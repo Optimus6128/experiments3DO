@@ -134,8 +134,8 @@ static void effectInit4()
 	generateUnpackedBmp4();
 
 	unpackedSpr4 = newSprite(SPRITE4_WIDTH, SPRITE4_HEIGHT, 4, CREATECEL_CODED, pal4, unpackedBmp4);
-	//packedSpr4 = newPackedSprite(SPRITE4_WIDTH, SPRITE4_HEIGHT, 4, CREATECEL_CODED, pal4, unpackedBmp4, packedData4);
-	//packedPer4 = packPercentage;
+	packedSpr4 = newPackedSprite(SPRITE4_WIDTH, SPRITE4_HEIGHT, 4, CREATECEL_CODED, pal4, unpackedBmp4, packedData4);
+	packedPer4 = packPercentage;
 }
 
 static void effectInit8()
@@ -165,7 +165,7 @@ void effectInit()
 
 static void updateFromInput()
 {
-	//if (isButtonPressedOnce(BUTTON_A)) showPacked4 = !showPacked4;
+	if (isButtonPressedOnce(BUTTON_A)) showPacked4 = !showPacked4;
 	if (isButtonPressedOnce(BUTTON_B)) showPacked8 = !showPacked8;
 	if (isButtonPressedOnce(BUTTON_C)) showPacked16 = !showPacked16;
 
@@ -175,7 +175,7 @@ static void updateFromInput()
 		showPacked16 = false;
 	}
 	if (isButtonPressedOnce(BUTTON_RPAD)) {
-		//showPacked4 = true;
+		showPacked4 = true;
 		showPacked8 = true;
 		showPacked16 = true;
 	}

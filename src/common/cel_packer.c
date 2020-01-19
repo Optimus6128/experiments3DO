@@ -24,12 +24,35 @@ static void extractPixelsToChunkyBytes(ubyte *unpackedLine, int width, int bpp)
 
 	switch(bpp) {
 		case 1:
+			for (i=0; i<width; i+=8) {
+				const ubyte b = *src8++;
+				*dst++ = b >> 7;
+				*dst++ = (b >> 6) & 1;
+				*dst++ = (b >> 5) & 1;
+				*dst++ = (b >> 4) & 1;
+				*dst++ = (b >> 3) & 1;
+				*dst++ = (b >> 2) & 1;
+				*dst++ = (b >> 1) & 1;
+				*dst++ = b & 1;
+			}
 		break;
 
 		case 2:
+			for (i=0; i<width; i+=4) {
+				const ubyte b = *src8++;
+				*dst++ = b >> 6;
+				*dst++ = (b >> 4) & 3;
+				*dst++ = (b >> 2) & 3;
+				*dst++ = b & 3;
+			}
 		break;
 
 		case 4:
+			for (i=0; i<width; i+=2) {
+				const ubyte b = *src8++;
+				*dst++ = b >> 4;
+				*dst++ = b & 15;
+			}
 		break;
 
 		case 6:
