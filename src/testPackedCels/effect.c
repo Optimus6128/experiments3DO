@@ -21,6 +21,12 @@
 #define SPRITE16_HEIGHT 240
 #define SPRITE16_SIZE (SPRITE16_WIDTH * SPRITE16_HEIGHT)
 
+
+#define ENABLE_4 false
+#define ENABLE_8 false
+#define ENABLE_16 true
+
+
 static Sprite *unpackedSpr4;
 static Sprite *packedSpr4;
 static ubyte unpackedBmp4[SPRITE4_SIZE];
@@ -43,9 +49,9 @@ static bool showPacked8 = false;
 static bool showPacked16 = false;
 static bool showPackInfo = false;
 
-static bool showRender4 = false;
-static bool showRender8 = true;
-static bool showRender16 = true;
+static bool showRender4 = ENABLE_4;
+static bool showRender8 = ENABLE_8;
+static bool showRender16 = ENABLE_16;
 
 static int packedPer4;
 static int packedPer8;
@@ -109,6 +115,10 @@ static void generateUnpackedBmp16()
 	int x,y,i=0;
 	const int repX = 63;
 	const int repY = 63;
+	
+	const int xDebugHack = 48;
+	//const int yDebugHack = 15;
+	const int yDebugHack = 48;
 
 	for (y=0; y<SPRITE16_HEIGHT; ++y) {
 		const int yp = (y & repY) - 32;
@@ -120,8 +130,13 @@ static void generateUnpackedBmp16()
 			if (c < 0) {
 				c = 0;
 			} else {
-				//c = (((y >> 3) & 31) << 10) | (((y >> 2) & 15) << 5) | ((c*y) % 24);	// FUCKED
-				c = (((y >> 3) & 31) << 10) | (((y >> 2) & 15) << 5) | (y % 24);
+				int yy = y;
+				if (yy==0) yy = 1;
+				//if (x < xDebugHack && y < yDebugHack)
+				if (y < yDebugHack)
+					c = (((yy >> 3) & 31) << 10) | (((yy >> 2) & 15) << 5) | ((c*yy) % 24);	// FUCKED
+				else
+					c = (((yy >> 3) & 31) << 10) | (((yy >> 2) & 15) << 5) | (yy % 24);
 			}
 
 			unpackedBmp16[i++] = c;
@@ -158,35 +173,35 @@ static void effectInit16()
 
 void effectInit()
 {
-	effectInit4();	// FUCKED
-	effectInit8();
-	effectInit16();
+	if (ENABLE_4) effectInit4();	// FUCKED
+	if (ENABLE_8) effectInit8();
+	if (ENABLE_16) effectInit16();
 }
 
 static void updateFromInput()
 {
-	if (isButtonPressedOnce(BUTTON_A)) showPacked4 = !showPacked4;
-	if (isButtonPressedOnce(BUTTON_B)) showPacked8 = !showPacked8;
-	if (isButtonPressedOnce(BUTTON_C)) showPacked16 = !showPacked16;
+	if (ENABLE_4 && isButtonPressedOnce(BUTTON_A)) showPacked4 = !showPacked4;
+	if (ENABLE_8 && isButtonPressedOnce(BUTTON_B)) showPacked8 = !showPacked8;
+	if (ENABLE_16 && isButtonPressedOnce(BUTTON_C)) showPacked16 = !showPacked16;
 
 	if (isButtonPressedOnce(BUTTON_LPAD)) {
-		showPacked4 = false;
-		showPacked8 = false;
-		showPacked16 = false;
+		if (ENABLE_4) showPacked4 = false;
+		if (ENABLE_8) showPacked8 = false;
+		if (ENABLE_16) showPacked16 = false;
 	}
 	if (isButtonPressedOnce(BUTTON_RPAD)) {
-		showPacked4 = true;
-		showPacked8 = true;
-		showPacked16 = true;
+		if (ENABLE_4) showPacked4 = true;
+		if (ENABLE_8) showPacked8 = true;
+		if (ENABLE_16) showPacked16 = true;
 	}
 
-	if (isButtonPressedOnce(BUTTON_LEFT)) {
+	if (ENABLE_4 && isButtonPressedOnce(BUTTON_LEFT)) {
 		showRender4 = !showRender4;
 	}
-	if (isButtonPressedOnce(BUTTON_UP)) {
+	if (ENABLE_8 && isButtonPressedOnce(BUTTON_UP)) {
 		showRender8 = !showRender8;
 	}
-	if (isButtonPressedOnce(BUTTON_RIGHT)) {
+	if (ENABLE_16 && isButtonPressedOnce(BUTTON_RIGHT)) {
 		showRender16 = !showRender16;
 	}
 
@@ -277,7 +292,7 @@ static void render8()
 
 static void render16()
 {
-	const int scrollX = -64 + (-time & 63);
+	const int scrollX = 0;//-64 + (-time & 63);
 
 	if (showPacked16)
 		renderScrollSprite(packedSpr16, scrollX, 0);

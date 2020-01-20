@@ -116,16 +116,18 @@ static pixelRepeatsType* getPixelRepeats(int *src, int length, int bpp, int type
 				prt.type = PACK_LITERAL;
 				--src;
 				pixel = *src;
-				for (x=2; x<length; ++x) {
-					if (count > 2) {
-						x -= count;
-						break;
+				if (!isChunkyPixelTransparent(pixel, type, pal)) {
+					for (x=2; x<length; ++x) {
+						if (count > 2) {
+							x -= count;
+							break;
+						}
+						if (pixel != *src++) {
+							pixel = *src;
+							count = 0;
+						}
+						++count;
 					}
-					if (pixel != *src++) {
-						pixel = *src;
-						count = 0;
-					}
-					++count;
 				}
 			}
 		}
@@ -247,7 +249,7 @@ ubyte* createPackedDataFromUnpackedBmp(int width, int height, int bpp, int type,
 	packedData = (ubyte*)malloc(countBytes);
 	memcpy(packedData, tempBuff, countBytes);
 
-	packPercentage = (countBytes * 100) / ((width * height * bpp) >> 3);
+	packPercentage = countBytes;//(countBytes * 100) / ((width * height * bpp) >> 3);
 
 	return packedData;
 }
