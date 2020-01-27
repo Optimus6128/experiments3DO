@@ -16,12 +16,13 @@ static void rotatePoint(int *px, int *py, int angle)
 
 Sprite *newSprite(int width, int height, int bpp, int type, uint16 *pal, ubyte *bmp)
 {
-	Sprite *spr = (Sprite*)malloc(sizeof(Sprite));
+	Sprite *spr = (Sprite*)AllocMem(sizeof(Sprite), MEMTYPE_ANY);
 
 	spr->width = width;
 	spr->height = height;
 
 	spr->cel = CreateCel(width, height, bpp, type, bmp);
+	spr->cel->ccb_SourcePtr = (void*)bmp;	// CreateCel is supposed to do that for you but fails for some pointer addresses, either a bug or something I miss
 
 	spr->cel->ccb_Flags |= (CCB_ACSC | CCB_ALSC);
 	if (type == CREATECEL_CODED) spr->cel->ccb_PLUTPtr = (PLUTChunk*)pal;

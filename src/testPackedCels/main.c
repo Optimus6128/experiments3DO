@@ -29,8 +29,7 @@ static void initStuff()
 	initGraphics();
 	initInput();
 
-	initFonts();
-	initTimer();
+	initTools();
 
 	initGame();
 }
@@ -58,6 +57,8 @@ static void mainLoop()
 		script();
 
 		showFPS();
+		showAvailMem();
+		//showDebugNums();
 
 		displayScreen();
 

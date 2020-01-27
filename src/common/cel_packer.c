@@ -1,16 +1,16 @@
 #include "cel_packer.h"
 #include "main_includes.h"
 
-static ubyte tempBuff[262144];
-static int tempLine[1024];
-
-int packPercentage;
-
 typedef struct pixelRepeatsType
 {
 	int type;
 	int pixelRepeats;
 }pixelRepeatsType;
+
+static ubyte tempBuff[262144];
+static int tempLine[1024];
+
+int packPercentage;
 
 static int currentBit;
 
@@ -246,7 +246,7 @@ ubyte* createPackedDataFromUnpackedBmp(int width, int height, int bpp, int type,
 		countBytes = currentBit >> 3;
 	}
 
-	packedData = (ubyte*)malloc(countBytes);
+	packedData = (ubyte*)AllocMem(countBytes, MEMTYPE_ANY);
 	memcpy(packedData, tempBuff, countBytes);
 
 	packPercentage = countBytes;//(countBytes * 100) / ((width * height * bpp) >> 3);

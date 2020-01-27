@@ -9,6 +9,12 @@
 #include "sprite_engine.h"
 #include "cel_packer.h"
 
+
+#define ENABLE_4 true
+#define ENABLE_8 true
+#define ENABLE_16 true
+
+
 #define SPRITE4_WIDTH 640
 #define SPRITE4_HEIGHT 480
 #define SPRITE4_SIZE (SPRITE4_WIDTH * SPRITE4_HEIGHT)
@@ -20,11 +26,6 @@
 #define SPRITE16_WIDTH 384
 #define SPRITE16_HEIGHT 240
 #define SPRITE16_SIZE (SPRITE16_WIDTH * SPRITE16_HEIGHT)
-
-
-#define ENABLE_4 false
-#define ENABLE_8 false
-#define ENABLE_16 true
 
 
 static Sprite *unpackedSpr4;
@@ -115,10 +116,6 @@ static void generateUnpackedBmp16()
 	int x,y,i=0;
 	const int repX = 63;
 	const int repY = 63;
-	
-	const int xDebugHack = 48;
-	//const int yDebugHack = 15;
-	const int yDebugHack = 48;
 
 	for (y=0; y<SPRITE16_HEIGHT; ++y) {
 		const int yp = (y & repY) - 32;
@@ -132,13 +129,8 @@ static void generateUnpackedBmp16()
 			} else {
 				int yy = y;
 				if (yy==0) yy = 1;
-				//if (x < xDebugHack && y < yDebugHack)
-				if (y < yDebugHack)
-					c = (((yy >> 3) & 31) << 10) | (((yy >> 2) & 15) << 5) | ((c*yy) % 24);	// FUCKED
-				else
-					c = (((yy >> 3) & 31) << 10) | (((yy >> 2) & 15) << 5) | (yy % 24);
+				c = (((yy >> 3) & 31) << 10) | (((yy >> 2) & 15) << 5) | (yy % 24);
 			}
-
 			unpackedBmp16[i++] = c;
 		}
 	}

@@ -30,6 +30,10 @@ static uchar fontsMap[FONTS_MAP_SIZE];
 
 bool fontsAreReady = false;
 
+#define DEBUG_NUMS_MAX 1024
+int *debugNums;
+int debugNumsIndex;
+
 // -------------------------------------
 
 int nframe = 0;
@@ -90,6 +94,20 @@ void initFonts()
 	fontsAreReady = true;
 }
 
+void initDebugNums()
+{
+	debugNums = (int*)AllocMem(DEBUG_NUMS_MAX * sizeof(*debugNums), MEMTYPE_ANY);
+	memset(debugNums, 0, DEBUG_NUMS_MAX);
+	debugNumsIndex = 0;
+}
+
+void initTools()
+{
+	initTimer();
+	initFonts();
+	initDebugNums();
+}
+
 void drawZoomedText(int xtp, int ytp, char *text, int zoom)
 {
 	int i = 0;
@@ -135,6 +153,30 @@ int getTicks()
 	return GetMSecTime(timerIOreq);
 }
 
+void addDebugNum(int value)
+{
+	if (debugNumsIndex == DEBUG_NUMS_MAX) return;
+
+	debugNums[debugNumsIndex++] = value;
+}
+
+void showDebugNums()
+{
+	int x, y, i = 0;
+	for (y=0; y<240; y+=FONT_HEIGHT) {
+		for (x=0; x<320; x+= 12*FONT_WIDTH) {
+			drawNumber(x, y, debugNums[i++]);
+			if (i==debugNumsIndex) break;
+		}
+		if (i==debugNumsIndex) break;
+	}
+}
+
+void resetDebugNums()
+{
+	debugNumsIndex = 0;
+}
+
 void showFPS()
 {
 	if (getTicks() - atime >= 1000)
@@ -147,7 +189,7 @@ void showFPS()
 	drawText(0, 0, sbuffer);
 }
 
-void drawAvailMem()
+void showAvailMem()
 {
 	static MemInfo memInfo;
 
