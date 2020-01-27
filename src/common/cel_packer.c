@@ -170,6 +170,12 @@ static void writeManyValues(int *valuePtr, int bpp, int count)
 	}
 }
 
+static void writeEolToTempBuff()
+{
+	const int header = PACK_EOL << 6;
+	writeOneValue(header, 8);
+}
+
 static void writePixelRepeatToTempBuff(int start, int bpp, pixelRepeatsType *prt)
 {
 	const int header = (prt->type << 6) | ((prt->pixelRepeats - 1) & 63);
@@ -241,6 +247,7 @@ ubyte* createPackedDataFromUnpackedBmp(int width, int height, int bpp, int type,
 			writePixelRepeatToTempBuff(x, bpp, prt);
 			x += prt->pixelRepeats;
 		}
+		writeEolToTempBuff();
 
 		padLineBitsAndWriteAddressOffset(countBytes, bpp);
 		countBytes = currentBit >> 3;
@@ -249,7 +256,7 @@ ubyte* createPackedDataFromUnpackedBmp(int width, int height, int bpp, int type,
 	packedData = (ubyte*)AllocMem(countBytes, MEMTYPE_ANY);
 	memcpy(packedData, tempBuff, countBytes);
 
-	packPercentage = countBytes;//(countBytes * 100) / ((width * height * bpp) >> 3);
+	packPercentage = (countBytes * 100) / ((width * height * bpp) >> 3);
 
 	return packedData;
 }

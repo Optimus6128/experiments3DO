@@ -284,7 +284,7 @@ static void render8()
 
 static void render16()
 {
-	const int scrollX = 0;//-64 + (-time & 63);
+	const int scrollX = -64 + (-time & 63);
 
 	if (showPacked16)
 		renderScrollSprite(packedSpr16, scrollX, 0);

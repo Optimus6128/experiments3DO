@@ -57,7 +57,7 @@ static void mainLoop()
 		script();
 
 		showFPS();
-		showAvailMem();
+		//showAvailMem();
 		//showDebugNums();
 
 		displayScreen();
