@@ -139,24 +139,27 @@ static pixelRepeatsType* getPixelRepeats(int *src, int length, int bpp, int type
 static void writeValueBits(int value, int bpp)
 {
 	int i;
-
 	for (i = 0; i < bpp; ++i) {
 		const int byteIndex = currentBit >> 3;
-		const int writeBitIndex = currentBit & 7;
+		const int writeBitIndex = 7 - (currentBit & 7);
 
-		tempBuff[byteIndex] |= (((value >> (bpp - i - 1)) & 1) << writeBitIndex);
+		tempBuff[byteIndex] = (tempBuff[byteIndex] & ~(1 << writeBitIndex)) | (((value >> (bpp - i - 1)) & 1) << writeBitIndex);
 		++currentBit;
 	}
 }
 
 static void writeOneValue(int value, int bpp)
 {
-	if (bpp==8) {
-		tempBuff[currentBit >> 3] = value & 255; currentBit += 8;
-	} else if (bpp==16) {
-		*((uint16*)&tempBuff[currentBit >> 3]) = value & 65535; currentBit += 16;
-	} else {
+	if ((currentBit & 7) != 0){
 		writeValueBits(value, bpp);
+	} else {
+		if (bpp==8) {
+			tempBuff[currentBit >> 3] = value & 255; currentBit += 8;
+		} else if (bpp==16) {
+			*((uint16*)&tempBuff[currentBit >> 3]) = value & 65535; currentBit += 16;
+		} else {
+			writeValueBits(value, bpp);
+		}
 	}
 }
 
