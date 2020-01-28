@@ -103,10 +103,7 @@ static void generateUnpackedBmp8()
 			if (c < 0) c = 0;
 			c = (32 * c) / (SPRITE8_SIZE / 4);
 			c = (c * c) / 3;
-			if (c > 31) c = 31;	// commenting out this, fucks (between packed and unpacked I mean).
-								// However, not with my packer but something with higher bits and how it's interpreted by CEL depending on packed or unpacked?
-								// Case in point, I left the same values, but changed to UNCODED 8bit, and it wouldn't fail.
-								// Datawise packed and unpacked work the same. Just don't go above 31 in palettized mode.
+			if (c > 31) c = 31;
 			unpackedBmp8[i++] = c;
 		}
 	}

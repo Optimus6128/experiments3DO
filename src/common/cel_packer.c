@@ -75,11 +75,16 @@ static void extractPixelsToChunkyBytes(ubyte *unpackedLine, int width, int bpp)
 	}
 }
 
-static bool isChunkyPixelTransparent(int pixel, int type, uint16 *pal)
+static bool isChunkyPixelTransparent(int pixel, int type, int bpp, uint16 *pal)
 {
+	int palMax;
+	int palBpp = bpp;
+	if (palBpp > 5) palBpp = 5;
+	palMax = (1 << palBpp) - 1;
+	
 	switch (type) {
 	case CREATECEL_CODED:
-		return (pal[pixel] == 0);
+		return (pal[pixel & palMax] == 0);
 		break;
 
 	case CREATECEL_UNCODED:
@@ -106,7 +111,7 @@ static pixelRepeatsType* getPixelRepeats(int *src, int length, int bpp, int type
 		}
 	}
 
-	if (isChunkyPixelTransparent(pixel, type, pal)) {
+	if (isChunkyPixelTransparent(pixel, type, bpp, pal)) {
 		prt.type = PACK_TRANSPARENT;
 	} else {
 		prt.type = PACK_PACKED;
@@ -116,7 +121,7 @@ static pixelRepeatsType* getPixelRepeats(int *src, int length, int bpp, int type
 				prt.type = PACK_LITERAL;
 				--src;
 				pixel = *src;
-				if (!isChunkyPixelTransparent(pixel, type, pal)) {
+				if (!isChunkyPixelTransparent(pixel, type, bpp, pal)) {
 					for (x=2; x<length; ++x) {
 						if (count > 2) {
 							x -= count;
