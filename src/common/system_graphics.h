@@ -40,6 +40,7 @@ void displayScreen(void);
 void debugUpdate(void);
 void drawCels(CCB *cels);
 
+void setBackgroundColor(int color);
 void drawPixel(int px, int py, uint16 c);
 
 extern bool vsync;

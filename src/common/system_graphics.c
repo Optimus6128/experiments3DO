@@ -45,7 +45,7 @@ void initGraphics()
 	memset(&ioInfo,0,sizeof(ioInfo));
 	ioInfo.ioi_Command = FLASHWRITE_CMD;
 	ioInfo.ioi_CmdOptions = 0xffffffff;
-	ioInfo.ioi_Offset = 0x32122123;//0x12344321; // background colour
+	ioInfo.ioi_Offset = 0; // background colour
 	ioInfo.ioi_Recv.iob_Buffer = Bitmaps[0]->bm_Buffer;
 	ioInfo.ioi_Recv.iob_Len = width*height*2;   // 2 could be because 16bit and not because number of buffers, gotta check
 
@@ -68,6 +68,11 @@ return;
 
 	ioInfo.ioi_Offset = 0;
 	++incNum;
+}
+
+void setBackgroundColor(int color)
+{
+	ioInfo.ioi_Offset = color;
 }
 
 void drawPixel(int px, int py, uint16 c)
