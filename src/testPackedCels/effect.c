@@ -15,8 +15,8 @@
 #define ENABLE_16 true
 
 
-#define SPRITE4_WIDTH 640
-#define SPRITE4_HEIGHT 480
+#define SPRITE4_WIDTH 512
+#define SPRITE4_HEIGHT 512
 #define SPRITE4_SIZE (SPRITE4_WIDTH * SPRITE4_HEIGHT)
 
 #define SPRITE8_WIDTH 128
@@ -30,7 +30,7 @@
 
 static Sprite *unpackedSpr4;
 static Sprite *packedSpr4;
-static ubyte unpackedBmp4[SPRITE4_SIZE];
+static ubyte unpackedBmp4[SPRITE4_SIZE/2];
 static ubyte *packedData4 = NULL;
 static uint16 pal4[16];
 static uint16 pal8[32];
@@ -85,7 +85,7 @@ static void generateUnpackedBmp4()
 		}
 	}
 	pal4[0] = 0;
-	setPal(1,15, 128,92,144, 255,224,160, pal4);
+	setPal(1,15, 255,224,160, 32,64,128, pal4);
 }
 
 static void generateUnpackedBmp8()
@@ -255,11 +255,13 @@ static void renderText()
 static void render4()
 {
 	const int angle = -time << 16;
+	const int px = (SinF16(time * 40000) * 48) >> 16;
+	const int py = (SinF16(time * 50000) * 32) >> 16;
 
 	if (showPacked4)
-		renderZoomRotateSprite(packedSpr4, 0, 0, 256, angle);
+		renderZoomRotateSprite(packedSpr4, px, py, 256, angle);
 	else
-		renderZoomRotateSprite(unpackedSpr4, 0, 0, 256, angle);
+		renderZoomRotateSprite(unpackedSpr4, px, py, 256, angle);
 }
 
 static void render8()
