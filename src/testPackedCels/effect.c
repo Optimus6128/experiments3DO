@@ -1,9 +1,9 @@
-#include "main.h"
-#include "tools.h"
+#include "core.h"
 
 #include "effect.h"
 
 #include "system_graphics.h"
+#include "tools.h"
 #include "input.h"
 
 #include "sprite_engine.h"
@@ -254,7 +254,7 @@ static void renderText()
 	}
 }
 
-static void render4()
+static void render4(const int time)
 {
 	const int angle = -time << 16;
 	const int px = (SinF16(time * 40000) * 48) >> 16;
@@ -266,7 +266,7 @@ static void render4()
 		renderZoomRotateSprite(unpackedSpr4, px, py, 256, angle);
 }
 
-static void render8()
+static void render8(const int time)
 {
 	int i;
 	const int angle = time << 16;
@@ -286,7 +286,7 @@ static void render8()
 	}
 }
 
-static void render16()
+static void render16(const int time)
 {
 	const int scrollX = -64 + (-time & 63);
 
@@ -296,11 +296,11 @@ static void render16()
 		renderScrollSprite(unpackedSpr16, scrollX, 0);
 }
 
-static void render()
+static void render(const int time)
 {
-	if (showRender4) render4();
-	if (showRender16) render16();
-	if (showRender8) render8();
+	if (showRender4) render4(time);
+	if (showRender16) render16(time);
+	if (showRender8) render8(time);
 
 	renderText();
 }
@@ -309,5 +309,5 @@ void effectRun()
 {
 	updateFromInput();
 
-	render();
+	render(getFrameNum());
 }

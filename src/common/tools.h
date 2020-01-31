@@ -13,9 +13,6 @@
 
 #define TEXT_ZOOM_SHR 8
 
-extern int nframe;
-extern int *debugNums;
-extern int debugNumsIndex;
 
 void initTools(void);
 
@@ -25,10 +22,6 @@ void drawNumber(int xtp, int ytp, int num);
 
 void showFPS(void);
 void showAvailMem(void);
-void showDebugNums(void);
-
-void addDebugNum(int value);
-void resetDebugNums(void);
 
 int getTicks(void);
 

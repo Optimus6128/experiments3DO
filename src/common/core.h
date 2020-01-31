@@ -1,5 +1,5 @@
-#ifndef MAIN_INCLUDES_H
-#define MAIN_INCLUDES_H
+#ifndef CORE_H
+#define CORE_H
 
 #include "displayutils.h"
 #include "debug.h"
@@ -28,6 +28,11 @@
 #include "Utils3DO.h"
 #include "3d_examples.h"
 #include "getvideoinfo.h"
+
+
+void initCore(void);
+
+void showSystemInfo(bool fps, bool mem);
 
 
 #endif

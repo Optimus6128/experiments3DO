@@ -1,9 +1,9 @@
-#include "main.h"
-#include "tools.h"
+#include "core.h"
 
 #include "effect.h"
 
 #include "system_graphics.h"
+#include "tools.h"
 #include "input.h"
 
 #include "sprite_engine.h"
@@ -14,6 +14,7 @@
 #define RAIN_LAYER_HEIGHT 256
 #define RAIN_LAYER_SIZE (RAIN_LAYER_WIDTH * RAIN_LAYER_HEIGHT)
 #define RAIN_LAYERS_NUM 32
+
 
 static Sprite *unpackedRain[RAIN_LAYERS_NUM];
 static Sprite *packedRain[RAIN_LAYERS_NUM];
@@ -98,10 +99,11 @@ static void renderText()
 
 static void renderRain()
 {
-	int i;
 	const int layersOnScreen = RAIN_LAYERS_NUM;
+	const int time = getFrameNum();
 	const int angle = (64 << 16) + (SinF16(time * 30000) << 3);	// 90 degrees
 
+	int i;
 	for (i=0; i<layersOnScreen; ++i) {
 		const int zoom = 512 - ((layersOnScreen - i) * 448) / layersOnScreen + ((2*time) & 127);
 		const int k = i;//rand() % layersOnScreen;

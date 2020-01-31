@@ -1,5 +1,5 @@
 #include "cel_packer.h"
-#include "main_includes.h"
+#include "core.h"
 
 typedef struct pixelRepeatsType
 {

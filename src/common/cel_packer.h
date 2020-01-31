@@ -3,7 +3,7 @@
 
 #include "types.h"
 #include "sprite_engine.h"
-#include "main_includes.h"
+#include "core.h"
 
 extern int packPercentage;
 

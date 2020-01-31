@@ -1,10 +1,10 @@
 #include "types.h"
-#include "main_includes.h"
+#include "core.h"
 
 #include "system_graphics.h"
 #include "tools.h"
 
-bool vsync = true;
+static bool vsync = true;
 
 static Item gVRAMIOReq;
 static Item vsyncItem;
@@ -17,13 +17,13 @@ static ScreenContext screen;
 static IOInfo ioInfo;
 
 static int screenPage = 0;
+static int frameNum = 0;
 
 void initGraphics()
 {
 	int i;
 	int width,height;
 
-	//int test = OpenGraphics(&screen,NUM_SCREEN_PAGES);
 	CreateBasicDisplay(&screen,DI_TYPE_DEFAULT,NUM_SCREEN_PAGES);   // DI_TYPE_DEFAULT = 0 (NTSC)
 
 	for(i=0;i<NUM_SCREEN_PAGES;i++)
@@ -52,24 +52,6 @@ void initGraphics()
 	vsyncItem = GetVBLIOReq();
 }
 
-void debugUpdate()
-{
-	static int incNum = 0;
-	int i;
-
-	int c = rand() & 65535;
-return;
-	ioInfo.ioi_Offset = (c << 16) | c;
-
-	for (i=0; i<10; ++i) {
-		drawNumber(0, 0, incNum);
-		displayScreen();
-	}
-
-	ioInfo.ioi_Offset = 0;
-	++incNum;
-}
-
 void setBackgroundColor(int color)
 {
 	ioInfo.ioi_Offset = color;
@@ -81,6 +63,21 @@ void drawPixel(int px, int py, uint16 c)
 	*dst = c;
 }
 
+int getFrameNum()
+{
+	return frameNum;
+}
+
+void setVsync(bool on)
+{
+	vsync = on;
+}
+
+void toggleVsync()
+{
+	vsync = !vsync;
+}
+
 void displayScreen()
 {
 	DisplayScreen(screen.sc_Screens[screenPage], 0 );
@@ -90,6 +87,8 @@ void displayScreen()
 
 	ioInfo.ioi_Recv.iob_Buffer = Bitmaps[screenPage]->bm_Buffer;
 	DoIO(gVRAMIOReq,&ioInfo);
+
+	++frameNum;
 }
 
 void drawCels(CCB *cels)

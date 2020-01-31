@@ -1,48 +1,27 @@
 #include "types.h"
-#include "main.h"
+#include "core.h"
 
 #include "system_graphics.h"
 #include "input.h"
 
 #include "tools.h"
-
 #include "effect.h"
 
-uint32 time;
 
-static void initSystem()
+static void init()
 {
-	OpenMathFolio();
-	OpenGraphicsFolio();
-	InitEventUtility(1,0,LC_Observer);
-	OpenAudioFolio();
-}
+	initCore();
 
-static void initGame()
-{
 	effectInit();
-}
-
-static void initStuff()
-{
-	initSystem();
-	initGraphics();
-	initInput();
-
-	initTools();
-
-	initGame();
 }
 
 static void inputScript()
 {
-	if (isButtonPressedOnce(BUTTON_SELECT)) vsync = !vsync;
+	if (isButtonPressedOnce(BUTTON_SELECT)) toggleVsync();
 }
 
 static void script()
 {
-	time = nframe;
-
 	inputScript();
 
 	effectRun();
@@ -50,26 +29,21 @@ static void script()
 
 static void mainLoop()
 {
-	for(;;)
+	while(true)
 	{
 		updateJoypad();
 
 		script();
-
-		showFPS();
-		//showAvailMem();
-		//showDebugNums();
+		
+		showSystemInfo(true, false);
 
 		displayScreen();
-
-		++nframe;
 	}
 }
 
-
 int main()
 {
-	initStuff();
+	init();
 
 	mainLoop();
 }

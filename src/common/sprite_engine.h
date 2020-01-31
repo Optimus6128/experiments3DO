@@ -2,7 +2,7 @@
 #define SPRITE_ENGINE_H
 
 #include "types.h"
-#include "main_includes.h"
+#include "core.h"
 
 typedef struct Sprite
 {
