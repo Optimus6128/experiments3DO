@@ -3,7 +3,12 @@
 #include "system_graphics.h"
 #include "input.h"
 #include "tools.h"
+#include "menu.h"
 
+static bool showFps = false;
+static bool showMem = false;
+static bool defaultInput = false;
+static bool menu = false;
 
 static void initSystem()
 {
@@ -13,16 +18,47 @@ static void initSystem()
 	OpenAudioFolio();
 }
 
-void initCore()
+void coreInit(void(*initFunc)(), int flags)
 {
 	initSystem();
 	initGraphics();
 	initInput();
 	initTools();
+	initMenu();
+
+	initFunc();
+
+	showFps = (flags & CORE_SHOW_FPS);
+	showMem = (flags & CORE_SHOW_MEM);
+	defaultInput = (flags & CORE_DEFAULT_INPUT);
 }
 
-void showSystemInfo(bool fps, bool mem)
+static void defaultInputScript()
 {
-	if (fps) showFPS();
-	if (mem) showAvailMem();
+	if (defaultInput) {
+		if (isButtonPressedOnce(BUTTON_SELECT)) toggleVsync();
+		if (menu & isButtonPressedOnce(BUTTON_START)) showMenu();
+	}
+}
+
+void displaySystemInfo()
+{
+	if (showFps) displayFPS();
+	if (showMem) displayMem();
+}
+
+void coreRun(void(*mainLoopFunc)())
+{
+	while(true)
+	{
+		updateInput();
+
+		defaultInputScript();
+		
+		mainLoopFunc();
+		
+		displaySystemInfo();
+
+		displayScreen();
+	}
 }

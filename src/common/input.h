@@ -10,7 +10,7 @@ enum {
 
 
 void initInput(void);
-void updateJoypad(void);
+void updateInput(void);
 
 bool isButtonPressed(int buttonId);
 bool isButtonPressedOnce(int buttonId);

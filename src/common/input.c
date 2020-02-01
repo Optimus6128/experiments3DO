@@ -39,6 +39,16 @@ void updateJoypad()
 	}
 }
 
+void updateMouse()
+{
+}
+
+void updateInput()
+{
+	updateJoypad();
+	updateMouse();
+}
+
 bool isButtonPressed(int buttonId)
 {
 	if (buttonId < 0 || buttonId >= BUTTONS_NUM) return false;

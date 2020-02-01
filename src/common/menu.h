@@ -3,6 +3,7 @@
 
 void initMenu(void);
 void showMenu(void);
+void hideMenu(void);
 
 void initHelp(const char *helpText);
 

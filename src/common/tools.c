@@ -139,7 +139,7 @@ int getTicks()
 	return GetMSecTime(timerIOreq);
 }
 
-void showFPS()
+void displayFPS()
 {
 	static int fps = 0, prevFrameNum = 0, prevTicks = 0;
 
@@ -155,7 +155,7 @@ void showFPS()
 	drawNumber(0, 0, fps);
 }
 
-void showAvailMem()
+void displayMem()
 {
 	static MemInfo memInfo;
 
