@@ -1,8 +1,8 @@
-cd src
-cd packedRain
+cd src/packedRain
 call clean.bat
-cd..
-cd testPackedCels
+cd../testPackedCels
 call clean.bat
-cd..
-cd..
+cd../feedbackCube
+call clean.bat
+cd../volumeEffects
+call clean.bat
