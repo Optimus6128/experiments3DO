@@ -19,6 +19,27 @@ static IOInfo ioInfo;
 static int screenPage = 0;
 static int frameNum = 0;
 
+void initSPORTwriteValue(uint32 value)
+{
+	memset(&ioInfo,0,sizeof(ioInfo));
+	ioInfo.ioi_Command = FLASHWRITE_CMD;
+	ioInfo.ioi_CmdOptions = 0xffffffff;
+	ioInfo.ioi_Offset = value; // background colour
+	ioInfo.ioi_Recv.iob_Buffer = Bitmaps[0]->bm_Buffer;
+	ioInfo.ioi_Recv.iob_Len = SCREEN_SIZE_IN_BYTES;
+}
+
+void initSPORTcopyImage(ubyte *srcImage)
+{
+	memset(&ioInfo,0,sizeof(ioInfo));
+	ioInfo.ioi_Command = SPORTCMD_COPY;
+	ioInfo.ioi_Offset = 0xffffffff; // mask
+	ioInfo.ioi_Send.iob_Buffer = srcImage;
+	ioInfo.ioi_Send.iob_Len = SCREEN_SIZE_IN_BYTES;
+	ioInfo.ioi_Recv.iob_Buffer = Bitmaps[0]->bm_Buffer;
+	ioInfo.ioi_Recv.iob_Len = SCREEN_SIZE_IN_BYTES;
+}
+
 void initGraphics()
 {
 	int i;
@@ -42,14 +63,14 @@ void initGraphics()
 
 	gVRAMIOReq = CreateVRAMIOReq(); // Obtain an IOReq for all SPORT operations
 
-	memset(&ioInfo,0,sizeof(ioInfo));
-	ioInfo.ioi_Command = FLASHWRITE_CMD;
-	ioInfo.ioi_CmdOptions = 0xffffffff;
-	ioInfo.ioi_Offset = 0; // background colour
-	ioInfo.ioi_Recv.iob_Buffer = Bitmaps[0]->bm_Buffer;
-	ioInfo.ioi_Recv.iob_Len = width*height*2;   // 2 could be because 16bit and not because number of buffers, gotta check
+	initSPORTwriteValue(0);
 
 	vsyncItem = GetVBLIOReq();
+}
+
+void loadAndSetBackgroundImage(char *path)
+{
+	initSPORTcopyImage(LoadImage(path, NULL, (VdlChunk **)NULL, &screen));
 }
 
 void setBackgroundColor(int color)
@@ -81,7 +102,7 @@ void toggleVsync()
 void displayScreen()
 {
 	DisplayScreen(screen.sc_Screens[screenPage], 0 );
-	if (vsync) WaitVBL(vsyncItem, 1);
+	if (vsync && ioInfo.ioi_Command != SPORTCMD_COPY) WaitVBL(vsyncItem, 1);
 
 	screenPage = (screenPage+ 1) & 1;
 

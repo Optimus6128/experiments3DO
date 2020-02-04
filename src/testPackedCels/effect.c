@@ -165,7 +165,7 @@ static void effectInit16()
 
 void effectInit()
 {
-	setBackgroundColor(0x32122123);
+	loadAndSetBackgroundImage("data/background.cel");
 
 	if (ENABLE_4) effectInit4();
 	if (ENABLE_8) effectInit8();

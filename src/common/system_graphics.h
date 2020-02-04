@@ -6,6 +6,7 @@
 
 #define SCREEN_WIDTH 320
 #define SCREEN_HEIGHT 240
+#define SCREEN_SIZE_IN_BYTES (SCREEN_WIDTH * SCREEN_HEIGHT * 2)
 
 #define NUM_SCREEN_PAGES 2
 
@@ -14,6 +15,7 @@ void displayScreen(void);
 void debugUpdate(void);
 void drawCels(CCB *cels);
 
+void loadAndSetBackgroundImage(char *path);
 void setBackgroundColor(int color);
 void drawPixel(int px, int py, uint16 c);
 int getFrameNum(void);
