@@ -36,7 +36,7 @@ SRC_C		= $(wildcard *.c) $(wildcard $(COMMON_DIR)*.c)
 
 OBJ	+= $(SRC_S:.s=.o)
 OBJ	+= $(SRC_C:.c=.o) 
-#tools.o input.o sprite_engine.o system_graphics.o
+
 
 all: $(NAME)
 	
