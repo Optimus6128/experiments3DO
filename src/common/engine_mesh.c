@@ -6,12 +6,43 @@
 #include "engine_texture.h"
 #include "mathutil.h"
 
-void allocateMeshArrays(mesh *ms)
+static void allocateMeshArrays(mesh *ms)
 {
     ms->indexNum = ms->quadsNum << 2;
     ms->vrtx = (vertex*)malloc(ms->vrtxNum * sizeof(vertex));
     ms->index = (int*)malloc(ms->indexNum * sizeof(int));
     ms->quad = (quadData*)malloc(ms->quadsNum * sizeof(quadData));
+}
+
+static void prepareCelList(mesh *ms)
+{
+	int i;
+
+	for (i=0; i<ms->quadsNum; i++)
+    {
+        texture *tex = ms->quad[i].tex;
+
+		ms->quad[i].cel = CreateCel(tex->width, tex->height, tex->bpp, CREATECEL_UNCODED, tex->bitmap);
+
+		ms->quad[i].cel->ccb_Flags &= ~CCB_ACW;	// Initially, ACW is off and only ACCW (counterclockwise) polygons are visible
+
+        ms->quad[i].cel->ccb_Flags |= (CCB_ACSC | CCB_ALSC | CCB_BGND);
+
+        if (i!=0) LinkCel(ms->quad[i-1].cel, ms->quad[i].cel);
+    }
+	ms->quad[ms->quadsNum-1].cel->ccb_Flags |= CCB_LAST;
+}
+
+static void setMeshCELflags(mesh *ms, uint32 flags, bool enable)
+{
+	int i;
+	for (i=0; i<ms->quadsNum; i++) {
+		if (enable) {
+			ms->quad[i].cel->ccb_Flags |= flags;
+		} else {
+			ms->quad[i].cel->ccb_Flags &= ~flags;
+		}
+	}
 }
 
 void setMeshPosition(mesh *ms, int px, int py, int pz)
@@ -28,27 +59,31 @@ void setMeshRotation(mesh *ms, int rx, int ry, int rz)
     ms->rotZ = rz;
 }
 
-void prepareCelList(mesh *ms, bool translucent, bool twosided)
+void setMeshPolygonOrder(mesh *ms, bool cw, bool ccw)
+{
+	if (cw) {
+		setMeshCELflags(ms, CCB_ACW, true);
+	} else {
+		setMeshCELflags(ms, CCB_ACW, false);
+	}
+
+	if (ccw) {
+		setMeshCELflags(ms, CCB_ACCW, true);
+	} else {
+		setMeshCELflags(ms, CCB_ACCW, false);
+	}
+}
+
+void setMeshTranslucency(mesh *ms, bool enable)
 {
 	int i;
-
-	for (i=0; i<ms->quadsNum; i++)
-    {
-        texture *tex = ms->quad[i].tex;
-
-		ms->quad[i].cel = CreateCel(tex->width, tex->height, tex->bpp, CREATECEL_UNCODED, tex->bitmap);
-
-		if (!twosided)
-            ms->quad[i].cel->ccb_Flags &= ~CCB_ACW;
-
-        ms->quad[i].cel->ccb_Flags |= (CCB_ACSC | CCB_ALSC | CCB_BGND);
-
-        if (translucent)
-            ms->quad[i].cel->ccb_PIXC = TRANSLUCENT_CEL;
-
-        if (i!=0) LinkCel(ms->quad[i-1].cel, ms->quad[i].cel);
-    }
-	ms->quad[ms->quadsNum-1].cel->ccb_Flags |= CCB_LAST;
+	for (i=0; i<ms->quadsNum; i++) {
+		if (enable) {
+			ms->quad[i].cel->ccb_PIXC = TRANSLUCENT_CEL;
+		} else {
+			ms->quad[i].cel->ccb_PIXC = SOLID_CEL;
+		}
+	}
 }
 
 mesh *initMesh(int type, int size, int divisions, int textureId)
@@ -149,7 +184,7 @@ mesh *initMesh(int type, int size, int divisions, int textureId)
         break;
     }
 
-    prepareCelList(ms, false, false);
+    prepareCelList(ms);
 
     return ms;
 }

@@ -32,5 +32,7 @@ mesh *initMesh(int type, int size, int divisions, int textureId);
 
 void setMeshPosition(mesh *ms, int px, int py, int pz);
 void setMeshRotation(mesh *ms, int rx, int ry, int rz);
+void setMeshPolygonOrder(mesh *ms, bool cw, bool ccw);
+void setMeshTranslucency(mesh *ms, bool enable);
 
 #endif

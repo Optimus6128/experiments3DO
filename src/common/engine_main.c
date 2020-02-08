@@ -11,35 +11,18 @@
 #include "mathutil.h"
 
 
-vertex vertices[MAX_VERTICES_NUM];
-int lastVertexNum = 0;
+static vertex vertices[MAX_VERTICES_NUM];
 
-int icos[256], isin[256];
-int recZ[NUM_REC_Z];
+static int icos[256], isin[256];
+static uint32 recZ[NUM_REC_Z];
 
 static int screenWidth = SCREEN_WIDTH;
 static int screenHeight = SCREEN_HEIGHT;
 
+static bool polygonOrderTestCPU = true;
 
-void initEngine()
-{
-    int i;
-    for(i=0; i<256; i++)
-    {
-        isin[i] = SinF16(i << 16) >> 4;
-        icos[i] = CosF16(i << 16) >> 4;
-    }
+static void(*mapcelFunc)(CCB*, Point*);
 
-    for (i=1; i<NUM_REC_Z; ++i) {
-        recZ[i] = (1 << REC_FPSHR) / i;
-    }
-}
-
-void setScreenDimensions(int w, int h)
-{
-	screenWidth = w;
-	screenHeight = h;
-}
 
 static void fasterMapCel(CCB *c, Point *q)
 {
@@ -99,39 +82,7 @@ static void createRotationMatrixValues(int rotX, int rotY, int rotZ, int *rotVec
     *rotVecs = (FIXED_MUL(cosxr, cosyr, FP_BASE)) << FP_BASE_TO_CORE;
 }
 
-void rotateTranslateProjectVertices(mesh *ms)
-{
-    const int posX = ms->posX;
-    const int posY = ms->posY;
-    const int posZ = ms->posZ;
-    const int rotX = ms->rotX;
-    const int rotY = ms->rotY;
-    const int rotZ = ms->rotZ;
-
-    int rotVec[9];
-
-    register vertex *v = ms->vrtx;
-
-    register int i;
-    const int lvNum = ms->vrtxNum;
-
-    //setScreenDimensions();
-
-    createRotationMatrixValues(rotX, rotY, rotZ, rotVec);
-
-    for (i=0; i<lvNum; i++)
-    {
-        const int vz = FIXED_TO_INT(v->x * rotVec[2] + v->y * rotVec[5] + v->z * rotVec[8], FP_CORE) + posZ;
-        if (vz > 0) {
-            const int recDivZ = recZ[vz];
-            vertices[i].x = screenWidth / 2 + ((((FIXED_TO_INT(v->x * rotVec[0]+ v->y * rotVec[3] + v->z * rotVec[6], FP_CORE) + posX) << PROJ_SHR) * recDivZ) >> REC_FPSHR);
-            vertices[i].y = screenHeight / 2 - ((((FIXED_TO_INT(v->x * rotVec[1] + v->y * rotVec[4] + v->z * rotVec[7], FP_CORE) + posY) << PROJ_SHR) * recDivZ) >> REC_FPSHR);
-        }
-        ++v;
-    }
-}
-
-void translateAndProjectVertices(mesh *ms)
+static void translateAndProjectVertices(mesh *ms)
 {
     const int posX = ms->posX;
     const int posY = ms->posY;
@@ -139,8 +90,6 @@ void translateAndProjectVertices(mesh *ms)
 
     register int i;
     const int lvNum = ms->vrtxNum;
-
-    //setScreenDimensions();
 
     for (i=0; i<lvNum; i++)
     {
@@ -153,7 +102,7 @@ void translateAndProjectVertices(mesh *ms)
     }
 }
 
-void rotateVerticesHw(mesh *ms)
+static void rotateVerticesHw(mesh *ms)
 {
     mat33f16 rotMat;
 
@@ -162,31 +111,18 @@ void rotateVerticesHw(mesh *ms)
     MulManyVec3Mat33_F16((vec3f16*)vertices, (vec3f16*)ms->vrtx, rotMat, ms->vrtxNum);
 }
 
-/*void uploadVertices(mesh *ms)
-{
-    memcpy(vertices, ms->vrtx, ms->vrtxNum * sizeof(vertex));
-    lastVertexNum = ms->vrtxNum;
-}
-
-void uploadTransformAndProjectMesh(mesh *ms)
-{
-    uploadVertices(ms);
-	rotateVertices(ms->rotX, ms->rotY, ms->rotZ);
-    translateVertices(ms->posX, ms->posY, ms->posZ);
-    projectVertices();
-}*/
-
-void renderTransformedGeometryCELs(mesh *ms)
+static void renderTransformedGeometryCELs(mesh *ms)
 {
     drawCels(ms->quad[0].cel);
 }
 
-void prepareTransformedGeometryCELs(mesh *ms)
+static void prepareTransformedGeometryCELs(mesh *ms)
 {
-    int i, j=0, n;
+    int i, j=0;
     int *indices = ms->index;
 	Point quad[4];
 
+	int n = 1;
     for (i=0; i<ms->indexNum; i+=4)
     {
 		quad[0].pt_X = vertices[indices[i]].x; quad[0].pt_Y = vertices[indices[i]].y;
@@ -194,21 +130,65 @@ void prepareTransformedGeometryCELs(mesh *ms)
 		quad[2].pt_X = vertices[indices[i+2]].x; quad[2].pt_Y = vertices[indices[i+2]].y;
 		quad[3].pt_X = vertices[indices[i+3]].x; quad[3].pt_Y = vertices[indices[i+3]].y;
 
-		n = (quad[0].pt_X - quad[1].pt_X) * (quad[2].pt_Y - quad[1].pt_Y) - (quad[2].pt_X - quad[1].pt_X) * (quad[0].pt_Y - quad[1].pt_Y);
+		if (polygonOrderTestCPU) {
+			n = (quad[0].pt_X - quad[1].pt_X) * (quad[2].pt_Y - quad[1].pt_Y) - (quad[2].pt_X - quad[1].pt_X) * (quad[0].pt_Y - quad[1].pt_Y);
+		}
 
-		if (n > 0) {
-            ms->quad[j].cel->ccb_Flags &= ~CCB_SKIP;
-//            fasterMapCel(ms->quad[j].cel, quad);
-            MapCel(ms->quad[j].cel, quad);
+		if (!polygonOrderTestCPU || n > 0) {
+			ms->quad[j].cel->ccb_Flags &= ~CCB_SKIP;
+			mapcelFunc(ms->quad[j].cel, quad);
 		} else {
-		    ms->quad[j].cel->ccb_Flags |= CCB_SKIP;
+			ms->quad[j].cel->ccb_Flags |= CCB_SKIP;
 		}
 		++j;
     }
+}
+
+void transformGeometry(mesh *ms)
+{
+	rotateVerticesHw(ms);
+	translateAndProjectVertices(ms);
 }
 
 void renderTransformedGeometry(mesh *ms)
 {
     prepareTransformedGeometryCELs(ms);
     renderTransformedGeometryCELs(ms);
+}
+
+void setScreenDimensions(int w, int h)
+{
+	screenWidth = w;
+	screenHeight = h;
+}
+
+void useCPUtestPolygonOrder(bool enable)
+{
+	polygonOrderTestCPU = enable;
+}
+
+void useMapCelFunctionFast(bool enable)
+{
+	if (enable) {
+		mapcelFunc = fasterMapCel;
+	} else {
+		mapcelFunc = MapCel;
+	}
+}
+
+void initEngine()
+{
+    uint32 i;
+    for(i=0; i<256; i++)
+    {
+        isin[i] = SinF16(i << 16) >> 4;
+        icos[i] = CosF16(i << 16) >> 4;
+    }
+
+    for (i=1; i<NUM_REC_Z; ++i) {
+        recZ[i] = (1 << REC_FPSHR) / i;
+    }
+
+	useCPUtestPolygonOrder(false);
+	useMapCelFunctionFast(true);
 }

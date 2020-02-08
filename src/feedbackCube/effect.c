@@ -23,8 +23,11 @@ static mesh *cubeMesh;
 static Sprite *bgndSpr;
 ubyte bgndBmp[FB_SIZE];
 
+static bool flipPolygons = false;
 static bool doFeedback = true;
 static bool hwFeedback = false;
+static bool translucency = false;
+static bool backAndFrontPolygons = false;
 
 static uint16 *cubeTex;
 
@@ -111,14 +114,34 @@ static void switchFeedback(bool on)
 
 static void inputScript()
 {
+    if (isButtonPressedOnce(BUTTON_A)) {
+        hwFeedback = !hwFeedback;
+        switchFeedback(hwFeedback);
+    }
+
     if (isButtonPressedOnce(BUTTON_B)) {
         doFeedback = !doFeedback;
     }
 
     if (isButtonPressedOnce(BUTTON_C)) {
-        hwFeedback = !hwFeedback;
-        switchFeedback(hwFeedback);
+		flipPolygons = !flipPolygons;
+		useCPUtestPolygonOrder(!flipPolygons);
+		setMeshPolygonOrder(cubeMesh, flipPolygons, !flipPolygons);
+		setMeshPolygonOrder(cubeMeshBack, flipPolygons, !flipPolygons);
     }
+
+	if (isButtonPressedOnce(BUTTON_LPAD)) {
+		translucency = !translucency;
+		setMeshTranslucency(cubeMesh, translucency);
+		setMeshTranslucency(cubeMeshBack, translucency);
+	}
+
+	if (isButtonPressedOnce(BUTTON_RPAD)) {
+		backAndFrontPolygons = !backAndFrontPolygons;
+		useCPUtestPolygonOrder(!backAndFrontPolygons);
+		setMeshPolygonOrder(cubeMesh, backAndFrontPolygons | flipPolygons, backAndFrontPolygons | !flipPolygons);
+		setMeshPolygonOrder(cubeMeshBack, backAndFrontPolygons | flipPolygons, backAndFrontPolygons | !flipPolygons);
+	}
 }
 
 void effectInit()
@@ -135,6 +158,9 @@ void effectInit()
     genBackgroundTex();
 
     cubeTex = (uint16*)(cubeMesh->quad[0].cel->ccb_SourcePtr);
+
+	useCPUtestPolygonOrder(true);
+	useMapCelFunctionFast(false);
 }
 
 void effectRun()
@@ -151,7 +177,7 @@ void effectRun()
 		setScreenDimensions(FB_WIDTH, FB_HEIGHT);
 
             drawSprite(bgndSpr);
-            rotateTranslateProjectVertices(cubeMeshBack);
+			transformGeometry(cubeMeshBack);
             renderTransformedGeometry(cubeMeshBack);
 
         switchBuffer(false);
@@ -165,11 +191,14 @@ void effectRun()
     setMeshPosition(cubeMesh, 0, 0, 512);
 	setMeshRotation(cubeMesh, 0, time, 0);
 
-    rotateTranslateProjectVertices(cubeMesh);
+	transformGeometry(cubeMesh);
     renderTransformedGeometry(cubeMesh);
 
     if (hwFeedback)
-        drawText(320-36, 4, "HARD");
+        drawText(320-32, 0, "HARD");
     else
-        drawText(320-36, 4, "SOFT");
+        drawText(320-32, 0, "SOFT");
+
+	if (!doFeedback)
+        drawText(320-40, 8, "PAUSED");
 }
