@@ -1,5 +1,5 @@
-#include "types.h"
 #include "core.h"
+
 #include "input.h"
 
 // order must correspond to enum order

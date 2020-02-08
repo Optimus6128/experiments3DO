@@ -9,8 +9,10 @@ static bool vsync = true;
 static Item gVRAMIOReq;
 static Item vsyncItem;
 
-static Item BitmapItems[NUM_SCREEN_PAGES];
-static Bitmap *Bitmaps[NUM_SCREEN_PAGES];
+static Item BitmapItems[NUM_TOTAL_PAGES];
+static Item *BufferItems[NUM_BUFFER_PAGES];
+static Bitmap *Bitmaps[NUM_TOTAL_PAGES];
+static Bitmap *Buffers[NUM_BUFFER_PAGES];
 
 static ScreenContext screen;
 
@@ -18,6 +20,9 @@ static IOInfo ioInfo;
 
 static int screenPage = 0;
 static int frameNum = 0;
+
+bool renderToBuffer = false;
+static uint32 bufferIndex = 0;
 
 void initSPORTwriteValue(uint32 value)
 {
@@ -45,10 +50,9 @@ void initGraphics()
 	int i;
 	int width,height;
 
-	CreateBasicDisplay(&screen,DI_TYPE_DEFAULT,NUM_SCREEN_PAGES);   // DI_TYPE_DEFAULT = 0 (NTSC)
+	CreateBasicDisplay(&screen,DI_TYPE_DEFAULT,NUM_TOTAL_PAGES);   // DI_TYPE_DEFAULT = 0 (NTSC)
 
-	for(i=0;i<NUM_SCREEN_PAGES;i++)
-	{
+	for(i=0; i<NUM_TOTAL_PAGES; ++i) {
 		BitmapItems[i] = screen.sc_BitmapItems[i];
 		Bitmaps[i] = screen.sc_Bitmaps[i];
 
@@ -56,6 +60,11 @@ void initGraphics()
 
 		EnableHAVG( BitmapItems[i] );
 		EnableVAVG( BitmapItems[i] );
+	}
+
+	for (i=0; i<NUM_BUFFER_PAGES; ++i) {
+        Buffers[i] = Bitmaps[NUM_SCREEN_PAGES + i];
+        BufferItems[i] = &BitmapItems[NUM_SCREEN_PAGES + i];
 	}
 
 	width = Bitmaps[0]->bm_Width;
@@ -76,6 +85,28 @@ void loadAndSetBackgroundImage(char *path)
 void setBackgroundColor(int color)
 {
 	ioInfo.ioi_Offset = color;
+}
+
+uint16 *getVramBuffer()
+{
+    return (uint16*)Bitmaps[screenPage]->bm_Buffer;
+}
+
+uint16 *getBackBuffer()
+{
+    return (uint16*)Buffers[bufferIndex]->bm_Buffer;
+}
+
+void switchBuffer(bool on)
+{
+    renderToBuffer = on;
+}
+
+void setBuffer(uint32 num)
+{
+    if (num > NUM_BUFFER_PAGES-1) num = NUM_BUFFER_PAGES-1;
+
+    bufferIndex = num;
 }
 
 void drawPixel(int px, int py, uint16 c)
@@ -114,5 +145,9 @@ void displayScreen()
 
 void drawCels(CCB *cels)
 {
-	DrawCels(BitmapItems[screenPage], cels);
+    if (renderToBuffer) {
+        DrawCels(*BufferItems[bufferIndex], cels);
+    } else {
+        DrawCels(BitmapItems[screenPage], cels);
+    }
 }

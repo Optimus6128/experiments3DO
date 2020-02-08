@@ -5,6 +5,9 @@
 #include "tools.h"
 #include "menu.h"
 
+#include "mathutil.h"
+#include "engine_main.h"
+
 static bool showFps = false;
 static bool showMem = false;
 static bool defaultInput = false;
@@ -25,6 +28,9 @@ void coreInit(void(*initFunc)(), int flags)
 	initInput();
 	initTools();
 	initMenu();
+
+    initMathUtil();
+	initEngine();
 
 	initFunc();
 

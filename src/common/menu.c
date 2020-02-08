@@ -1,4 +1,3 @@
-#include "types.h"
 #include "core.h"
 
 #include "system_graphics.h"

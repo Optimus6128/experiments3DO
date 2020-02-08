@@ -1,6 +1,8 @@
 #ifndef CORE_H
 #define CORE_H
 
+#include "types.h"
+
 #include "displayutils.h"
 #include "debug.h"
 #include "nodes.h"

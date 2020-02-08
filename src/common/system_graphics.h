@@ -9,6 +9,8 @@
 #define SCREEN_SIZE_IN_BYTES (SCREEN_WIDTH * SCREEN_HEIGHT * 2)
 
 #define NUM_SCREEN_PAGES 2
+#define NUM_BUFFER_PAGES 2
+#define NUM_TOTAL_PAGES (NUM_SCREEN_PAGES + NUM_BUFFER_PAGES)
 
 void initGraphics(void);
 void displayScreen(void);
@@ -22,5 +24,10 @@ int getFrameNum(void);
 
 void setVsync(bool on);
 void toggleVsync(void);
+uint16 *getVramBuffer(void);
+uint16 *getBackBuffer(void);
+
+void switchBuffer(bool on);
+void setBuffer(uint32 num);
 
 #endif
