@@ -9,10 +9,13 @@ static bool vsync = true;
 static Item gVRAMIOReq;
 static Item vsyncItem;
 
-static Item BitmapItems[NUM_TOTAL_PAGES];
-static Item *BufferItems[NUM_BUFFER_PAGES];
-static Bitmap *Bitmaps[NUM_TOTAL_PAGES];
-static Bitmap *Buffers[NUM_BUFFER_PAGES];
+static int vramBuffersNum = DEFAULT_VRAM_BUFFERS_NUM;
+static int offscreenBuffersNum = DEFAULT_OFFSCREEN_BUFFERS_NUM;
+
+static Item *BitmapItems;
+static Item **BufferItems;
+static Bitmap **Bitmaps;
+static Bitmap **Buffers;
 
 static ScreenContext screen;
 
@@ -45,26 +48,38 @@ void initSPORTcopyImage(ubyte *srcImage)
 	ioInfo.ioi_Recv.iob_Len = SCREEN_SIZE_IN_BYTES;
 }
 
-void initGraphics()
+void initGraphics(uint32 numVramBuffers, uint32 numOffscreenBuffers, bool horizontalAntialiasing, bool verticalAntialiasing)
 {
 	int i;
 	int width,height;
+	uint32 totalBuffersNum;
 
-	CreateBasicDisplay(&screen,DI_TYPE_DEFAULT,NUM_TOTAL_PAGES);   // DI_TYPE_DEFAULT = 0 (NTSC)
+	if (numVramBuffers !=0 || numOffscreenBuffers != 0) {	// if both vram and offscreen buffers are 0, we will use the defaults anyway
+		vramBuffersNum = numVramBuffers;
+		offscreenBuffersNum = numOffscreenBuffers;
+	}
+	totalBuffersNum = vramBuffersNum + offscreenBuffersNum;
 
-	for(i=0; i<NUM_TOTAL_PAGES; ++i) {
+	CreateBasicDisplay(&screen, DI_TYPE_DEFAULT, totalBuffersNum);   // DI_TYPE_DEFAULT = 0 (NTSC)
+
+	BitmapItems = (Item*)AllocMem(sizeof(Item) * totalBuffersNum, MEMTYPE_ANY);
+	BufferItems = (Item**)AllocMem(sizeof(Item*) * numOffscreenBuffers, MEMTYPE_ANY);
+	Bitmaps = (Bitmap**)AllocMem(sizeof(Bitmap*) * totalBuffersNum, MEMTYPE_ANY);
+	Buffers = (Bitmap**)AllocMem(sizeof(Bitmap*) * numOffscreenBuffers, MEMTYPE_ANY);
+
+	for(i=0; i<totalBuffersNum; ++i) {
 		BitmapItems[i] = screen.sc_BitmapItems[i];
 		Bitmaps[i] = screen.sc_Bitmaps[i];
 
-		SetCEControl(BitmapItems[i], 0xffffffff, ASCALL);
+		SetCEControl(BitmapItems[i], 0xffffffff, ASCALL);	// Enable Hardware CEL clipping
 
-		EnableHAVG( BitmapItems[i] );
-		EnableVAVG( BitmapItems[i] );
+		if (horizontalAntialiasing)	EnableHAVG(BitmapItems[i]);
+		if (verticalAntialiasing) EnableVAVG(BitmapItems[i]);
 	}
 
-	for (i=0; i<NUM_BUFFER_PAGES; ++i) {
-        Buffers[i] = Bitmaps[NUM_SCREEN_PAGES + i];
-        BufferItems[i] = &BitmapItems[NUM_SCREEN_PAGES + i];
+	for (i=0; i<offscreenBuffersNum; ++i) {
+        Buffers[i] = Bitmaps[vramBuffersNum + i];
+        BufferItems[i] = &BitmapItems[vramBuffersNum + i];
 	}
 
 	width = Bitmaps[0]->bm_Width;
@@ -77,9 +92,9 @@ void initGraphics()
 	vsyncItem = GetVBLIOReq();
 }
 
-void loadAndSetBackgroundImage(char *path)
+void loadAndSetBackgroundImage(char *path, ubyte *screenBuffer)
 {
-	initSPORTcopyImage(LoadImage(path, NULL, (VdlChunk **)NULL, &screen));
+	initSPORTcopyImage(LoadImage(path, screenBuffer, (VdlChunk **)NULL, &screen));
 }
 
 void setBackgroundColor(int color)
@@ -97,6 +112,16 @@ uint16 *getBackBuffer()
     return (uint16*)Buffers[bufferIndex]->bm_Buffer;
 }
 
+uint32 getNumVramBuffers()
+{
+	return vramBuffersNum;
+}
+
+uint32 getNumOffscreenBuffers()
+{
+	return offscreenBuffersNum;
+}
+
 void switchBuffer(bool on)
 {
     renderToBuffer = on;
@@ -104,7 +129,7 @@ void switchBuffer(bool on)
 
 void setBuffer(uint32 num)
 {
-    if (num > NUM_BUFFER_PAGES-1) num = NUM_BUFFER_PAGES-1;
+    if (num > offscreenBuffersNum-1) num = offscreenBuffersNum-1;
 
     bufferIndex = num;
 }
@@ -135,7 +160,7 @@ void displayScreen()
 	DisplayScreen(screen.sc_Screens[screenPage], 0 );
 	if (vsync && ioInfo.ioi_Command != SPORTCMD_COPY) WaitVBL(vsyncItem, 1);
 
-	screenPage = (screenPage+ 1) & 1;
+	if (++screenPage >= vramBuffersNum) screenPage = 0;
 
 	ioInfo.ioi_Recv.iob_Buffer = Bitmaps[screenPage]->bm_Buffer;
 	DoIO(gVRAMIOReq,&ioInfo);

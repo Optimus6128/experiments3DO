@@ -157,17 +157,42 @@ void displayFPS()
 
 void displayMem()
 {
-	static MemInfo memInfo;
+	static MemInfo memInfoAny;
+	static MemInfo memInfoDRAM;
+	static MemInfo memInfoVRAM;
 
+	const int xp = 0;
+	int yp = SCREEN_HEIGHT - (3 * 2 * 8) - 8;
+
+	AvailMem(&memInfoAny, MEMTYPE_ANY);
+	AvailMem(&memInfoDRAM, MEMTYPE_DRAM);
+	AvailMem(&memInfoVRAM, MEMTYPE_VRAM);
+
+	drawText(xp, yp, " ANY FREE:");
+	drawNumber(xp + 11*8, yp, memInfoAny.minfo_SysFree); yp += 8;
+	drawText(xp, yp, " ANY WIDE:");
+	drawNumber(xp + 11*8, yp, memInfoAny.minfo_SysLargest); yp += 8;
+
+	drawText(xp, yp, "DRAM FREE:");
+	drawNumber(xp + 11*8, yp, memInfoDRAM.minfo_SysFree); yp += 8;
+	drawText(xp, yp, "DRAM WIDE:");
+	drawNumber(xp + 11*8, yp, memInfoDRAM.minfo_SysLargest); yp += 8;
+
+	drawText(xp, yp, "VRAM FREE:");
+	drawNumber(xp + 11*8, yp, memInfoVRAM.minfo_SysFree); yp += 8;
+	drawText(xp, yp, "VRAM WIDE:");
+	drawNumber(xp + 11*8, yp, memInfoVRAM.minfo_SysLargest);
+}
+
+void displayBuffers()
+{
 	const int xp = 0;
 	const int yp = 8;
 
-	AvailMem(&memInfo, MEMTYPE_ANY);
-
-	drawNumber(xp, yp, memInfo.minfo_SysFree);
-	drawNumber(xp, yp+8, memInfo.minfo_SysLargest);
-	drawNumber(xp, yp+16, memInfo.minfo_TaskFree);
-	drawNumber(xp, yp+24, memInfo.minfo_TaskLargest);
+	drawText(xp, yp, "VRAM: ");
+	drawNumber(xp + 6*8, yp, getNumVramBuffers());
+	drawText(xp, yp+8, "OFFS: ");
+	drawNumber(xp + 6*8, yp+8, getNumOffscreenBuffers());
 }
 
 void setPalWithFades(int c0, int c1, int r0, int g0, int b0, int r1, int g1, int b1, uint16* pal, int numFades, int r2, int g2, int b2)

@@ -22,6 +22,7 @@ void drawNumber(int xtp, int ytp, int num);
 
 void displayFPS(void);
 void displayMem(void);
+void displayBuffers(void);
 
 int getTicks(void);
 

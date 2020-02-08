@@ -165,7 +165,7 @@ static void effectInit16()
 
 void effectInit()
 {
-	loadAndSetBackgroundImage("data/background.cel");
+	loadAndSetBackgroundImage("data/background.cel", (ubyte*)getBackBuffer());
 
 	if (ENABLE_4) effectInit4();
 	if (ENABLE_8) effectInit8();

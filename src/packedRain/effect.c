@@ -59,7 +59,7 @@ void effectInit()
 {
 	int i;
 	
-	//loadAndSetBackgroundImage("data/background.cel");
+	//loadAndSetBackgroundImage("data/background.cel", NULL);
 	//Bugs memory if on. Lib3DO function bug again? Let's try giving my own pointer next.
 	//Loading it after generateUnpackedRain works though. Maybe generateUnpackedRain has memory leak?
 
