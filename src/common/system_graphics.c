@@ -63,9 +63,9 @@ void initGraphics(uint32 numVramBuffers, uint32 numOffscreenBuffers, bool horizo
 	CreateBasicDisplay(&screen, DI_TYPE_DEFAULT, totalBuffersNum);   // DI_TYPE_DEFAULT = 0 (NTSC)
 
 	BitmapItems = (Item*)AllocMem(sizeof(Item) * totalBuffersNum, MEMTYPE_ANY);
-	BufferItems = (Item**)AllocMem(sizeof(Item*) * numOffscreenBuffers, MEMTYPE_ANY);
+	BufferItems = (Item**)AllocMem(sizeof(Item*) * offscreenBuffersNum, MEMTYPE_ANY);
 	Bitmaps = (Bitmap**)AllocMem(sizeof(Bitmap*) * totalBuffersNum, MEMTYPE_ANY);
-	Buffers = (Bitmap**)AllocMem(sizeof(Bitmap*) * numOffscreenBuffers, MEMTYPE_ANY);
+	Buffers = (Bitmap**)AllocMem(sizeof(Bitmap*) * offscreenBuffersNum, MEMTYPE_ANY);
 
 	for(i=0; i<totalBuffersNum; ++i) {
 		BitmapItems[i] = screen.sc_BitmapItems[i];

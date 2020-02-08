@@ -4,6 +4,6 @@
 
 int main()
 {
-	coreInit(effectInit, CORE_DEFAULT | CORE_VRAM_DOUBLEBUFFER | CORE_OFFSCREEN_BUFFERS(2));
+	coreInit(effectInit, CORE_DEFAULT);
 	coreRun(effectRun);
 }
