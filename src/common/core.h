@@ -42,13 +42,13 @@
 
 
 #define VRAM_NUMBUFFERS_BITS_START 8
-#define OFFSCREEN_NUMBUFFERS_BITS_START 11
-#define MAX_NUMBUFFER_BITS 3
+#define MAX_NUMBUFFER_BITS 2
+#define OFFSCREEN_NUMBUFFERS_BITS_START (VRAM_NUMBUFFERS_BITS_START + MAX_NUMBUFFER_BITS)
 #define OTHER_GRAPHICS_OPTIONS_BITS_START (OFFSCREEN_NUMBUFFERS_BITS_START + MAX_NUMBUFFER_BITS)
 
 // Omit these flag bits and a default will be set (2 screen buffers, 1 offscreen buffer)
-// I will allow 3bits for vram buffers (1 to 7) and another 3bits for offscreen buffers
-// At 6 or 7 total buffers of 320*240*16bpp you might have already filled the 1MB VRAM anyway
+// I will allow 2bits for vram buffers (1 to 3) and another 2bits for offscreen buffers
+// After 6 total buffers of 320*240*16bpp you might have already filled the 1MB VRAM anyway
 #define CORE_VRAM_SINGLEBUFFER			(1 << VRAM_NUMBUFFERS_BITS_START)
 #define CORE_VRAM_DOUBLEBUFFER			(2 << VRAM_NUMBUFFERS_BITS_START)
 #define CORE_VRAM_BUFFERS(N)			(N << VRAM_NUMBUFFERS_BITS_START)

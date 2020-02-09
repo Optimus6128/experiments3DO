@@ -31,9 +31,6 @@ static void initGraphicsOptions(uint32 flags)
 	uint32 numVramBuffers = (flags >> VRAM_NUMBUFFERS_BITS_START) & numBuffersMax;
 	uint32 numOffscreenBuffers = (flags >> OFFSCREEN_NUMBUFFERS_BITS_START) & numBuffersMax;
 
-	if (numVramBuffers > numBuffersMax) numVramBuffers = numBuffersMax;
-	if (numOffscreenBuffers > numBuffersMax) numOffscreenBuffers = numBuffersMax;
-
 	initGraphics(numVramBuffers, numOffscreenBuffers, horizontalAntialiasing, verticalAntialiasing);
 }
 

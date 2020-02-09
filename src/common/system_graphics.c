@@ -60,7 +60,13 @@ void initGraphics(uint32 numVramBuffers, uint32 numOffscreenBuffers, bool horizo
 	}
 	totalBuffersNum = vramBuffersNum + offscreenBuffersNum;
 
-	CreateBasicDisplay(&screen, DI_TYPE_DEFAULT, totalBuffersNum);   // DI_TYPE_DEFAULT = 0 (NTSC)
+	while (CreateBasicDisplay(&screen, DI_TYPE_DEFAULT, totalBuffersNum) < 0) {	// DI_TYPE_DEFAULT = 0 (NTSC)
+		// This should work but doesn't work if we exceed. I will reduce the buffer bits for now, who wants to make so many screens?
+		DeleteBasicDisplay(&screen);
+		totalBuffersNum--;
+		offscreenBuffersNum = totalBuffersNum - vramBuffersNum;
+		if (offscreenBuffersNum < 0) offscreenBuffersNum = 0;
+	}
 
 	BitmapItems = (Item*)AllocMem(sizeof(Item) * totalBuffersNum, MEMTYPE_ANY);
 	BufferItems = (Item**)AllocMem(sizeof(Item*) * offscreenBuffersNum, MEMTYPE_ANY);
