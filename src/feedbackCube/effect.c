@@ -27,7 +27,6 @@ static bool flipPolygons = false;
 static bool doFeedback = true;
 static bool hwFeedback = false;
 static bool translucency = false;
-static bool backAndFrontPolygons = false;
 
 static uint16 *cubeTex;
 
@@ -125,7 +124,8 @@ static void inputScript()
 
     if (isButtonPressedOnce(BUTTON_C)) {
 		flipPolygons = !flipPolygons;
-		useCPUtestPolygonOrder(!flipPolygons);
+		cubeMesh->useCPUccwTest = !flipPolygons;
+		cubeMeshBack->useCPUccwTest = !flipPolygons;
 		setMeshPolygonOrder(cubeMesh, flipPolygons, !flipPolygons);
 		setMeshPolygonOrder(cubeMeshBack, flipPolygons, !flipPolygons);
     }
@@ -137,10 +137,10 @@ static void inputScript()
 	}
 
 	if (isButtonPressedOnce(BUTTON_RPAD)) {
-		backAndFrontPolygons = !backAndFrontPolygons;
-		useCPUtestPolygonOrder(!backAndFrontPolygons);
-		setMeshPolygonOrder(cubeMesh, backAndFrontPolygons | flipPolygons, backAndFrontPolygons | !flipPolygons);
-		setMeshPolygonOrder(cubeMeshBack, backAndFrontPolygons | flipPolygons, backAndFrontPolygons | !flipPolygons);
+		cubeMesh->useCPUccwTest = false;
+		cubeMeshBack->useCPUccwTest = false;
+		setMeshPolygonOrder(cubeMesh, true, true);
+		setMeshPolygonOrder(cubeMeshBack, true, true);
 	}
 }
 
@@ -151,16 +151,13 @@ void effectInit()
 	initTexture(FB_WIDTH, FB_HEIGHT, TEXTURE_NOISE, 16);
 	initTexture(128, 128, TEXTURE_DRACUL, 16);
 	
-    cubeMesh = initMesh(MESH_CUBE, 256, 1, TEXTURE_NOISE);
-    cubeMeshBack = initMesh(MESH_CUBE, 256, 1, TEXTURE_DRACUL);
+    cubeMesh = initMesh(MESH_CUBE, 256, 1, getTexture(TEXTURE_NOISE), MESH_OPTION_CPU_CCW_TEST);
+    cubeMeshBack = initMesh(MESH_CUBE, 256, 1, getTexture(TEXTURE_DRACUL), MESH_OPTIONS_DEFAULT);
 
     bgndSpr = newSprite(FB_WIDTH, FB_HEIGHT, 8, CREATECEL_UNCODED, NULL, bgndBmp);
     genBackgroundTex();
 
     cubeTex = (uint16*)(cubeMesh->quad[0].cel->ccb_SourcePtr);
-
-	useCPUtestPolygonOrder(true);
-	useMapCelFunctionFast(false);
 }
 
 void effectRun()

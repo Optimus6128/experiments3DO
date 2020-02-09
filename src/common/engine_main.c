@@ -144,6 +144,20 @@ static void prepareTransformedGeometryCELs(mesh *ms)
     }
 }
 
+static void useCPUtestPolygonOrder(bool enable)
+{
+	polygonOrderTestCPU = enable;
+}
+
+static void useMapCelFunctionFast(bool enable)
+{
+	if (enable) {
+		mapcelFunc = fasterMapCel;
+	} else {
+		mapcelFunc = MapCel;
+	}
+}
+
 void transformGeometry(mesh *ms)
 {
 	rotateVerticesHw(ms);
@@ -152,6 +166,9 @@ void transformGeometry(mesh *ms)
 
 void renderTransformedGeometry(mesh *ms)
 {
+	useMapCelFunctionFast(ms->useFastMapCel);
+	useCPUtestPolygonOrder(ms->useCPUccwTest);
+
     prepareTransformedGeometryCELs(ms);
     renderTransformedGeometryCELs(ms);
 }
@@ -160,20 +177,6 @@ void setScreenDimensions(int w, int h)
 {
 	screenWidth = w;
 	screenHeight = h;
-}
-
-void useCPUtestPolygonOrder(bool enable)
-{
-	polygonOrderTestCPU = enable;
-}
-
-void useMapCelFunctionFast(bool enable)
-{
-	if (enable) {
-		mapcelFunc = fasterMapCel;
-	} else {
-		mapcelFunc = MapCel;
-	}
 }
 
 void initEngine()

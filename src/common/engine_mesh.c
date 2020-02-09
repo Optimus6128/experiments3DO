@@ -20,7 +20,7 @@ static void prepareCelList(mesh *ms)
 
 	for (i=0; i<ms->quadsNum; i++)
     {
-        texture *tex = ms->quad[i].tex;
+        texture *tex = &ms->tex[ms->quad[i].textureId];
 
 		ms->quad[i].cel = CreateCel(tex->width, tex->height, tex->bpp, CREATECEL_UNCODED, tex->bitmap);
 
@@ -86,13 +86,17 @@ void setMeshTranslucency(mesh *ms, bool enable)
 	}
 }
 
-mesh *initMesh(int type, int size, int divisions, int textureId)
+mesh *initMesh(int type, int size, int divisions, texture *tex, int optionsFlags)
 {
     int i, x, y;
 	int xp, yp;
 	int dx, dy;
 
     mesh *ms = (mesh*)malloc(sizeof(mesh));
+	ms->tex = tex;
+
+	ms->useFastMapCel = (optionsFlags & MESH_OPTION_FAST_MAPCEL);
+	ms->useCPUccwTest = (optionsFlags & MESH_OPTION_CPU_CCW_TEST);
 
     switch(type)
     {
@@ -109,7 +113,7 @@ mesh *initMesh(int type, int size, int divisions, int textureId)
             for (i=0; i<4; i++)
                 ms->index[i] = i;
 
-            ms->quad[0].tex = getTexture(textureId);
+            ms->quad[0].textureId = 0;
         break;
 
         case MESH_CUBE:
@@ -133,9 +137,8 @@ mesh *initMesh(int type, int size, int divisions, int textureId)
             ms->index[16] = 3; ms->index[17] = 2; ms->index[18] = 7; ms->index[19] = 6;
             ms->index[20] = 5; ms->index[21] = 4; ms->index[22] = 1; ms->index[23] = 0;
 
-			for (i=0; i<(ms->quadsNum); i++)
-			{
-				ms->quad[i].tex = getTexture(textureId);
+			for (i=0; i<(ms->quadsNum); i++) {
+				ms->quad[i].textureId = 0;
 			}
         break;
 
@@ -175,7 +178,7 @@ mesh *initMesh(int type, int size, int divisions, int textureId)
 			}
 
 			for (i=0; i<ms->quadsNum; i++) {
-				ms->quad[i].tex = getTexture(textureId);
+				ms->quad[i].textureId = 0;
 			}
 
         break;

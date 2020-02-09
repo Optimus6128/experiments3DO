@@ -4,9 +4,13 @@
 #include "engine_texture.h"
 #include "mathutil.h"
 
+#define MESH_OPTION_FAST_MAPCEL		(1 << 0)
+#define MESH_OPTION_CPU_CCW_TEST	(1 << 1)
+#define MESH_OPTIONS_DEFAULT (MESH_OPTION_FAST_MAPCEL | MESH_OPTION_CPU_CCW_TEST)
+
 typedef struct quadData
 {
-	texture *tex;
+	int textureId;
 	CCB *cel;
 }quadData;
 
@@ -21,14 +25,20 @@ typedef struct mesh
     quadData *quad;
     int quadsNum;
 
+	texture *tex;
+	int texturesNum;
+
     int posX, posY, posZ;
     int rotX, rotY, rotZ;
+
+	bool useFastMapCel;
+	bool useCPUccwTest;
 }mesh;
 
 
 enum {MESH_PLANE, MESH_CUBE, MESH_GRID};
 
-mesh *initMesh(int type, int size, int divisions, int textureId);
+mesh *initMesh(int type, int size, int divisions, texture *tex, int optionsFlags);
 
 void setMeshPosition(mesh *ms, int px, int py, int pz);
 void setMeshRotation(mesh *ms, int rx, int ry, int rz);

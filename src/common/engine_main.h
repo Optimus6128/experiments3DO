@@ -16,7 +16,4 @@ void renderTransformedGeometry(mesh *ms);
 
 void setScreenDimensions(int w, int h);
 
-void useCPUtestPolygonOrder(bool enable);
-void useMapCelFunctionFast(bool enable);
-
 #endif
