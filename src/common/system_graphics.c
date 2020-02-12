@@ -48,6 +48,14 @@ void initSPORTcopyImage(ubyte *srcImage)
 	ioInfo.ioi_Recv.iob_Len = SCREEN_SIZE_IN_BYTES;
 }
 
+static bool testIfTotalBuffersFitInVRAM(uint32 totalNumBuffers)
+{
+	MemInfo memInfoVRAM;
+
+	AvailMem(&memInfoVRAM, MEMTYPE_VRAM);
+	return (totalNumBuffers * SCREEN_SIZE_IN_BYTES < memInfoVRAM.minfo_SysFree);
+}
+
 void initGraphics(uint32 numVramBuffers, uint32 numOffscreenBuffers, bool horizontalAntialiasing, bool verticalAntialiasing)
 {
 	int i;
@@ -58,15 +66,20 @@ void initGraphics(uint32 numVramBuffers, uint32 numOffscreenBuffers, bool horizo
 		vramBuffersNum = numVramBuffers;
 		offscreenBuffersNum = numOffscreenBuffers;
 	}
-	totalBuffersNum = vramBuffersNum + offscreenBuffersNum;
 
-	while (CreateBasicDisplay(&screen, DI_TYPE_DEFAULT, totalBuffersNum) < 0) {	// DI_TYPE_DEFAULT = 0 (NTSC)
-		// This should work but doesn't work if we exceed. I will reduce the buffer bits for now, who wants to make so many screens?
-		DeleteBasicDisplay(&screen);
+	totalBuffersNum = vramBuffersNum + offscreenBuffersNum;
+	while (!testIfTotalBuffersFitInVRAM(totalBuffersNum) && totalBuffersNum!=0) {
 		totalBuffersNum--;
 		offscreenBuffersNum = totalBuffersNum - vramBuffersNum;
-		if (offscreenBuffersNum < 0) offscreenBuffersNum = 0;
+		if (offscreenBuffersNum < 0) {
+			offscreenBuffersNum = 0;
+			vramBuffersNum--;
+		}
 	}
+
+	if (totalBuffersNum > 0)	// else something went wrong
+		CreateBasicDisplay(&screen, DI_TYPE_DEFAULT, totalBuffersNum);	// DI_TYPE_DEFAULT = 0 (NTSC)
+
 
 	BitmapItems = (Item*)AllocMem(sizeof(Item) * totalBuffersNum, MEMTYPE_ANY);
 	BufferItems = (Item**)AllocMem(sizeof(Item*) * offscreenBuffersNum, MEMTYPE_ANY);

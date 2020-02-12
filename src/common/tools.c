@@ -157,9 +157,9 @@ void displayFPS()
 
 void displayMem()
 {
-	static MemInfo memInfoAny;
-	static MemInfo memInfoDRAM;
-	static MemInfo memInfoVRAM;
+	MemInfo memInfoAny;
+	MemInfo memInfoDRAM;
+	MemInfo memInfoVRAM;
 
 	const int xp = 0;
 	int yp = SCREEN_HEIGHT - (3 * 2 * 8) - 8;
