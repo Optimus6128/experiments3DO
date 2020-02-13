@@ -10,19 +10,23 @@ texture *textures[TEXTURE_NUM];
 void initTexture(int width, int height, int type, int bpp)
 {
     int i, x, y, xc, yc, c;
-	int size = width * height * (bpp / 8);
+	int size = (width * height * bpp) / 8;
 	texture *tex;
 
-    tex = (texture*)malloc(sizeof(texture));
+	tex = (texture*)AllocMem(sizeof(texture), MEMTYPE_ANY);
     textures[type] = tex;
 
     tex->width = width;
     tex->height = height;
-    tex->bitmap = (ubyte*)malloc(size * sizeof(ubyte));
+    tex->bitmap = (ubyte*)AllocMem(size, MEMTYPE_ANY);
 	tex->bpp = bpp;
 
     switch(type)
     {
+		case TEXTURE_EMPTY:
+			memset(tex->bitmap, 0, size);
+		break;
+
         case TEXTURE_FLAT:
             for (i=0; i<size; i++)
                 tex->bitmap[i] = 31;
@@ -54,11 +58,31 @@ void initTexture(int width, int height, int type, int bpp)
                 }
             }
         break;
-
-        case TEXTURE_DRACUL:
-            tex->bitmap = (ubyte*)dracul;
-        break;
     }
+}
+
+void loadTexture(char *path, int id)
+{
+	texture *tex;
+	CCB *tempCel;
+	int size;
+
+	tex = (texture*)AllocMem(sizeof(texture), MEMTYPE_ANY);
+    textures[id] = tex;
+
+	tempCel = LoadCel(path, MEMTYPE_ANY);
+
+    tex->width = tempCel->ccb_Width;
+    tex->height = tempCel->ccb_Height;
+	tex->bpp = 16;	// 16bit is the only bpp CEL type extracted from BMPTo3DOCel for now (which is what I currently use to make CEL files and testing)
+					// In the future, I'll try to deduce this from the CEL bits anyway (I already know how, just too lazy to find out again)
+					// Update: BMPTo3DOCel is shit! It saves right now the same format as BMPTo3DOImage (for VRAM structure to use with SPORT copy) instead of the most common linear CEL bitmap structure
+	size = (tex->width * tex->height * tex->bpp) / 8;
+    tex->bitmap = (ubyte*)AllocMem(size, MEMTYPE_ANY);
+
+	memcpy(tex->bitmap, tempCel->ccb_SourcePtr, size);
+
+	UnloadCel(tempCel);
 }
 
 texture *getTexture(int textureNum)

@@ -10,9 +10,10 @@ typedef struct texture
     int bpp;
 }texture;
 
-enum {TEXTURE_FLAT, TEXTURE_NOISE, TEXTURE_XOR, TEXTURE_GRID, TEXTURE_DRACUL, TEXTURE_NUM};
+enum {TEXTURE_EMPTY, TEXTURE_FLAT, TEXTURE_NOISE, TEXTURE_XOR, TEXTURE_GRID, TEXTURE_DRACUL, TEXTURE_NUM};
 
 void initTexture(int width, int height, int type, int bpp);
+void loadTexture(char *path, int id);
 
 texture *getTexture(int textureNum);
 

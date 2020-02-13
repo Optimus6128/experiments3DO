@@ -9,9 +9,9 @@
 static void allocateMeshArrays(mesh *ms)
 {
     ms->indexNum = ms->quadsNum << 2;
-    ms->vrtx = (vertex*)malloc(ms->vrtxNum * sizeof(vertex));
-    ms->index = (int*)malloc(ms->indexNum * sizeof(int));
-    ms->quad = (quadData*)malloc(ms->quadsNum * sizeof(quadData));
+    ms->vrtx = (vertex*)AllocMem(ms->vrtxNum * sizeof(vertex), MEMTYPE_ANY);
+    ms->index = (int*)AllocMem(ms->indexNum * sizeof(int), MEMTYPE_ANY);
+    ms->quad = (quadData*)AllocMem(ms->quadsNum * sizeof(quadData), MEMTYPE_ANY);
 }
 
 static void prepareCelList(mesh *ms)
@@ -92,7 +92,7 @@ mesh *initMesh(int type, int size, int divisions, texture *tex, int optionsFlags
 	int xp, yp;
 	int dx, dy;
 
-    mesh *ms = (mesh*)malloc(sizeof(mesh));
+    mesh *ms = (mesh*)AllocMem(sizeof(mesh), MEMTYPE_ANY);
 	ms->tex = tex;
 
 	ms->useFastMapCel = (optionsFlags & MESH_OPTION_FAST_MAPCEL);

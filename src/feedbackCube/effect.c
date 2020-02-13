@@ -13,14 +13,12 @@
 #include "engine_mesh.h"
 #include "engine_texture.h"
 
-#define DRACUL_SIZE 128
-#define DRACUL_SHR 7
-
 
 static mesh *cubeMeshBack;
 static mesh *cubeMesh;
 
 static Sprite *bgndSpr;
+static Sprite *testSpr;
 ubyte bgndBmp[FB_SIZE];
 
 static bool flipPolygons = false;
@@ -30,21 +28,6 @@ static bool translucency = false;
 
 static uint16 *cubeTex;
 
-
-static void convertDracul()
-{
-    int x,y,i;
-
-    i = 0;
-    for (y=0; y<DRACUL_SIZE; ++y) {
-        for (x=0; x<DRACUL_SIZE; ++x) {
-            ushort c = dracul[i];
-            int r = c & 31;
-            int bg = ((c >> 5) & 2047) >> 1;
-            dracul[i++] = (bg << 5) | r;
-        }
-    }
-}
 
 static void genBackgroundTex()
 {
@@ -146,18 +129,23 @@ static void inputScript()
 
 void effectInit()
 {
-    convertDracul();
-	
-	initTexture(FB_WIDTH, FB_HEIGHT, TEXTURE_NOISE, 16);
-	initTexture(128, 128, TEXTURE_DRACUL, 16);
-	
-    cubeMesh = initMesh(MESH_CUBE, 256, 1, getTexture(TEXTURE_NOISE), MESH_OPTION_CPU_CCW_TEST);
+	initTexture(FB_WIDTH, FB_HEIGHT, TEXTURE_EMPTY, 16);
+	loadTexture("data/draculin.cel", TEXTURE_DRACUL);
+
+    cubeMesh = initMesh(MESH_CUBE, 256, 1, getTexture(TEXTURE_EMPTY), MESH_OPTION_CPU_CCW_TEST);
     cubeMeshBack = initMesh(MESH_CUBE, 256, 1, getTexture(TEXTURE_DRACUL), MESH_OPTIONS_DEFAULT);
 
     bgndSpr = newSprite(FB_WIDTH, FB_HEIGHT, 8, CREATECEL_UNCODED, NULL, bgndBmp);
     genBackgroundTex();
 
     cubeTex = (uint16*)(cubeMesh->quad[0].cel->ccb_SourcePtr);
+	
+	testSpr = newSprite(128, 128, 16, CREATECEL_UNCODED, NULL, getTexture(TEXTURE_DRACUL)->bitmap);
+}
+
+void effectRun1()
+{
+	drawSprite(testSpr);
 }
 
 void effectRun()
