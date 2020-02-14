@@ -18,7 +18,6 @@ static mesh *cubeMeshBack;
 static mesh *cubeMesh;
 
 static Sprite *bgndSpr;
-static Sprite *testSpr;
 ubyte bgndBmp[FB_SIZE];
 
 static bool flipPolygons = false;
@@ -139,13 +138,6 @@ void effectInit()
     genBackgroundTex();
 
     cubeTex = (uint16*)(cubeMesh->quad[0].cel->ccb_SourcePtr);
-	
-	testSpr = newSprite(128, 128, 16, CREATECEL_UNCODED, NULL, getTexture(TEXTURE_DRACUL)->bitmap);
-}
-
-void effectRun1()
-{
-	drawSprite(testSpr);
 }
 
 void effectRun()
