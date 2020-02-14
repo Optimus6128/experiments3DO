@@ -30,41 +30,41 @@ static uint16 *cubeTex;
 
 static void genBackgroundTex()
 {
-    int x,y;
-    ubyte *dst = bgndBmp;
+	int x,y;
+	ubyte *dst = bgndBmp;
 
-    for (y=0; y<FB_HEIGHT; ++y) {
-        for (x=0; x<FB_WIDTH; ++x) {
-            ubyte r = 2;
-            ubyte g = 1;
-            ubyte b = 1;
-            if (x==0 || x==FB_WIDTH-1 || y==0 || y==FB_HEIGHT-1) b=3;
-            else if (x==1 || x==FB_WIDTH-2 || y==1 || y==FB_HEIGHT-2) b=2;
-            *dst++ = (r << 5) | (g << 2) | b;
-        }
-    }
+	for (y=0; y<FB_HEIGHT; ++y) {
+		for (x=0; x<FB_WIDTH; ++x) {
+			ubyte r = 2;
+			ubyte g = 1;
+			ubyte b = 1;
+			if (x==0 || x==FB_WIDTH-1 || y==0 || y==FB_HEIGHT-1) b=3;
+			else if (x==1 || x==FB_WIDTH-2 || y==1 || y==FB_HEIGHT-2) b=2;
+			*dst++ = (r << 5) | (g << 2) | b;
+		}
+	}
 }
 
 static void copyBufferToTexture()
 {
-    int x,y;
-    uint32 *src = (uint32*)getBackBuffer();
-    uint16 *tex = (uint16*)(cubeMesh->quad[0].cel->ccb_SourcePtr);
-    uint32 *dst0;
-    uint32 *dst1;
-    for (y=0; y<FB_HEIGHT/2; ++y) {
-        dst0 = (uint32*)(tex + 2*y * FB_WIDTH);
-        dst1 = (uint32*)(tex + (2*y+1) * FB_WIDTH);
-        for (x=0; x<FB_WIDTH; x+=2) {
-            uint32 s0 = *(src + x);
-            uint32 s1 = *(src + x + 1);
-            uint32 c0 = (s0 & ~65535) | (s1 >> 16);
-            uint32 c1 = (s0 << 16) | (s1 & 65535);
-            *dst0++ = c0;
-            *dst1++ = c1;
-        }
-        src += SCREEN_WIDTH;
-    }
+	int x,y;
+	uint32 *src = (uint32*)getBackBuffer();
+	uint16 *tex = (uint16*)(cubeMesh->quad[0].cel->ccb_SourcePtr);
+	uint32 *dst0;
+	uint32 *dst1;
+	for (y=0; y<FB_HEIGHT/2; ++y) {
+		dst0 = (uint32*)(tex + 2*y * FB_WIDTH);
+		dst1 = (uint32*)(tex + (2*y+1) * FB_WIDTH);
+		for (x=0; x<FB_WIDTH; x+=2) {
+			uint32 s0 = *(src + x);
+			uint32 s1 = *(src + x + 1);
+			uint32 c0 = (s0 & ~65535) | (s1 >> 16);
+			uint32 c1 = (s0 << 16) | (s1 & 65535);
+			*dst0++ = c0;
+			*dst1++ = c1;
+		}
+		src += SCREEN_WIDTH;
+	}
 }
 
 static void switchFeedback(bool on)
@@ -73,44 +73,44 @@ static void switchFeedback(bool on)
 	const int feedbackFlag = 1 << 11;
 
 	for (i=0; i<cubeMesh->quadsNum; i++) {
-        CCB *cel = cubeMesh->quad[i].cel;
-        int woffset;
-        int vcnt;
+		CCB *cel = cubeMesh->quad[i].cel;
+		int woffset;
+		int vcnt;
 
-        if (on) {
-            cel->ccb_PRE1 |= feedbackFlag;
-            cel->ccb_SourcePtr = (void*)getBackBuffer();
-            woffset = SCREEN_WIDTH - 2;
-            vcnt = (FB_HEIGHT / 2) - 1;
-        } else {
-            cel->ccb_PRE1 &= ~feedbackFlag;
-            cel->ccb_SourcePtr = (void*)cubeTex;
-            woffset = FB_WIDTH / 2 - 2;
-            vcnt = FB_HEIGHT - 1;
-        }
-        cel->ccb_PRE0 = (cel->ccb_PRE0 & ~(((1<<10) - 1)<<6)) | (vcnt << 6);
-        cel->ccb_PRE1 = (cel->ccb_PRE1 & 65535) | (woffset << 16);
+		if (on) {
+			cel->ccb_PRE1 |= feedbackFlag;
+			cel->ccb_SourcePtr = (void*)getBackBuffer();
+			woffset = SCREEN_WIDTH - 2;
+			vcnt = (FB_HEIGHT / 2) - 1;
+		} else {
+			cel->ccb_PRE1 &= ~feedbackFlag;
+			cel->ccb_SourcePtr = (void*)cubeTex;
+			woffset = FB_WIDTH / 2 - 2;
+			vcnt = FB_HEIGHT - 1;
+		}
+		cel->ccb_PRE0 = (cel->ccb_PRE0 & ~(((1<<10) - 1)<<6)) | (vcnt << 6);
+		cel->ccb_PRE1 = (cel->ccb_PRE1 & 65535) | (woffset << 16);
 	}
 }
 
 static void inputScript()
 {
-    if (isButtonPressedOnce(BUTTON_A)) {
-        hwFeedback = !hwFeedback;
-        switchFeedback(hwFeedback);
-    }
+	if (isButtonPressedOnce(BUTTON_A)) {
+		hwFeedback = !hwFeedback;
+		switchFeedback(hwFeedback);
+	}
 
-    if (isButtonPressedOnce(BUTTON_B)) {
-        doFeedback = !doFeedback;
-    }
+	if (isButtonPressedOnce(BUTTON_B)) {
+		doFeedback = !doFeedback;
+	}
 
-    if (isButtonPressedOnce(BUTTON_C)) {
+	if (isButtonPressedOnce(BUTTON_C)) {
 		flipPolygons = !flipPolygons;
 		cubeMesh->useCPUccwTest = !flipPolygons;
 		cubeMeshBack->useCPUccwTest = !flipPolygons;
 		setMeshPolygonOrder(cubeMesh, flipPolygons, !flipPolygons);
 		setMeshPolygonOrder(cubeMeshBack, flipPolygons, !flipPolygons);
-    }
+	}
 
 	if (isButtonPressedOnce(BUTTON_LPAD)) {
 		translucency = !translucency;
@@ -131,13 +131,13 @@ void effectInit()
 	initTexture(FB_WIDTH, FB_HEIGHT, TEXTURE_EMPTY, 16);
 	loadTexture("data/draculin.cel", TEXTURE_DRACUL);
 
-    cubeMesh = initMesh(MESH_CUBE, 256, 1, getTexture(TEXTURE_EMPTY), MESH_OPTION_CPU_CCW_TEST);
-    cubeMeshBack = initMesh(MESH_CUBE, 256, 1, getTexture(TEXTURE_DRACUL), MESH_OPTIONS_DEFAULT);
+	cubeMesh = initMesh(MESH_CUBE, 256, 1, getTexture(TEXTURE_EMPTY), MESH_OPTION_CPU_CCW_TEST);
+	cubeMeshBack = initMesh(MESH_CUBE, 256, 1, getTexture(TEXTURE_DRACUL), MESH_OPTIONS_DEFAULT);
 
-    bgndSpr = newSprite(FB_WIDTH, FB_HEIGHT, 8, CREATECEL_UNCODED, NULL, bgndBmp);
-    genBackgroundTex();
+	bgndSpr = newSprite(FB_WIDTH, FB_HEIGHT, 8, CREATECEL_UNCODED, NULL, bgndBmp);
+	genBackgroundTex();
 
-    cubeTex = (uint16*)(cubeMesh->quad[0].cel->ccb_SourcePtr);
+	cubeTex = (uint16*)(cubeMesh->quad[0].cel->ccb_SourcePtr);
 }
 
 void effectRun()
@@ -147,35 +147,35 @@ void effectRun()
 	inputScript();
 
 	if (doFeedback) {
-        setMeshPosition(cubeMeshBack, 0, 0, 512);
-        setMeshRotation(cubeMeshBack, time, time, time);
+		setMeshPosition(cubeMeshBack, 0, 0, 512);
+		setMeshRotation(cubeMeshBack, time, time, time);
 
-        switchBuffer(true);
+		switchBuffer(true);
 		setScreenDimensions(FB_WIDTH, FB_HEIGHT);
 
-            drawSprite(bgndSpr);
+			drawSprite(bgndSpr);
 			transformGeometry(cubeMeshBack);
-            renderTransformedGeometry(cubeMeshBack);
+			renderTransformedGeometry(cubeMeshBack);
 
-        switchBuffer(false);
+		switchBuffer(false);
 		setScreenDimensions(SCREEN_WIDTH, SCREEN_HEIGHT);
 
-        if (!hwFeedback)
-            copyBufferToTexture();
+		if (!hwFeedback)
+			copyBufferToTexture();
 	}
 
 
-    setMeshPosition(cubeMesh, 0, 0, 512);
+	setMeshPosition(cubeMesh, 0, 0, 512);
 	setMeshRotation(cubeMesh, 0, time, 0);
 
 	transformGeometry(cubeMesh);
-    renderTransformedGeometry(cubeMesh);
+	renderTransformedGeometry(cubeMesh);
 
-    if (hwFeedback)
-        drawText(320-32, 0, "HARD");
-    else
-        drawText(320-32, 0, "SOFT");
+	if (hwFeedback)
+		drawText(320-32, 0, "HARD");
+	else
+		drawText(320-32, 0, "SOFT");
 
 	if (!doFeedback)
-        drawText(320-40, 8, "PAUSED");
+		drawText(320-40, 8, "PAUSED");
 }

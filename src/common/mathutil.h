@@ -20,7 +20,7 @@
 
 typedef struct vertex
 {
-    int x, y, z;
+	int x, y, z;
 }vertex;
 
 extern int shr[257];

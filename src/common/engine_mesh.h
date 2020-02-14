@@ -16,20 +16,20 @@ typedef struct quadData
 
 typedef struct mesh
 {
-    vertex *vrtx;
-    int vrtxNum;
+	vertex *vrtx;
+	int vrtxNum;
 
-    int *index;
-    int indexNum;
+	int *index;
+	int indexNum;
 
-    quadData *quad;
-    int quadsNum;
+	quadData *quad;
+	int quadsNum;
 
 	texture *tex;
 	int texturesNum;
 
-    int posX, posY, posZ;
-    int rotX, rotY, rotZ;
+	int posX, posY, posZ;
+	int rotX, rotY, rotZ;
 
 	bool useFastMapCel;
 	bool useCPUccwTest;

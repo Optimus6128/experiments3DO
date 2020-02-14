@@ -97,8 +97,8 @@ void initGraphics(uint32 numVramBuffers, uint32 numOffscreenBuffers, bool horizo
 	}
 
 	for (i=0; i<offscreenBuffersNum; ++i) {
-        Buffers[i] = Bitmaps[vramBuffersNum + i];
-        BufferItems[i] = &BitmapItems[vramBuffersNum + i];
+		Buffers[i] = Bitmaps[vramBuffersNum + i];
+		BufferItems[i] = &BitmapItems[vramBuffersNum + i];
 	}
 
 	width = Bitmaps[0]->bm_Width;
@@ -123,12 +123,12 @@ void setBackgroundColor(int color)
 
 uint16 *getVramBuffer()
 {
-    return (uint16*)Bitmaps[screenPage]->bm_Buffer;
+	return (uint16*)Bitmaps[screenPage]->bm_Buffer;
 }
 
 uint16 *getBackBuffer()
 {
-    return (uint16*)Buffers[bufferIndex]->bm_Buffer;
+	return (uint16*)Buffers[bufferIndex]->bm_Buffer;
 }
 
 uint32 getNumVramBuffers()
@@ -143,14 +143,14 @@ uint32 getNumOffscreenBuffers()
 
 void switchBuffer(bool on)
 {
-    renderToBuffer = on;
+	renderToBuffer = on;
 }
 
 void setBuffer(uint32 num)
 {
-    if (num > offscreenBuffersNum-1) num = offscreenBuffersNum-1;
+	if (num > offscreenBuffersNum-1) num = offscreenBuffersNum-1;
 
-    bufferIndex = num;
+	bufferIndex = num;
 }
 
 void drawPixel(int px, int py, uint16 c)
@@ -189,9 +189,9 @@ void displayScreen()
 
 void drawCels(CCB *cels)
 {
-    if (renderToBuffer) {
-        DrawCels(*BufferItems[bufferIndex], cels);
-    } else {
-        DrawCels(BitmapItems[screenPage], cels);
-    }
+	if (renderToBuffer) {
+		DrawCels(*BufferItems[bufferIndex], cels);
+	} else {
+		DrawCels(BitmapItems[screenPage], cels);
+	}
 }

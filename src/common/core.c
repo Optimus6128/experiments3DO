@@ -44,7 +44,7 @@ void coreInit(void(*initFunc)(), uint32 flags)
 	initTools();
 	initMenu();
 
-    initMathUtil();
+	initMathUtil();
 	initEngine();
 
 	initFunc();
