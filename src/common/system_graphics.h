@@ -26,6 +26,7 @@ void toggleVsync(void);
 
 uint16 *getVramBuffer(void);
 uint16 *getBackBuffer(void);
+uint16 *getBackBufferByIndex(int index);
 
 uint32 getNumVramBuffers(void);
 uint32 getNumOffscreenBuffers(void);

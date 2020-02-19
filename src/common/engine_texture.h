@@ -1,20 +1,31 @@
 #ifndef ENGINE_TEXTURE_H
 #define ENGINE_TEXTURE_H
 
-extern ushort dracul[];
+#define TEXTURE_TYPE_STATIC 0
+#define TEXTURE_TYPE_DYNAMIC 1
+#define TEXTURE_TYPE_FEEDBACK 2
 
-typedef struct texture
+typedef struct Texture
 {
+	int type;
 	int width, height;
-	ubyte *bitmap;
 	int bpp;
-}texture;
 
-enum {TEXTURE_EMPTY, TEXTURE_FLAT, TEXTURE_NOISE, TEXTURE_XOR, TEXTURE_GRID, TEXTURE_DRACUL, TEXTURE_NUM};
+	// Texture bitmap and palette pointer (needed for 8bpp CODED or less)
+	ubyte *bitmap;
+	ushort *pal;
 
-void initTexture(int width, int height, int type, int bpp);
-void loadTexture(char *path, int id);
+	// Necessary extension for feedback textures
+	int posX, posY;
+}Texture;
 
-texture *getTexture(int textureNum);
+
+enum {TEXGEN_EMPTY, TEXGEN_FLAT, TEXGEN_NOISE, TEXGEN_XOR, TEXGEN_GRID, TEXGEN_NUM};
+
+Texture *loadTexture(char *path);
+Texture *initFeedbackTexture(int posX, int posY, int width, int height, int bufferIndex);
+
+void initGenTexture(int width, int height, int bpp, int texgenId, void *vars);
+Texture *getGenTexture(int textureNum);
 
 #endif

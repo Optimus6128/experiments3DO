@@ -11,8 +11,8 @@
 
 void initEngine(void);
 
-void transformGeometry(mesh *ms);
-void renderTransformedGeometry(mesh *ms);
+void transformGeometry(Mesh *ms);
+void renderTransformedGeometry(Mesh *ms);
 
 void setScreenDimensions(int w, int h);
 

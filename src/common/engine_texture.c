@@ -1,74 +1,118 @@
 #include "core.h"
 
 #include "tools.h"
+#include "system_graphics.h"
 #include "engine_texture.h"
 #include "mathutil.h"
 
-texture *textures[TEXTURE_NUM];
+Texture *genTextures[TEXGEN_NUM];
 
-
-void initTexture(int width, int height, int type, int bpp)
+static void genTexture(Texture *tex, int texgenId, void *vars)
 {
 	int i, x, y, xc, yc, c;
-	int size = (width * height * bpp) / 8;
-	texture *tex;
 
-	tex = (texture*)AllocMem(sizeof(texture), MEMTYPE_ANY);
-	textures[type] = tex;
+	const int width = tex->width;
+	const int height = tex->height;
+	const int size = (width * height * tex->bpp) / 8;
 
-	tex->width = width;
-	tex->height = height;
-	tex->bitmap = (ubyte*)AllocMem(size, MEMTYPE_ANY);
-	tex->bpp = bpp;
+	ubyte *dst = tex->bitmap;
 
-	switch(type)
+	// Right now, these are suitable for 8bpp with 32 color palette, no check is happening whether the texture is in other bpp modes
+	switch(texgenId)
 	{
-		case TEXTURE_EMPTY:
-			memset(tex->bitmap, 0, size);
+		default:
+		case TEXGEN_EMPTY:
+		{
+			memset(dst, 0, size);
+		}
 		break;
 
-		case TEXTURE_FLAT:
+		case TEXGEN_FLAT:
+		{
+			ubyte color = *((ubyte*)vars);
+			memset(dst, color, size);
+		}
+		break;
+
+		case TEXGEN_NOISE:
+		{
 			for (i=0; i<size; i++)
-				tex->bitmap[i] = 31;
+				*dst++ = getRand(1, 255);
+		}
 		break;
 
-		case TEXTURE_NOISE:
-			for (i=0; i<size; i++)
-				tex->bitmap[i] = getRand(1, 32767);
-		break;
-
-		case TEXTURE_XOR:
-			i = 0;
+		case TEXGEN_XOR:
+		{
 			for (y=0; y<height; y++) {
 				for (x=0; x<width; x++) {
-					tex->bitmap[i++] = x ^ y;
+					*dst++ = x ^ y;
 				}
 			}
+		}
 		break;
 
-		case TEXTURE_GRID:
-			i = 0;
+		case TEXGEN_GRID:
+		{
 			for (y=0; y<height; y++) {
 				yc = y - (height >> 1);
 				for (x=0; x<width; x++) {
 					xc = x - (width >> 1);
 					c = (xc * xc * xc * xc + yc * yc * yc * yc) >> 3;
 					if (c > 31) c = 31;
-					tex->bitmap[i++] = c;
+					*dst++ = c;
 				}
 			}
+		}
 		break;
 	}
+	genTextures[texgenId] = tex;
 }
 
-void loadTexture(char *path, int id)
+static Texture* initTexture(int width, int height, int bpp)
 {
-	texture *tex;
+	const int size = (width * height * bpp) / 8;
+	Texture *tex = (Texture*)AllocMem(sizeof(Texture), MEMTYPE_ANY);
+
+	tex->type = TEXTURE_TYPE_STATIC;
+
+	tex->width = width;
+	tex->height = height;
+	tex->bitmap = (ubyte*)AllocMem(size, MEMTYPE_ANY);
+	tex->bpp = bpp;
+
+	return tex;
+}
+
+void initGenTexture(int width, int height, int bpp, int texgenId, void *vars)
+{
+	Texture *tex = initTexture(width, height, bpp);
+	genTexture(tex, texgenId, vars);
+}
+
+Texture *initFeedbackTexture(int posX, int posY, int width, int height, int bufferIndex)
+{
+	Texture *tex = (Texture*)AllocMem(sizeof(Texture), MEMTYPE_ANY);
+
+	tex->type = (TEXTURE_TYPE_DYNAMIC | TEXTURE_TYPE_FEEDBACK);
+
+	tex->width = width;
+	tex->height = height;
+	tex->bpp = 16;
+
+	tex->bitmap = (ubyte*)getBackBufferByIndex(bufferIndex);
+	tex->posX = posX;
+	tex->posY = posY;
+
+	return tex;
+}
+
+Texture *loadTexture(char *path)
+{
+	Texture *tex;
 	CCB *tempCel;
 	int size;
 
-	tex = (texture*)AllocMem(sizeof(texture), MEMTYPE_ANY);
-	textures[id] = tex;
+	tex = (Texture*)AllocMem(sizeof(Texture), MEMTYPE_ANY);
 
 	tempCel = LoadCel(path, MEMTYPE_ANY);
 
@@ -83,16 +127,11 @@ void loadTexture(char *path, int id)
 	memcpy(tex->bitmap, tempCel->ccb_SourcePtr, size);
 
 	UnloadCel(tempCel);
+
+	return tex;
 }
 
-texture *getTexture(int textureNum)
+Texture *getGenTexture(int textureNum)
 {
-	return textures[textureNum];
+	return genTextures[textureNum];
 }
-
-/*void initTextures()
-{
-	initTexture(FB_WIDTH, FB_HEIGHT, TEXTURE_NOISE, 16);
-	initTexture(16, 16, TEXTURE_FLAT, 8);
-	initTexture(128, 128, TEXTURE_DRACUL, 16);
-}*/

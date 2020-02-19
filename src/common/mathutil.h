@@ -18,10 +18,10 @@
 #define DEG256RAD ((2 * PI) / 256.0f)
 
 
-typedef struct vertex
+typedef struct Vertex
 {
 	int x, y, z;
-}vertex;
+}Vertex;
 
 extern int shr[257];
 

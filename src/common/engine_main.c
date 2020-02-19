@@ -11,7 +11,7 @@
 #include "mathutil.h"
 
 
-static vertex vertices[MAX_VERTICES_NUM];
+static Vertex vertices[MAX_VERTICES_NUM];
 
 static int icos[256], isin[256];
 static uint32 recZ[NUM_REC_Z];
@@ -82,7 +82,7 @@ static void createRotationMatrixValues(int rotX, int rotY, int rotZ, int *rotVec
 	*rotVecs = (FIXED_MUL(cosxr, cosyr, FP_BASE)) << FP_BASE_TO_CORE;
 }
 
-static void translateAndProjectVertices(mesh *ms)
+static void translateAndProjectVertices(Mesh *ms)
 {
 	const int posX = ms->posX;
 	const int posY = ms->posY;
@@ -102,7 +102,7 @@ static void translateAndProjectVertices(mesh *ms)
 	}
 }
 
-static void rotateVerticesHw(mesh *ms)
+static void rotateVerticesHw(Mesh *ms)
 {
 	mat33f16 rotMat;
 
@@ -111,12 +111,12 @@ static void rotateVerticesHw(mesh *ms)
 	MulManyVec3Mat33_F16((vec3f16*)vertices, (vec3f16*)ms->vrtx, rotMat, ms->vrtxNum);
 }
 
-static void renderTransformedGeometryCELs(mesh *ms)
+static void renderTransformedGeometryCELs(Mesh *ms)
 {
 	drawCels(ms->quad[0].cel);
 }
 
-static void prepareTransformedGeometryCELs(mesh *ms)
+static void prepareTransformedGeometryCELs(Mesh *ms)
 {
 	int i, j=0;
 	int *indices = ms->index;
@@ -158,13 +158,13 @@ static void useMapCelFunctionFast(bool enable)
 	}
 }
 
-void transformGeometry(mesh *ms)
+void transformGeometry(Mesh *ms)
 {
 	rotateVerticesHw(ms);
 	translateAndProjectVertices(ms);
 }
 
-void renderTransformedGeometry(mesh *ms)
+void renderTransformedGeometry(Mesh *ms)
 {
 	useMapCelFunctionFast(ms->useFastMapCel);
 	useCPUtestPolygonOrder(ms->useCPUccwTest);

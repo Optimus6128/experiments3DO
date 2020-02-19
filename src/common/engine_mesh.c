@@ -6,21 +6,21 @@
 #include "engine_texture.h"
 #include "mathutil.h"
 
-static void allocateMeshArrays(mesh *ms)
+static void allocateMeshArrays(Mesh *ms)
 {
 	ms->indexNum = ms->quadsNum << 2;
-	ms->vrtx = (vertex*)AllocMem(ms->vrtxNum * sizeof(vertex), MEMTYPE_ANY);
+	ms->vrtx = (Vertex*)AllocMem(ms->vrtxNum * sizeof(Vertex), MEMTYPE_ANY);
 	ms->index = (int*)AllocMem(ms->indexNum * sizeof(int), MEMTYPE_ANY);
-	ms->quad = (quadData*)AllocMem(ms->quadsNum * sizeof(quadData), MEMTYPE_ANY);
+	ms->quad = (QuadData*)AllocMem(ms->quadsNum * sizeof(QuadData), MEMTYPE_ANY);
 }
 
-static void prepareCelList(mesh *ms)
+static void prepareCelList(Mesh *ms)
 {
 	int i;
 
 	for (i=0; i<ms->quadsNum; i++)
 	{
-		texture *tex = &ms->tex[ms->quad[i].textureId];
+		Texture *tex = &ms->tex[ms->quad[i].textureId];
 
 		ms->quad[i].cel = CreateCel(tex->width, tex->height, tex->bpp, CREATECEL_UNCODED, tex->bitmap);
 
@@ -33,7 +33,7 @@ static void prepareCelList(mesh *ms)
 	ms->quad[ms->quadsNum-1].cel->ccb_Flags |= CCB_LAST;
 }
 
-static void setMeshCELflags(mesh *ms, uint32 flags, bool enable)
+static void setMeshCELflags(Mesh *ms, uint32 flags, bool enable)
 {
 	int i;
 	for (i=0; i<ms->quadsNum; i++) {
@@ -45,21 +45,21 @@ static void setMeshCELflags(mesh *ms, uint32 flags, bool enable)
 	}
 }
 
-void setMeshPosition(mesh *ms, int px, int py, int pz)
+void setMeshPosition(Mesh *ms, int px, int py, int pz)
 {
 	ms->posX = px;
 	ms->posY = py;
 	ms->posZ = pz;
 }
 
-void setMeshRotation(mesh *ms, int rx, int ry, int rz)
+void setMeshRotation(Mesh *ms, int rx, int ry, int rz)
 {
 	ms->rotX = rx;
 	ms->rotY = ry;
 	ms->rotZ = rz;
 }
 
-void setMeshPolygonOrder(mesh *ms, bool cw, bool ccw)
+void setMeshPolygonOrder(Mesh *ms, bool cw, bool ccw)
 {
 	if (cw) {
 		setMeshCELflags(ms, CCB_ACW, true);
@@ -74,7 +74,7 @@ void setMeshPolygonOrder(mesh *ms, bool cw, bool ccw)
 	}
 }
 
-void setMeshTranslucency(mesh *ms, bool enable)
+void setMeshTranslucency(Mesh *ms, bool enable)
 {
 	int i;
 	for (i=0; i<ms->quadsNum; i++) {
@@ -86,13 +86,13 @@ void setMeshTranslucency(mesh *ms, bool enable)
 	}
 }
 
-mesh *initMesh(int type, int size, int divisions, texture *tex, int optionsFlags)
+Mesh *initMesh(int type, int size, int divisions, Texture *tex, int optionsFlags)
 {
 	int i, x, y;
 	int xp, yp;
 	int dx, dy;
 
-	mesh *ms = (mesh*)AllocMem(sizeof(mesh), MEMTYPE_ANY);
+	Mesh *ms = (Mesh*)AllocMem(sizeof(Mesh), MEMTYPE_ANY);
 	ms->tex = tex;
 
 	ms->useFastMapCel = (optionsFlags & MESH_OPTION_FAST_MAPCEL);

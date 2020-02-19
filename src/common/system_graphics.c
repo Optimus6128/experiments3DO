@@ -131,6 +131,13 @@ uint16 *getBackBuffer()
 	return (uint16*)Buffers[bufferIndex]->bm_Buffer;
 }
 
+uint16 *getBackBufferByIndex(int index)
+{
+	if (index > offscreenBuffersNum-1) index = offscreenBuffersNum-1;
+
+	return (uint16*)Buffers[index]->bm_Buffer;
+}
+
 uint32 getNumVramBuffers()
 {
 	return vramBuffersNum;

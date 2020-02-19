@@ -14,8 +14,17 @@
 #include "engine_texture.h"
 
 
-static mesh *cubeMeshBack;
-static mesh *cubeMesh;
+#define FB_WIDTH 256
+#define FB_HEIGHT 240
+#define FB_SIZE (FB_WIDTH * FB_HEIGHT)
+
+
+static Mesh *cubeMeshBack;
+static Mesh *cubeMesh;
+
+Texture *feedbackTex0;
+Texture *feedbackTex1;
+Texture *draculTex;
 
 static Sprite *bgndSpr;
 ubyte bgndBmp[FB_SIZE];
@@ -128,11 +137,11 @@ static void inputScript()
 
 void effectInit()
 {
-	initTexture(FB_WIDTH, FB_HEIGHT, TEXTURE_EMPTY, 16);
-	loadTexture("data/draculin.cel", TEXTURE_DRACUL);
+	feedbackTex0 = initFeedbackTexture(0, 0, FB_WIDTH, FB_HEIGHT, 0);
+	draculTex = loadTexture("data/draculin.cel");
 
-	cubeMesh = initMesh(MESH_CUBE, 256, 1, getTexture(TEXTURE_EMPTY), MESH_OPTION_CPU_CCW_TEST);
-	cubeMeshBack = initMesh(MESH_CUBE, 256, 1, getTexture(TEXTURE_DRACUL), MESH_OPTIONS_DEFAULT);
+	cubeMesh = initMesh(MESH_CUBE, 256, 1, feedbackTex0, MESH_OPTION_CPU_CCW_TEST);
+	cubeMeshBack = initMesh(MESH_CUBE, 256, 1, draculTex, MESH_OPTIONS_DEFAULT);
 
 	bgndSpr = newSprite(FB_WIDTH, FB_HEIGHT, 8, CREATECEL_UNCODED, NULL, bgndBmp);
 	genBackgroundTex();

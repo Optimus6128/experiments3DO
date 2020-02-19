@@ -8,24 +8,24 @@
 #define MESH_OPTION_CPU_CCW_TEST	(1 << 1)
 #define MESH_OPTIONS_DEFAULT (MESH_OPTION_FAST_MAPCEL | MESH_OPTION_CPU_CCW_TEST)
 
-typedef struct quadData
+typedef struct QuadData
 {
 	int textureId;
 	CCB *cel;
-}quadData;
+}QuadData;
 
-typedef struct mesh
+typedef struct Mesh
 {
-	vertex *vrtx;
+	Vertex *vrtx;
 	int vrtxNum;
 
 	int *index;
 	int indexNum;
 
-	quadData *quad;
+	QuadData *quad;
 	int quadsNum;
 
-	texture *tex;
+	Texture *tex;
 	int texturesNum;
 
 	int posX, posY, posZ;
@@ -33,16 +33,16 @@ typedef struct mesh
 
 	bool useFastMapCel;
 	bool useCPUccwTest;
-}mesh;
+}Mesh;
 
 
 enum {MESH_PLANE, MESH_CUBE, MESH_GRID};
 
-mesh *initMesh(int type, int size, int divisions, texture *tex, int optionsFlags);
+Mesh *initMesh(int type, int size, int divisions, Texture *tex, int optionsFlags);
 
-void setMeshPosition(mesh *ms, int px, int py, int pz);
-void setMeshRotation(mesh *ms, int rx, int ry, int rz);
-void setMeshPolygonOrder(mesh *ms, bool cw, bool ccw);
-void setMeshTranslucency(mesh *ms, bool enable);
+void setMeshPosition(Mesh *ms, int px, int py, int pz);
+void setMeshRotation(Mesh *ms, int rx, int ry, int rz);
+void setMeshPolygonOrder(Mesh *ms, bool cw, bool ccw);
+void setMeshTranslucency(Mesh *ms, bool enable);
 
 #endif
