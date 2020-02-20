@@ -22,6 +22,7 @@
 static Mesh *cubeMeshBack;
 static Mesh *cubeMesh;
 
+Texture *softFeedbackTex;
 Texture *feedbackTex0;
 Texture *feedbackTex1;
 Texture *draculTex;
@@ -33,8 +34,6 @@ static bool flipPolygons = false;
 static bool doFeedback = true;
 static bool hwFeedback = false;
 static bool translucency = false;
-
-static uint16 *cubeTex;
 
 
 static void genBackgroundTex()
@@ -57,8 +56,8 @@ static void genBackgroundTex()
 static void copyBufferToTexture()
 {
 	int x,y;
-	uint32 *src = (uint32*)getBackBuffer();
-	uint16 *tex = (uint16*)(cubeMesh->quad[0].cel->ccb_SourcePtr);
+	uint32 *src = (uint32*)feedbackTex0->bitmap;
+	uint16 *tex = (uint16*)softFeedbackTex->bitmap;
 	uint32 *dst0;
 	uint32 *dst1;
 	for (y=0; y<FB_HEIGHT/2; ++y) {
@@ -85,15 +84,15 @@ static void switchFeedback(bool on)
 		CCB *cel = cubeMesh->quad[i].cel;
 		int woffset;
 		int vcnt;
-
+		
 		if (on) {
 			cel->ccb_PRE1 |= feedbackFlag;
-			cel->ccb_SourcePtr = (void*)getBackBuffer();
+			cel->ccb_SourcePtr = (void*)feedbackTex0->bitmap;
 			woffset = SCREEN_WIDTH - 2;
 			vcnt = (FB_HEIGHT / 2) - 1;
 		} else {
 			cel->ccb_PRE1 &= ~feedbackFlag;
-			cel->ccb_SourcePtr = (void*)cubeTex;
+			cel->ccb_SourcePtr = (void*)softFeedbackTex->bitmap;
 			woffset = FB_WIDTH / 2 - 2;
 			vcnt = FB_HEIGHT - 1;
 		}
@@ -138,6 +137,7 @@ static void inputScript()
 void effectInit()
 {
 	feedbackTex0 = initFeedbackTexture(0, 0, FB_WIDTH, FB_HEIGHT, 0);
+	softFeedbackTex = initGenTexture(FB_WIDTH, FB_HEIGHT, 16, TEXGEN_EMPTY, NULL);
 	draculTex = loadTexture("data/draculin.cel");
 
 	cubeMesh = initMesh(MESH_CUBE, 256, 1, feedbackTex0, MESH_OPTION_CPU_CCW_TEST);
@@ -145,8 +145,8 @@ void effectInit()
 
 	bgndSpr = newSprite(FB_WIDTH, FB_HEIGHT, 8, CREATECEL_UNCODED, NULL, bgndBmp);
 	genBackgroundTex();
-
-	cubeTex = (uint16*)(cubeMesh->quad[0].cel->ccb_SourcePtr);
+	
+	switchFeedback(hwFeedback);
 }
 
 void effectRun()

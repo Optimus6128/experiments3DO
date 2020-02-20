@@ -4,6 +4,9 @@
 #define TEXTURE_TYPE_STATIC 0
 #define TEXTURE_TYPE_DYNAMIC 1
 #define TEXTURE_TYPE_FEEDBACK 2
+#define TEXTURE_TYPE_PALETIZED 4
+#define TEXTURE_TYPE_BLEND 8
+#define TEXTURE_TYPE_TWOSIDED 16
 
 typedef struct Texture
 {
@@ -19,13 +22,10 @@ typedef struct Texture
 	int posX, posY;
 }Texture;
 
-
-enum {TEXGEN_EMPTY, TEXGEN_FLAT, TEXGEN_NOISE, TEXGEN_XOR, TEXGEN_GRID, TEXGEN_NUM};
+enum {TEXGEN_EMPTY, TEXGEN_FLAT, TEXGEN_NOISE, TEXGEN_XOR, TEXGEN_GRID};
 
 Texture *loadTexture(char *path);
 Texture *initFeedbackTexture(int posX, int posY, int width, int height, int bufferIndex);
-
-void initGenTexture(int width, int height, int bpp, int texgenId, void *vars);
-Texture *getGenTexture(int textureNum);
+Texture *initGenTexture(int width, int height, int bpp, int texgenId, void *vars);
 
 #endif

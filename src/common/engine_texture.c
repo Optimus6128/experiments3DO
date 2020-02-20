@@ -5,8 +5,6 @@
 #include "engine_texture.h"
 #include "mathutil.h"
 
-Texture *genTextures[TEXGEN_NUM];
-
 static void genTexture(Texture *tex, int texgenId, void *vars)
 {
 	int i, x, y, xc, yc, c;
@@ -65,7 +63,7 @@ static void genTexture(Texture *tex, int texgenId, void *vars)
 		}
 		break;
 	}
-	genTextures[texgenId] = tex;
+	if (tex->bpp <= 8) tex->type |= TEXTURE_TYPE_PALETIZED;
 }
 
 static Texture* initTexture(int width, int height, int bpp)
@@ -83,10 +81,11 @@ static Texture* initTexture(int width, int height, int bpp)
 	return tex;
 }
 
-void initGenTexture(int width, int height, int bpp, int texgenId, void *vars)
+Texture* initGenTexture(int width, int height, int bpp, int texgenId, void *vars)
 {
 	Texture *tex = initTexture(width, height, bpp);
 	genTexture(tex, texgenId, vars);
+	return tex;
 }
 
 Texture *initFeedbackTexture(int posX, int posY, int width, int height, int bufferIndex)
@@ -129,9 +128,4 @@ Texture *loadTexture(char *path)
 	UnloadCel(tempCel);
 
 	return tex;
-}
-
-Texture *getGenTexture(int textureNum)
-{
-	return genTextures[textureNum];
 }
