@@ -56,7 +56,7 @@ static void genBackgroundTex()
 static void copyBufferToTexture()
 {
 	int x,y;
-	uint32 *src = (uint32*)feedbackTex0->bitmap;
+	uint32 *src = (uint32*)getBackBufferByIndex(feedbackTex0->bufferIndex);
 	uint16 *tex = (uint16*)softFeedbackTex->bitmap;
 	uint32 *dst0;
 	uint32 *dst1;
