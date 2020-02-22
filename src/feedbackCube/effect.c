@@ -77,28 +77,13 @@ static void copyBufferToTexture()
 
 static void switchFeedback(bool on)
 {
-	int i;
-	const int feedbackFlag = 1 << 11;
-
-	for (i=0; i<cubeMesh->quadsNum; i++) {
-		CCB *cel = cubeMesh->quad[i].cel;
-		int woffset;
-		int vcnt;
-		
-		if (on) {
-			cel->ccb_PRE1 |= feedbackFlag;
-			cel->ccb_SourcePtr = (void*)feedbackTex0->bitmap;
-			woffset = SCREEN_WIDTH - 2;
-			vcnt = (FB_HEIGHT / 2) - 1;
-		} else {
-			cel->ccb_PRE1 &= ~feedbackFlag;
-			cel->ccb_SourcePtr = (void*)softFeedbackTex->bitmap;
-			woffset = FB_WIDTH / 2 - 2;
-			vcnt = FB_HEIGHT - 1;
-		}
-		cel->ccb_PRE0 = (cel->ccb_PRE0 & ~(((1<<10) - 1)<<6)) | (vcnt << 6);
-		cel->ccb_PRE1 = (cel->ccb_PRE1 & 65535) | (woffset << 16);
+	if (on) {
+		feedbackTex0->type |= TEXTURE_TYPE_FEEDBACK;
+	} else {
+		feedbackTex0->type &= ~TEXTURE_TYPE_FEEDBACK;
+		feedbackTex0->bitmap = softFeedbackTex->bitmap;
 	}
+	updateMeshCELs(cubeMesh);
 }
 
 static void inputScript()

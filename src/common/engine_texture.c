@@ -98,7 +98,9 @@ Texture *initFeedbackTexture(int posX, int posY, int width, int height, int buff
 	tex->height = height;
 	tex->bpp = 16;
 
+
 	tex->bitmap = (ubyte*)getBackBufferByIndex(bufferIndex);
+	tex->bufferIndex = bufferIndex;
 	tex->posX = posX;
 	tex->posY = posY;
 

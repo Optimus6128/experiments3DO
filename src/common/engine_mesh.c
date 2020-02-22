@@ -1,6 +1,7 @@
 #include "core.h"
 
 #include "tools.h"
+#include "system_graphics.h"
 
 #include "engine_mesh.h"
 #include "engine_texture.h"
@@ -12,6 +13,37 @@ static void allocateMeshArrays(Mesh *ms)
 	ms->vrtx = (Vertex*)AllocMem(ms->vrtxNum * sizeof(Vertex), MEMTYPE_ANY);
 	ms->index = (int*)AllocMem(ms->indexNum * sizeof(int), MEMTYPE_ANY);
 	ms->quad = (QuadData*)AllocMem(ms->quadsNum * sizeof(QuadData), MEMTYPE_ANY);
+}
+
+void updateMeshCELs(Mesh *ms)
+{
+	int i;
+	for (i=0; i<ms->quadsNum; i++) {
+		Texture *tex = &ms->tex[ms->quad[i].textureId];
+
+		if (tex->type & TEXTURE_TYPE_DYNAMIC) {
+			CCB *cel = ms->quad[i].cel;
+			int woffset;
+			int vcnt;
+
+			// In the future, also take account of offscreen buffer position too
+			if (tex->type & TEXTURE_TYPE_FEEDBACK) {
+				cel->ccb_PRE1 |= PRE1_LRFORM;
+				cel->ccb_SourcePtr = (void*)getBackBufferByIndex(tex->bufferIndex);
+				woffset = SCREEN_WIDTH - 2;
+				vcnt = (tex->height / 2) - 1;
+			} else {
+				cel->ccb_PRE1 &= ~PRE1_LRFORM;
+				cel->ccb_SourcePtr = (void*)tex->bitmap;
+				woffset = tex->width / 2 - 2;
+				vcnt = tex->height - 1;
+			}
+
+			// Should spare the magic numbers at some point
+			cel->ccb_PRE0 = (cel->ccb_PRE0 & ~(((1<<10) - 1)<<6)) | (vcnt << 6);
+			cel->ccb_PRE1 = (cel->ccb_PRE1 & (65536 - 1024)) | (woffset << 16) | tex->width;
+		}
+	}
 }
 
 static void prepareCelList(Mesh *ms)

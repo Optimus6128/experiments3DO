@@ -20,6 +20,7 @@ typedef struct Texture
 
 	// Necessary extension for feedback textures
 	int posX, posY;
+	int bufferIndex;
 }Texture;
 
 enum {TEXGEN_EMPTY, TEXGEN_FLAT, TEXGEN_NOISE, TEXGEN_XOR, TEXGEN_GRID};
