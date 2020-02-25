@@ -36,9 +36,10 @@ typedef struct Mesh
 }Mesh;
 
 
-enum {MESH_PLANE, MESH_CUBE, MESH_GRID};
+Mesh* initMesh(int vrtxNum, int quadsNum);
+// TODO: Mesh *loadMesh(char *path);
 
-Mesh *initMesh(int type, int size, int divisions, Texture *tex, int optionsFlags);
+void prepareCelList(Mesh *ms);
 
 void setMeshPosition(Mesh *ms, int px, int py, int pz);
 void setMeshRotation(Mesh *ms, int rx, int ry, int rz);

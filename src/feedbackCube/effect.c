@@ -13,6 +13,8 @@
 #include "engine_mesh.h"
 #include "engine_texture.h"
 
+#include "procgen_mesh.h"
+#include "procgen_texture.h"
 
 #define FB_WIDTH 256
 #define FB_HEIGHT 240
@@ -125,8 +127,8 @@ void effectInit()
 	softFeedbackTex = initGenTexture(FB_WIDTH, FB_HEIGHT, 16, TEXGEN_EMPTY, NULL);
 	draculTex = loadTexture("data/draculin.cel");
 
-	cubeMesh = initMesh(MESH_CUBE, 256, 1, feedbackTex0, MESH_OPTION_CPU_CCW_TEST);
-	cubeMeshBack = initMesh(MESH_CUBE, 256, 1, draculTex, MESH_OPTIONS_DEFAULT);
+	cubeMesh = initGenMesh(256, feedbackTex0, MESH_OPTION_CPU_CCW_TEST, MESH_CUBE, NULL);
+	cubeMeshBack = initGenMesh(256, draculTex, MESH_OPTIONS_DEFAULT, MESH_CUBE, NULL);
 
 	bgndSpr = newSprite(FB_WIDTH, FB_HEIGHT, 8, CREATECEL_UNCODED, NULL, bgndBmp);
 	genBackgroundTex();
