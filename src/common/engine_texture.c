@@ -5,17 +5,36 @@
 #include "engine_texture.h"
 
 
-Texture* initTexture(int width, int height, int bpp, int type)
+Texture* initTexture(int width, int height, int bpp, int type, ubyte *bmp, uint16 *pal, ubyte numPals)
 {
-	const int size = (width * height * bpp) / 8;
 	Texture *tex = (Texture*)AllocMem(sizeof(Texture), MEMTYPE_ANY);
+
+	// Can't have palettized texture if bpp over 8
+	if (bpp > 8 || numPals == 0) {
+		type &= ~TEXTURE_TYPE_PALLETIZED;
+	}
 
 	tex->width = width;
 	tex->height = height;
 	tex->bpp = bpp;
 	tex->type = type;
 
-	tex->bitmap = (ubyte*)AllocMem(size, MEMTYPE_ANY);
+	if (type & TEXTURE_TYPE_PALLETIZED) {
+		if (!pal) {
+			int palBits = bpp;
+			if (palBits > 5) palBits = 5;	// Can't have more than 5bits (32 colors palette), even in 6bpp or 8bpp modes
+			tex->pal = (uint16*)AllocMem(sizeof(uint16) * (1 << palBits) * numPals, MEMTYPE_ANY);
+		} else {
+			tex->pal = pal;
+		}
+	}
+
+	if (!bmp) {
+		const int size = (width * height * bpp) / 8;
+		tex->bitmap = (ubyte*)AllocMem(size, MEMTYPE_ANY);
+	} else {
+		tex->bitmap = bmp;
+	}
 
 	return tex;
 }
@@ -48,7 +67,7 @@ Texture *loadTexture(char *path)
 
 	tempCel = LoadCel(path, MEMTYPE_ANY);
 
-	tex = initTexture(tempCel->ccb_Width, tempCel->ccb_Height, 16, TEXTURE_TYPE_STATIC);
+	tex = initTexture(tempCel->ccb_Width, tempCel->ccb_Height, 16, TEXTURE_TYPE_STATIC, NULL, NULL, 0);
 		// 16bit is the only bpp CEL type extracted from BMPTo3DOCel for now (which is what I currently use to make CEL files and testing)
 		// In the future, I'll try to deduce this from the CEL bits anyway (I already know how, just too lazy to find out again)
 		// Update: BMPTo3DOCel is shit! It saves right now the same format as BMPTo3DOImage (for VRAM structure to use with SPORT copy) instead of the most common linear CEL bitmap structure

@@ -22,12 +22,12 @@ void updateMeshCELs(Mesh *ms)
 			// In the future, also take account of offscreen buffer position too
 			if (tex->type & TEXTURE_TYPE_FEEDBACK) {
 				cel->ccb_PRE1 |= PRE1_LRFORM;
-				cel->ccb_SourcePtr = (void*)getBackBufferByIndex(tex->bufferIndex);
+				cel->ccb_SourcePtr = (CelData*)getBackBufferByIndex(tex->bufferIndex);
 				woffset = SCREEN_WIDTH - 2;
 				vcnt = (tex->height / 2) - 1;
 			} else {
 				cel->ccb_PRE1 &= ~PRE1_LRFORM;
-				cel->ccb_SourcePtr = (void*)tex->bitmap;
+				cel->ccb_SourcePtr = (CelData*)tex->bitmap;
 				woffset = tex->width / 2 - 2;
 				vcnt = tex->height - 1;
 			}
@@ -35,6 +35,8 @@ void updateMeshCELs(Mesh *ms)
 			// Should spare the magic numbers at some point
 			cel->ccb_PRE0 = (cel->ccb_PRE0 & ~(((1<<10) - 1)<<6)) | (vcnt << 6);
 			cel->ccb_PRE1 = (cel->ccb_PRE1 & (65536 - 1024)) | (woffset << 16) | tex->width;
+
+			cel->ccb_PLUTPtr = (uint16*)tex->pal[ms->quad[i].palId];
 		}
 	}
 }
@@ -48,6 +50,8 @@ void prepareCelList(Mesh *ms)
 		Texture *tex = &ms->tex[ms->quad[i].textureId];
 
 		ms->quad[i].cel = CreateCel(tex->width, tex->height, tex->bpp, CREATECEL_UNCODED, tex->bitmap);
+		cel->ccb_SourcePtr = (CelData*)tex->bitmap;	// I used to have issues, fixed it on sprite_engine. In the future I'll simple replace CreateCel
+		cel->ccb_PLUTPtr = (uint16*)tex->pal[ms->quad[i].palId];
 
 		ms->quad[i].cel->ccb_Flags &= ~CCB_ACW;	// Initially, ACW is off and only ACCW (counterclockwise) polygons are visible
 

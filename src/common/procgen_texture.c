@@ -64,12 +64,17 @@ static void genTexture(Texture *tex, int texgenId, void *params)
 		}
 		break;
 	}
-	if (tex->bpp <= 8) tex->type |= TEXTURE_TYPE_PALLETIZED;
 }
 
-Texture* initGenTexture(int width, int height, int bpp, int texgenId, void *params)
+Texture* initGenTexture(int width, int height, int bpp, ubyte numPals, int texgenId, void *params)
 {
-	Texture *tex = initTexture(width, height, bpp, TEXTURE_TYPE_STATIC);
+	Texture *tex;
+
+	int type = TEXTURE_TYPE_STATIC;
+	if (bpp <= 8 && numPals > 0) type |= TEXTURE_TYPE_PALLETIZED;
+
+	tex = initTexture(width, height, bpp, type, NULL, NULL, numPals);
 	genTexture(tex, texgenId, params);
+
 	return tex;
 }

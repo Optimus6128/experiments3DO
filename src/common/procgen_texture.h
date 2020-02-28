@@ -5,6 +5,6 @@
 
 enum {TEXGEN_EMPTY, TEXGEN_FLAT, TEXGEN_NOISE, TEXGEN_XOR, TEXGEN_GRID};
 
-Texture *initGenTexture(int width, int height, int bpp, int texgenId, void *params);
+Texture *initGenTexture(int width, int height, int bpp, ubyte numPals, int texgenId, void *params);
 
 #endif
