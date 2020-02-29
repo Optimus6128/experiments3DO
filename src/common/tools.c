@@ -236,7 +236,7 @@ void setPalWithFades(int c0, int c1, int r0, int g0, int b0, int r1, int g1, int
 	}
 }
 
-void setPal(int c0, int c1, int r0, int g0, int b0, int r1, int g1, int b1, uint16* pal)
+void setPal(int c0, int c1, int r0, int g0, int b0, int r1, int g1, int b1, uint16* pal, int shr)
 {
 	int i, rr, gg, bb;
 	float dc = (float)(c1 - c0);
@@ -250,9 +250,9 @@ void setPal(int c0, int c1, int r0, int g0, int b0, int r1, int g1, int b1, uint
 	pal+=c0;
 	for (i=c0; i<=c1; i++)
 	{
-		rr = (int)r >> 3;
-		gg = (int)g >> 3;
-		bb = (int)b >> 3;
+		rr = (int)r >> shr;
+		gg = (int)g >> shr;
+		bb = (int)b >> shr;
 		*pal++ = (rr << 10) | (gg << 5) | bb;
 		r += dr;
 		g += dg;

@@ -14,7 +14,6 @@
 #include "engine_texture.h"
 
 #include "procgen_mesh.h"
-#include "procgen_texture.h"
 
 #define FB_WIDTH 256
 #define FB_HEIGHT 240
@@ -90,16 +89,16 @@ static void switchFeedback(bool on)
 
 static void inputScript()
 {
-	if (isButtonPressedOnce(BUTTON_A)) {
+	if (isJoyButtonPressedOnce(JOY_BUTTON_A)) {
 		hwFeedback = !hwFeedback;
 		switchFeedback(hwFeedback);
 	}
 
-	if (isButtonPressedOnce(BUTTON_B)) {
+	if (isJoyButtonPressedOnce(JOY_BUTTON_B)) {
 		doFeedback = !doFeedback;
 	}
 
-	if (isButtonPressedOnce(BUTTON_C)) {
+	if (isJoyButtonPressedOnce(JOY_BUTTON_C)) {
 		flipPolygons = !flipPolygons;
 		cubeMesh->useCPUccwTest = !flipPolygons;
 		cubeMeshBack->useCPUccwTest = !flipPolygons;
@@ -107,13 +106,13 @@ static void inputScript()
 		setMeshPolygonOrder(cubeMeshBack, flipPolygons, !flipPolygons);
 	}
 
-	if (isButtonPressedOnce(BUTTON_LPAD)) {
+	if (isJoyButtonPressedOnce(JOY_BUTTON_LPAD)) {
 		translucency = !translucency;
 		setMeshTranslucency(cubeMesh, translucency);
 		setMeshTranslucency(cubeMeshBack, translucency);
 	}
 
-	if (isButtonPressedOnce(BUTTON_RPAD)) {
+	if (isJoyButtonPressedOnce(JOY_BUTTON_RPAD)) {
 		cubeMesh->useCPUccwTest = false;
 		cubeMeshBack->useCPUccwTest = false;
 		setMeshPolygonOrder(cubeMesh, true, true);
@@ -124,7 +123,7 @@ static void inputScript()
 void effectInit()
 {
 	feedbackTex0 = initFeedbackTexture(0, 0, FB_WIDTH, FB_HEIGHT, 0);
-	softFeedbackTex = initGenTexture(FB_WIDTH, FB_HEIGHT, 16, TEXGEN_EMPTY, NULL);
+	softFeedbackTex = initTexture(FB_WIDTH, FB_HEIGHT, 16, TEXTURE_TYPE_STATIC, NULL, NULL, 0);
 	draculTex = loadTexture("data/draculin.cel");
 
 	cubeMesh = initGenMesh(256, feedbackTex0, MESH_OPTION_CPU_CCW_TEST, MESH_CUBE, NULL);

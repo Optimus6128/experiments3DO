@@ -52,7 +52,7 @@ static void generateUnpackedRain()
 	}
 
 	pal2[0] = 0;
-	setPal(1,3, 160,192,255, 255,255,255, pal2);
+	setPal(1,3, 160,192,255, 255,255,255, pal2, 3);
 }
 
 void effectInit()
@@ -75,8 +75,8 @@ void effectInit()
 
 static void updateFromInput()
 {
-	if (isButtonPressedOnce(BUTTON_A)) showPackedRain = !showPackedRain;
-	if (isButtonPressedOnce(BUTTON_START)) showPackInfo = !showPackInfo;
+	if (isJoyButtonPressedOnce(JOY_BUTTON_A)) showPackedRain = !showPackedRain;
+	if (isJoyButtonPressedOnce(JOY_BUTTON_START)) showPackInfo = !showPackInfo;
 }
 
 static void renderZoomRotateRainLayerSprite(Sprite *spr, int offsetX, int offsetY, int zoom, int angle)

@@ -50,8 +50,8 @@ void prepareCelList(Mesh *ms)
 		Texture *tex = &ms->tex[ms->quad[i].textureId];
 
 		ms->quad[i].cel = CreateCel(tex->width, tex->height, tex->bpp, CREATECEL_UNCODED, tex->bitmap);
-		cel->ccb_SourcePtr = (CelData*)tex->bitmap;	// I used to have issues, fixed it on sprite_engine. In the future I'll simple replace CreateCel
-		cel->ccb_PLUTPtr = (uint16*)tex->pal[ms->quad[i].palId];
+		ms->quad[i].cel->ccb_SourcePtr = (CelData*)tex->bitmap;	// I used to have issues, fixed it on sprite_engine. In the future I'll simple replace CreateCel
+		ms->quad[i].cel->ccb_PLUTPtr = (uint16*)tex->pal[ms->quad[i].palId];
 
 		ms->quad[i].cel->ccb_Flags &= ~CCB_ACW;	// Initially, ACW is off and only ACCW (counterclockwise) polygons are visible
 

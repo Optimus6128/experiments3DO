@@ -85,7 +85,7 @@ static void generateUnpackedBmp4()
 		}
 	}
 	pal4[0] = 0;
-	setPal(1,15, 255,224,160, 32,64,128, pal4);
+	setPal(1,15, 255,224,160, 32,64,128, pal4, 3);
 }
 
 static void generateUnpackedBmp8()
@@ -108,7 +108,7 @@ static void generateUnpackedBmp8()
 		}
 	}
 	pal8[0] = 0;
-	setPal(1,31, 32,16,48, 255,224,192, pal8);
+	setPal(1,31, 32,16,48, 255,224,192, pal8, 3);
 }
 
 static void generateUnpackedBmp16()
@@ -174,32 +174,32 @@ void effectInit()
 
 static void updateFromInput()
 {
-	if (ENABLE_4 && isButtonPressedOnce(BUTTON_A)) showPacked4 = !showPacked4;
-	if (ENABLE_8 && isButtonPressedOnce(BUTTON_B)) showPacked8 = !showPacked8;
-	if (ENABLE_16 && isButtonPressedOnce(BUTTON_C)) showPacked16 = !showPacked16;
+	if (ENABLE_4 && isJoyButtonPressedOnce(JOY_BUTTON_A)) showPacked4 = !showPacked4;
+	if (ENABLE_8 && isJoyButtonPressedOnce(JOY_BUTTON_B)) showPacked8 = !showPacked8;
+	if (ENABLE_16 && isJoyButtonPressedOnce(JOY_BUTTON_C)) showPacked16 = !showPacked16;
 
-	if (isButtonPressedOnce(BUTTON_LPAD)) {
+	if (isJoyButtonPressedOnce(JOY_BUTTON_LPAD)) {
 		if (ENABLE_4) showPacked4 = false;
 		if (ENABLE_8) showPacked8 = false;
 		if (ENABLE_16) showPacked16 = false;
 	}
-	if (isButtonPressedOnce(BUTTON_RPAD)) {
+	if (isJoyButtonPressedOnce(JOY_BUTTON_RPAD)) {
 		if (ENABLE_4) showPacked4 = true;
 		if (ENABLE_8) showPacked8 = true;
 		if (ENABLE_16) showPacked16 = true;
 	}
 
-	if (ENABLE_4 && isButtonPressedOnce(BUTTON_LEFT)) {
+	if (ENABLE_4 && isJoyButtonPressedOnce(JOY_BUTTON_LEFT)) {
 		showRender4 = !showRender4;
 	}
-	if (ENABLE_8 && isButtonPressedOnce(BUTTON_UP)) {
+	if (ENABLE_8 && isJoyButtonPressedOnce(JOY_BUTTON_UP)) {
 		showRender8 = !showRender8;
 	}
-	if (ENABLE_16 && isButtonPressedOnce(BUTTON_RIGHT)) {
+	if (ENABLE_16 && isJoyButtonPressedOnce(JOY_BUTTON_RIGHT)) {
 		showRender16 = !showRender16;
 	}
 
-	if (isButtonPressedOnce(BUTTON_START)) {
+	if (isJoyButtonPressedOnce(JOY_BUTTON_START)) {
 		showPackInfo = !showPackInfo;
 	}
 }

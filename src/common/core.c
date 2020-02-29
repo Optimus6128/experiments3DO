@@ -59,8 +59,8 @@ void coreInit(void(*initFunc)(), uint32 flags)
 static void defaultInputScript()
 {
 	if (defaultInput) {
-		if (isButtonPressedOnce(BUTTON_SELECT)) toggleVsync();
-		if (menu & isButtonPressedOnce(BUTTON_START)) showMenu();
+		if (isJoyButtonPressedOnce(JOY_BUTTON_SELECT)) toggleVsync();
+		if (menu & isJoyButtonPressedOnce(JOY_BUTTON_START)) showMenu();
 	}
 }
 
