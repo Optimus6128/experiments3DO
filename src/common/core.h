@@ -60,6 +60,7 @@
 
 #define CORE_DEFAULT	(CORE_SHOW_FPS | CORE_DEFAULT_INPUT | CORE_MENU)
 #define CORE_SIMPLE		(CORE_SHOW_FPS)
+#define CORE_MORE_INFO	(CORE_SHOW_FPS | CORE_SHOW_MEM | CORE_SHOW_BUFFERS)
 
 
 void coreInit(void(*initFunc)(), uint32 flags);
