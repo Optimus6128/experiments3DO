@@ -38,6 +38,7 @@
 #define CORE_SHOW_BUFFERS	(1 << 3)
 #define CORE_DEFAULT_INPUT	(1 << 4)
 #define CORE_MENU			(1 << 5)
+#define CORE_NO_VSYNC		(1 << 6)
 #define CORE_DEBUG			(1 << 31)
 
 
@@ -60,7 +61,6 @@
 
 #define CORE_DEFAULT	(CORE_SHOW_FPS | CORE_DEFAULT_INPUT | CORE_MENU)
 #define CORE_SIMPLE		(CORE_SHOW_FPS)
-#define CORE_MORE_INFO	(CORE_SHOW_FPS | CORE_SHOW_MEM | CORE_SHOW_BUFFERS)
 
 
 void coreInit(void(*initFunc)(), uint32 flags);

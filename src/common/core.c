@@ -32,6 +32,8 @@ static void initGraphicsOptions(uint32 flags)
 	uint32 numOffscreenBuffers = (flags >> OFFSCREEN_NUMBUFFERS_BITS_START) & numBuffersMax;
 
 	initGraphics(numVramBuffers, numOffscreenBuffers, horizontalAntialiasing, verticalAntialiasing);
+
+	if (flags & CORE_NO_VSYNC) setVsync(false);
 }
 
 void coreInit(void(*initFunc)(), uint32 flags)
