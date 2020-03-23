@@ -5,6 +5,7 @@
 #include "tools.h"
 
 static bool vsync = true;
+static bool clearFrame = true;
 
 static Item gVRAMIOReq;
 static Item vsyncItem;
@@ -90,6 +91,8 @@ void initGraphics(uint32 numVramBuffers, uint32 numOffscreenBuffers, bool horizo
 		BitmapItems[i] = screen.sc_BitmapItems[i];
 		Bitmaps[i] = screen.sc_Bitmaps[i];
 
+		memset(Bitmaps[i]->bm_Buffer, 0, Bitmaps[i]->bm_Width * Bitmaps[i]->bm_Height * 2);
+
 		SetCEControl(BitmapItems[i], 0xffffffff, ASCALL);	// Enable Hardware CEL clipping
 
 		if (horizontalAntialiasing)	EnableHAVG(BitmapItems[i]);
@@ -160,15 +163,38 @@ void setBuffer(uint32 num)
 	bufferIndex = num;
 }
 
+void clearAllBuffers()
+{
+	const uint32 totalBuffersNum = vramBuffersNum + offscreenBuffersNum;
+	int i;
+
+	for(i=0; i<totalBuffersNum; ++i) {
+		memset(Bitmaps[i]->bm_Buffer, 0, Bitmaps[i]->bm_Width * Bitmaps[i]->bm_Height * 2);
+	}
+}
+
 void drawPixel(int px, int py, uint16 c)
 {
 	uint16 *dst = (uint16*)(Bitmaps[screenPage]->bm_Buffer) + (py >> 1) * SCREEN_WIDTH * 2 + (py & 1) + (px << 1);
 	*dst = c;
 }
 
+void drawThickPixel(int px, int py, uint16 c)
+{
+	const uint32 cc = (c << 16) | c;
+	uint32 *dst = (uint32*)((uint16*)Bitmaps[screenPage]->bm_Buffer + py * SCREEN_WIDTH * 2 + (px << 2));
+	*dst++ = cc;
+	*dst++ = cc;
+}
+
 int getFrameNum()
 {
 	return frameNum;
+}
+
+void setClearFrame(bool on)
+{
+	clearFrame = on;
 }
 
 void setVsync(bool on)
@@ -184,12 +210,14 @@ void toggleVsync()
 void displayScreen()
 {
 	DisplayScreen(screen.sc_Screens[screenPage], 0 );
-	if (vsync && ioInfo.ioi_Command != SPORTCMD_COPY) WaitVBL(vsyncItem, 1);
+	if (vsync && !(ioInfo.ioi_Command == SPORTCMD_COPY && clearFrame)) WaitVBL(vsyncItem, 1);
 
 	if (++screenPage >= vramBuffersNum) screenPage = 0;
 
-	ioInfo.ioi_Recv.iob_Buffer = Bitmaps[screenPage]->bm_Buffer;
-	DoIO(gVRAMIOReq,&ioInfo);
+	if (clearFrame) {
+		ioInfo.ioi_Recv.iob_Buffer = Bitmaps[screenPage]->bm_Buffer;
+		DoIO(gVRAMIOReq,&ioInfo);
+	}
 
 	++frameNum;
 }

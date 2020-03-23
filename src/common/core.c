@@ -34,6 +34,7 @@ static void initGraphicsOptions(uint32 flags)
 	initGraphics(numVramBuffers, numOffscreenBuffers, horizontalAntialiasing, verticalAntialiasing);
 
 	if (flags & CORE_NO_VSYNC) setVsync(false);
+	if (flags & CORE_NO_CLEAR_FRAME) setClearFrame(false);
 }
 
 void coreInit(void(*initFunc)(), uint32 flags)
@@ -71,6 +72,21 @@ void displaySystemInfo()
 	if (showFps) displayFPS();
 	if (showMem) displayMem();
 	if (showBuffers) displayBuffers();
+}
+
+void setShowFps(bool on)
+{
+	showFps = on;
+}
+
+void setShowMem(bool on)
+{
+	showMem = on;
+}
+
+void setShowBuffers(bool on)
+{
+	showBuffers = on;
 }
 
 void coreRun(void(*mainLoopFunc)())

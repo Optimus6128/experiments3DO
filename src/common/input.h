@@ -21,6 +21,7 @@ typedef struct MousePosition
 void initInput(void);
 void updateInput(void);
 
+bool isAnyJoyButtonPressed(void);
 bool isJoyButtonPressed(int joyButtonId);
 bool isJoyButtonPressedOnce(int joyButtonId);
 bool isMouseButtonPressed(int mouseButtonId);

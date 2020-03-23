@@ -18,9 +18,12 @@ void drawCels(CCB *cels);
 
 void loadAndSetBackgroundImage(char *path, ubyte *screenBuffer);	// if screenBuffer is NULL, one will automatically allocated in VRAM
 void setBackgroundColor(int color);
+void clearAllBuffers(void);
 void drawPixel(int px, int py, uint16 c);
+void drawThickPixel(int px, int py, uint16 c);	// coordinates map in 160*120 thick 2*2 pixels
 int getFrameNum(void);
 
+void setClearFrame(bool on);
 void setVsync(bool on);
 void toggleVsync(void);
 

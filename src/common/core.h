@@ -20,6 +20,11 @@
 #include "stdlib.h"
 #include "event.h"
 #include "controlpad.h"
+#include "filesystem.h"
+#include "filefunctions.h"
+#include "operror.h"
+#include "directory.h"
+#include "directoryfunctions.h"
 
 #include "stdio.h"
 #include "graphics.h"
@@ -39,6 +44,7 @@
 #define CORE_DEFAULT_INPUT	(1 << 4)
 #define CORE_MENU			(1 << 5)
 #define CORE_NO_VSYNC		(1 << 6)
+#define CORE_NO_CLEAR_FRAME		(1 << 7)
 #define CORE_DEBUG			(1 << 31)
 
 
@@ -65,5 +71,9 @@
 
 void coreInit(void(*initFunc)(), uint32 flags);
 void coreRun(void(*mainLoopFunc)());
+
+void setShowFps(bool on);
+void setShowMem(bool on);
+void setShowBuffers(bool on);
 
 #endif

@@ -88,6 +88,11 @@ void initFonts()
 	fontsAreReady = true;
 }
 
+void setTextColor(uint16 color)
+{
+	fontsPal[31] = color;
+}
+
 void initTools()
 {
 	initTimer();
@@ -119,6 +124,11 @@ void drawZoomedText(int xtp, int ytp, char *text, int zoom)
 	textCel[i]->ccb_Flags |= CCB_LAST;
 	drawCels(textCel[0]);
 	textCel[i]->ccb_Flags ^= CCB_LAST;
+}
+
+void drawTextX2(int xtp, int ytp, char *text)
+{
+	drawZoomedText(xtp, ytp, text, 2 << TEXT_ZOOM_SHR);
 }
 
 void drawText(int xtp, int ytp, char *text)

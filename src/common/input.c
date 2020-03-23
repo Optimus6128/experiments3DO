@@ -15,6 +15,7 @@ static bool mouseButtonPressedOnce[MOUSE_BUTTONS_NUM];
 
 static MousePosition mousePosition;
 static int mouseStatus = 0;
+static bool anyJoyButtonPressed;
 
 void initInput()
 {
@@ -44,10 +45,12 @@ static void updateJoypad()
 
 	joybits = cpaddata.cped_ButtonBits;
 
+	anyJoyButtonPressed = false;
 	for (i=0; i<JOY_BUTTONS_NUM; ++i) {
 		if (joybits & joyButtonHwIDs[i]) {
 			joyButtonPressedOnce[i] = !joyButtonPressed[i];
 			joyButtonPressed[i] = true;
+			anyJoyButtonPressed = true;
 		} else {
 			joyButtonPressed[i] = false;
 			joyButtonPressedOnce[i] = false;
@@ -88,6 +91,11 @@ void updateInput()
 {
 	updateJoypad();
 	updateMouse();
+}
+
+bool isAnyJoyButtonPressed()
+{
+	return anyJoyButtonPressed;
 }
 
 bool isJoyButtonPressed(int joyButtonId)
