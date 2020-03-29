@@ -44,14 +44,17 @@ void updateMeshCELs(Mesh *ms)
 void prepareCelList(Mesh *ms)
 {
 	int i;
-
 	for (i=0; i<ms->quadsNum; i++)
 	{
 		Texture *tex = &ms->tex[ms->quad[i].textureId];
 
-		ms->quad[i].cel = CreateCel(tex->width, tex->height, tex->bpp, CREATECEL_UNCODED, tex->bitmap);
+		int32 celType = CREATECEL_UNCODED;
+		if (tex->type & TEXTURE_TYPE_PALLETIZED)
+			celType = CREATECEL_CODED;
+
+		ms->quad[i].cel = CreateCel(tex->width, tex->height, tex->bpp, celType, tex->bitmap);
 		ms->quad[i].cel->ccb_SourcePtr = (CelData*)tex->bitmap;	// I used to have issues, fixed it on sprite_engine. In the future I'll simple replace CreateCel
-		ms->quad[i].cel->ccb_PLUTPtr = (uint16*)tex->pal[ms->quad[i].palId];
+		ms->quad[i].cel->ccb_PLUTPtr = (uint16*)&tex->pal[ms->quad[i].palId];
 
 		ms->quad[i].cel->ccb_Flags &= ~CCB_ACW;	// Initially, ACW is off and only ACCW (counterclockwise) polygons are visible
 

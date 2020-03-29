@@ -36,7 +36,7 @@ static void genTexture(Texture *tex, int texgenId, void *params)
 		case TEXGEN_NOISE:
 		{
 			for (i=0; i<size; i++)
-				*dst++ = getRand(1, 255);
+				*dst++ = getRand(0, 31);
 		}
 		break;
 
