@@ -6,3 +6,5 @@ cd../feedbackCube
 call clean.bat
 cd../volumeEffects
 call clean.bat
+cd../meshTests
+call clean.bat

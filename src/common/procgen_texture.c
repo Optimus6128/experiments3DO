@@ -44,7 +44,7 @@ static void genTexture(Texture *tex, int texgenId, void *params)
 		{
 			for (y=0; y<height; y++) {
 				for (x=0; x<width; x++) {
-					*dst++ = x ^ y;
+					*dst++ = (x ^ y) & 31;
 				}
 			}
 		}
@@ -66,15 +66,33 @@ static void genTexture(Texture *tex, int texgenId, void *params)
 	}
 }
 
-Texture* initGenTexture(int width, int height, int bpp, ubyte numPals, int texgenId, void *params)
+Texture* initGenTexture(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, void *params)
 {
 	Texture *tex;
 
 	int type = TEXTURE_TYPE_STATIC;
 	if (bpp <= 8 && numPals > 0) type |= TEXTURE_TYPE_PALLETIZED;
 
-	tex = initTexture(width, height, bpp, type, NULL, NULL, numPals);
+	tex = initTexture(width, height, bpp, type, NULL, pal, numPals);
 	genTexture(tex, texgenId, params);
 
 	return tex;
+}
+
+void eraseHalfTextureTriangleArea(Texture *tex, int eraseTriangleOrientation)
+{
+	switch(eraseTriangleOrientation)
+	{
+		case TRI_AREA_LR_TOP:
+		break;
+
+		case TRI_AREA_LR_BOTTOM:
+		break;
+
+		case TRI_AREA_RL_TOP:
+		break;
+
+		case TRI_AREA_RL_BOTTOM:
+		break;
+	}
 }
