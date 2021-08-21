@@ -25,7 +25,9 @@ typedef struct Texture
 }Texture;
 
 
-Texture* initTexture(int width, int height, int bpp, int type, ubyte *bmp, uint16 *pal, ubyte numPals);
+void setupTexture(int width, int height, int bpp, int type, ubyte *bmp, uint16 *pal, ubyte numPals, Texture *tex);
+Texture *initTextures(int width, int height, int bpp, int type, ubyte *bmp, uint16 *pal, ubyte numPals, ubyte numTextures);
+Texture *initTexture(int width, int height, int bpp, int type, ubyte *bmp, uint16 *pal, ubyte numPals);
 Texture *loadTexture(char *path);
 Texture *initFeedbackTexture(int posX, int posY, int width, int height, int bufferIndex);
 

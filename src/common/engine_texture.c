@@ -4,11 +4,8 @@
 #include "system_graphics.h"
 #include "engine_texture.h"
 
-
-Texture* initTexture(int width, int height, int bpp, int type, ubyte *bmp, uint16 *pal, ubyte numPals)
+void setupTexture(int width, int height, int bpp, int type, ubyte *bmp, uint16 *pal, ubyte numPals, Texture *tex)
 {
-	Texture *tex = (Texture*)AllocMem(sizeof(Texture), MEMTYPE_ANY);
-
 	// Can't have palettized texture if bpp over 8
 	if (bpp > 8 || numPals == 0) {
 		type &= ~TEXTURE_TYPE_PALLETIZED;
@@ -35,8 +32,23 @@ Texture* initTexture(int width, int height, int bpp, int type, ubyte *bmp, uint1
 	} else {
 		tex->bitmap = bmp;
 	}
+}
 
-	return tex;
+Texture* initTextures(int width, int height, int bpp, int type, ubyte *bmp, uint16 *pal, ubyte numPals, ubyte numTextures)
+{
+	int i;
+	Texture *texs = (Texture*)AllocMem(numTextures * sizeof(Texture), MEMTYPE_ANY);
+
+	for (i=0; i<numTextures; ++i) {
+		setupTexture(width, height, bpp, type, bmp, pal, numPals, &texs[i]);
+	}
+
+	return texs;
+}
+
+Texture *initTexture(int width, int height, int bpp, int type, ubyte *bmp, uint16 *pal, ubyte numPals)
+{
+	return initTextures(width, height, bpp, type, bmp, pal, numPals, 1);
 }
 
 Texture *initFeedbackTexture(int posX, int posY, int width, int height, int bufferIndex)

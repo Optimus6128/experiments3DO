@@ -19,7 +19,7 @@
 static Mesh *pyramidMesh1, *pyramidMesh2;
 static uint16 *pyramidPal;
 
-static Texture *xorTex1, *xorTex2;
+static Texture *xorTexs;
 
 static int rotX=0, rotY=0, rotZ=0;
 static int zoom=2048;
@@ -64,21 +64,19 @@ static void inputScript()
 
 void effectInit()
 {
-	pyramidPal = (uint16*)AllocMem(32 * sizeof(uint16), MEMTYPE_ANY);
+	pyramidPal = (uint16*)AllocMem(2 * 32 * sizeof(uint16), MEMTYPE_ANY);
 	setPal(0,31, 48,64,192, 160,64,32, pyramidPal, 3);
+	setPal(32,63, 48,64,192, 160,64,32, pyramidPal, 3);
 
-	xorTex1 = initGenTexture(128, 128, 8, pyramidPal, 1, TEXGEN_XOR, NULL);
-	xorTex2 = initGenTexture(128, 128, 8, pyramidPal, 1, TEXGEN_XOR, NULL);
+	xorTexs = initGenTexturesTriangleHack(128,128,8,pyramidPal,2,TEXGEN_XOR, NULL);
 
-	eraseHalfTextureTriangleArea(xorTex2, TRI_AREA_LR_TOP);
-
-	pyramidMesh1 = initGenMesh(1024, xorTex1, MESH_OPTIONS_DEFAULT, MESH_PYRAMID1, NULL);
-	pyramidMesh2 = initGenMesh(1024, xorTex2, MESH_OPTIONS_DEFAULT, MESH_PYRAMID2, NULL);
+	pyramidMesh1 = initGenMesh(1024, xorTexs, MESH_OPTIONS_DEFAULT, MESH_PYRAMID1, NULL);
+	pyramidMesh2 = initGenMesh(1024, xorTexs, MESH_OPTIONS_DEFAULT, MESH_PYRAMID2, NULL);
 }
 
 void effectRun()
 {
-	Mesh *mesh = pyramidMesh1;
+	Mesh *mesh = pyramidMesh2;
 
 	inputScript();
 	

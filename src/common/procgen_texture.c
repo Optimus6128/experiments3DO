@@ -6,7 +6,51 @@
 #include "procgen_texture.h"
 #include "mathutil.h"
 
-static void genTexture(Texture *tex, int texgenId, void *params)
+
+enum {TRI_AREA_LR_TOP, TRI_AREA_LR_BOTTOM, TRI_AREA_RL_TOP, TRI_AREA_RL_BOTTOM};
+
+static void eraseHalfTextureTriangleArea(Texture *tex, int eraseTriangleOrientation, int eraseColor)
+{
+	int x,y;
+
+	const int width = tex->width;
+	const int height = tex->height;
+
+	// very specific works only for 8bpp (32 pal colors) now
+	ubyte *dst = tex->bitmap;
+	for (y=0; y<height; ++y) {
+		for (x=0; x<width; ++x) {
+			bool erase = false;
+			switch(eraseTriangleOrientation)
+			{
+				case TRI_AREA_LR_TOP:
+					erase = (width - x < y);
+				break;
+
+				case TRI_AREA_LR_BOTTOM:
+					erase = (width - x > y);
+				break;
+
+				case TRI_AREA_RL_TOP:
+					erase = (x < y);
+				break;
+
+				case TRI_AREA_RL_BOTTOM:
+					erase = (x > y);
+				break;
+			}
+			if (erase) {
+				*dst = eraseColor;
+			} else {
+				if (*dst==eraseColor) *dst = (eraseColor + 1) & 31;
+			}
+			dst++;
+		}
+	}
+	tex->pal[32+eraseColor] = 0;
+}
+
+static void genTexture(int texgenId, void *params, Texture *tex)
 {
 	int i, x, y, xc, yc, c;
 
@@ -74,25 +118,22 @@ Texture* initGenTexture(int width, int height, int bpp, uint16 *pal, ubyte numPa
 	if (bpp <= 8 && numPals > 0) type |= TEXTURE_TYPE_PALLETIZED;
 
 	tex = initTexture(width, height, bpp, type, NULL, pal, numPals);
-	genTexture(tex, texgenId, params);
+	genTexture(texgenId, params, tex);
 
 	return tex;
 }
 
-void eraseHalfTextureTriangleArea(Texture *tex, int eraseTriangleOrientation)
+Texture *initGenTexturesTriangleHack(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, void *params)
 {
-	switch(eraseTriangleOrientation)
-	{
-		case TRI_AREA_LR_TOP:
-		break;
+	Texture *tex;
 
-		case TRI_AREA_LR_BOTTOM:
-		break;
+	int type = TEXTURE_TYPE_STATIC;
+	if (bpp <= 8 && numPals > 0) type |= TEXTURE_TYPE_PALLETIZED;
 
-		case TRI_AREA_RL_TOP:
-		break;
+	tex = initTexture(width, height, bpp, type, NULL, pal, numPals);
+	genTexture(texgenId, params, &tex[0]);
+	genTexture(texgenId, params, &tex[1]);
+	eraseHalfTextureTriangleArea(&tex[1], TRI_AREA_LR_TOP, 0);
 
-		case TRI_AREA_RL_BOTTOM:
-		break;
-	}
+	return tex;
 }

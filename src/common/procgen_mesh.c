@@ -64,23 +64,20 @@ Mesh *initGenMesh(int size, Texture *tex, int optionsFlags, int meshgenId, void 
 
 		case MESH_PYRAMID1:
 		{
-			ms = initMesh(8, 6);
+			ms = initMesh(5, 5);
 
 			ms->vrtx[0].x = -size/2; ms->vrtx[0].y = -size/2; ms->vrtx[0].z = -size/2;
 			ms->vrtx[1].x = size/2; ms->vrtx[1].y = -size/2; ms->vrtx[1].z = -size/2;
-			ms->vrtx[2].x = size/2; ms->vrtx[2].y = size/2; ms->vrtx[2].z = -size/2;
-			ms->vrtx[3].x = -size/2; ms->vrtx[3].y = size/2; ms->vrtx[3].z = -size/2;
-			ms->vrtx[4].x = size/2; ms->vrtx[4].y = -size/2; ms->vrtx[4].z = size/2;
-			ms->vrtx[5].x = -size/2; ms->vrtx[5].y = -size/2; ms->vrtx[5].z = size/2;
-			ms->vrtx[6].x = -size/2; ms->vrtx[6].y = size/2; ms->vrtx[6].z = size/2;
-			ms->vrtx[7].x = size/2; ms->vrtx[7].y = size/2; ms->vrtx[7].z = size/2;
+			ms->vrtx[2].x = size/2; ms->vrtx[2].y = -size/2; ms->vrtx[2].z = size/2;
+			ms->vrtx[3].x = -size/2; ms->vrtx[3].y = -size/2; ms->vrtx[3].z = size/2;
+			ms->vrtx[4].x = 0; ms->vrtx[4].y = size/2; ms->vrtx[4].z = 0;
 
-			ms->index[0] = 0; ms->index[1] = 1; ms->index[2] = 2; ms->index[3] = 3;
-			ms->index[4] = 1; ms->index[5] = 4; ms->index[6] = 7; ms->index[7] = 2;
-			ms->index[8] = 4; ms->index[9] = 5; ms->index[10] = 6; ms->index[11] = 7;
-			ms->index[12] = 5; ms->index[13] = 0; ms->index[14] = 3; ms->index[15] = 6;
-			ms->index[16] = 3; ms->index[17] = 2; ms->index[18] = 7; ms->index[19] = 6;
-			ms->index[20] = 5; ms->index[21] = 4; ms->index[22] = 1; ms->index[23] = 0;
+
+			ms->index[0] = 3; ms->index[1] = 2; ms->index[2] = 1; ms->index[3] = 0;
+			ms->index[4] = 0; ms->index[5] = 1; ms->index[6] = 4; ms->index[7] = 4;
+			ms->index[8] = 1; ms->index[9] = 2; ms->index[10] = 4; ms->index[11] = 4;
+			ms->index[12] = 2; ms->index[13] = 3; ms->index[14] = 4; ms->index[15] = 4;
+			ms->index[16] = 3; ms->index[17] = 0; ms->index[18] = 4; ms->index[19] = 4;
 
 			for (i=0; i<ms->quadsNum; i++) {
 				ms->quad[i].textureId = 0;
@@ -91,27 +88,34 @@ Mesh *initGenMesh(int size, Texture *tex, int optionsFlags, int meshgenId, void 
 
 		case MESH_PYRAMID2:
 		{
-			ms = initMesh(8, 6);
+			ms = initMesh(9, 5);
 
 			ms->vrtx[0].x = -size/2; ms->vrtx[0].y = -size/2; ms->vrtx[0].z = -size/2;
 			ms->vrtx[1].x = size/2; ms->vrtx[1].y = -size/2; ms->vrtx[1].z = -size/2;
-			ms->vrtx[2].x = size/2; ms->vrtx[2].y = size/2; ms->vrtx[2].z = -size/2;
-			ms->vrtx[3].x = -size/2; ms->vrtx[3].y = size/2; ms->vrtx[3].z = -size/2;
-			ms->vrtx[4].x = size/2; ms->vrtx[4].y = -size/2; ms->vrtx[4].z = size/2;
-			ms->vrtx[5].x = -size/2; ms->vrtx[5].y = -size/2; ms->vrtx[5].z = size/2;
-			ms->vrtx[6].x = -size/2; ms->vrtx[6].y = size/2; ms->vrtx[6].z = size/2;
-			ms->vrtx[7].x = size/2; ms->vrtx[7].y = size/2; ms->vrtx[7].z = size/2;
+			ms->vrtx[2].x = size/2; ms->vrtx[2].y = -size/2; ms->vrtx[2].z = size/2;
+			ms->vrtx[3].x = -size/2; ms->vrtx[3].y = -size/2; ms->vrtx[3].z = size/2;
+			
+			ms->vrtx[4].x = size; ms->vrtx[4].y = size/2; ms->vrtx[4].z = 0;
+			ms->vrtx[5].x = 0; ms->vrtx[5].y = size/2; ms->vrtx[5].z = size;
+			ms->vrtx[6].x = -size; ms->vrtx[6].y = size/2; ms->vrtx[6].z = 0;
+			ms->vrtx[7].x = 0; ms->vrtx[7].y = size/2; ms->vrtx[7].z = -size;
+			
+			ms->vrtx[8].x = 0; ms->vrtx[8].y = size/2; ms->vrtx[8].z = 0;
 
-			ms->index[0] = 0; ms->index[1] = 1; ms->index[2] = 2; ms->index[3] = 3;
-			ms->index[4] = 1; ms->index[5] = 4; ms->index[6] = 7; ms->index[7] = 2;
-			ms->index[8] = 4; ms->index[9] = 5; ms->index[10] = 6; ms->index[11] = 7;
-			ms->index[12] = 5; ms->index[13] = 0; ms->index[14] = 3; ms->index[15] = 6;
-			ms->index[16] = 3; ms->index[17] = 2; ms->index[18] = 7; ms->index[19] = 6;
-			ms->index[20] = 5; ms->index[21] = 4; ms->index[22] = 1; ms->index[23] = 0;
+			ms->index[0] = 3; ms->index[1] = 2; ms->index[2] = 1; ms->index[3] = 0;
+			ms->index[4] = 0; ms->index[5] = 1; ms->index[6] = 4; ms->index[7] = 8;
+			ms->index[8] = 1; ms->index[9] = 2; ms->index[10] = 5; ms->index[11] = 8;
+			ms->index[12] = 2; ms->index[13] = 3; ms->index[14] = 6; ms->index[15] = 8;
+			ms->index[16] = 3; ms->index[17] = 0; ms->index[18] = 7; ms->index[19] = 8;
 
 			for (i=0; i<ms->quadsNum; i++) {
-				ms->quad[i].textureId = 0;
-				ms->quad[i].palId = 0;
+				if (i==0) {
+					ms->quad[i].textureId = 0;
+					ms->quad[i].palId = 0;
+				} else {
+					ms->quad[i].textureId = 1;
+					ms->quad[i].palId = 1;
+				}
 			}
 		}
 		break;
