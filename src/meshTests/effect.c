@@ -16,6 +16,7 @@
 #include "procgen_texture.h"
 
 
+static Mesh *pyramidMesh;
 static Mesh *pyramidMesh1, *pyramidMesh2;
 static uint16 *pyramidPal;
 
@@ -26,6 +27,7 @@ static int zoom=2048;
 
 const int rotVel = 1;
 const int zoomVel = 16;
+
 
 static void inputScript()
 {
@@ -53,6 +55,14 @@ static void inputScript()
 		rotZ -= rotVel;
 	}
 
+	if (isJoyButtonPressedOnce(JOY_BUTTON_C)) {
+		if (pyramidMesh == pyramidMesh1) {
+			pyramidMesh = pyramidMesh2;
+		} else {
+			pyramidMesh = pyramidMesh1;
+		}
+	}
+
 	if (isJoyButtonPressed(JOY_BUTTON_LPAD)) {
 		zoom += zoomVel;
 	}
@@ -72,17 +82,16 @@ void effectInit()
 
 	pyramidMesh1 = initGenMesh(1024, xorTexs, MESH_OPTIONS_DEFAULT, MESH_PYRAMID1, NULL);
 	pyramidMesh2 = initGenMesh(1024, xorTexs, MESH_OPTIONS_DEFAULT, MESH_PYRAMID2, NULL);
+	pyramidMesh = pyramidMesh1;
 }
 
 void effectRun()
 {
-	Mesh *mesh = pyramidMesh2;
-
 	inputScript();
 	
-	setMeshPosition(mesh, 0, 0, zoom);
-	setMeshRotation(mesh, rotX, rotY, rotZ);
+	setMeshPosition(pyramidMesh, 0, 0, zoom);
+	setMeshRotation(pyramidMesh, rotX, rotY, rotZ);
 
-	transformGeometry(mesh);
-	renderTransformedGeometry(mesh);
+	transformGeometry(pyramidMesh);
+	renderTransformedGeometry(pyramidMesh);
 }

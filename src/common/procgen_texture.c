@@ -47,7 +47,7 @@ static void eraseHalfTextureTriangleArea(Texture *tex, int eraseTriangleOrientat
 			dst++;
 		}
 	}
-	tex->pal[32+eraseColor] = 0;
+	tex->pal[32 + eraseColor] = 0;
 }
 
 static void genTexture(int texgenId, void *params, Texture *tex)
@@ -110,29 +110,32 @@ static void genTexture(int texgenId, void *params, Texture *tex)
 	}
 }
 
-Texture* initGenTexture(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, void *params)
+static Texture* initGenTextures(int width, int height, int bpp, uint16 *pal, ubyte numPals, ubyte numTextures, int texgenId, void *params)
 {
+	int i;
 	Texture *tex;
 
 	int type = TEXTURE_TYPE_STATIC;
 	if (bpp <= 8 && numPals > 0) type |= TEXTURE_TYPE_PALLETIZED;
 
-	tex = initTexture(width, height, bpp, type, NULL, pal, numPals);
-	genTexture(texgenId, params, tex);
+	tex = initTextures(width, height, bpp, type, NULL, pal, numPals, numTextures);
+	for (i=0; i<numTextures; ++i) {
+		genTexture(texgenId, params, &tex[i]);
+	}
 
 	return tex;
+}
+
+Texture* initGenTexture(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, void *params)
+{
+	return initGenTextures(width, height, bpp, pal, numPals, 1, texgenId, params);
 }
 
 Texture *initGenTexturesTriangleHack(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, void *params)
 {
 	Texture *tex;
 
-	int type = TEXTURE_TYPE_STATIC;
-	if (bpp <= 8 && numPals > 0) type |= TEXTURE_TYPE_PALLETIZED;
-
-	tex = initTexture(width, height, bpp, type, NULL, pal, numPals);
-	genTexture(texgenId, params, &tex[0]);
-	genTexture(texgenId, params, &tex[1]);
+	tex = initGenTextures(width, height, bpp, pal, numPals, 2, texgenId, params);
 	eraseHalfTextureTriangleArea(&tex[1], TRI_AREA_LR_TOP, 0);
 
 	return tex;
