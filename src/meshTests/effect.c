@@ -80,6 +80,8 @@ void effectInit()
 	pyramidMesh[0] = initGenMesh(1024, xorTexs, MESH_OPTIONS_DEFAULT, MESH_PYRAMID1, NULL);
 	pyramidMesh[1] = initGenMesh(1024, xorTexs, MESH_OPTIONS_DEFAULT, MESH_PYRAMID2, NULL);
 	pyramidMesh[2] = initGenMesh(1024, xorTexs2, MESH_OPTIONS_DEFAULT, MESH_PYRAMID3, NULL);
+
+	setMeshTransparency(pyramidMesh[1], true);
 }
 
 void effectRun()

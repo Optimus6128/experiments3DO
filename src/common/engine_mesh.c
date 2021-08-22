@@ -118,6 +118,11 @@ void setMeshTranslucency(Mesh *ms, bool enable)
 	}
 }
 
+void setMeshTransparency(Mesh *ms, bool enable)
+{
+	setMeshCELflags(ms, CCB_BGND, !enable);
+}
+
 Mesh* initMesh(int vrtxNum, int quadsNum)
 {
 	Mesh *ms = (Mesh*)AllocMem(sizeof(Mesh), MEMTYPE_ANY);
