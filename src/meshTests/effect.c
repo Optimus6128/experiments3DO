@@ -15,11 +15,14 @@
 #include "procgen_mesh.h"
 #include "procgen_texture.h"
 
+#include "sprite_engine.h"
+
 
 static Mesh *pyramidMesh[3];
 static uint16 *pyramidPal;
 
 static Texture *xorTexs, *xorTexs2;
+static Sprite *sprTexture[3];
 
 static int rotX=0, rotY=0, rotZ=0;
 static int zoom=2048;
@@ -68,14 +71,45 @@ static void inputScript()
 	}
 }
 
+static void renderText()
+{
+	char title[10];
+
+	sprintf(title, "Method %d\0", pyramidMeshIndex+1);
+
+	drawText(8,224, title);
+}
+
+static void renderTexture()
+{
+	drawSprite(sprTexture[pyramidMeshIndex]);
+}
+
 void effectInit()
 {
+	int i;
+
+	const int texWidth = 128;
+	const int texHeight = texWidth;
+
 	pyramidPal = (uint16*)AllocMem(2 * 32 * sizeof(uint16), MEMTYPE_ANY);
 	setPal(0,31, 48,64,192, 160,64,32, pyramidPal, 3);
 	setPal(32,63, 48,64,192, 160,64,32, pyramidPal, 3);
 
-	xorTexs = initGenTexturesTriangleHack(128,128,8,pyramidPal,2,TEXGEN_XOR, NULL);
-	xorTexs2 = initGenTexturesTriangleHack2(128,128,8,pyramidPal,2,TEXGEN_XOR, NULL);
+	xorTexs = initGenTexturesTriangleHack(texWidth,texHeight,8,pyramidPal,2,TEXGEN_XOR, NULL);
+	xorTexs2 = initGenTexturesTriangleHack2(texWidth,texHeight,8,pyramidPal,2,TEXGEN_XOR, NULL);
+
+	sprTexture[0] = newSprite(texWidth, texHeight, 8, CREATECEL_CODED, pyramidPal, xorTexs[0].bitmap);
+	sprTexture[1] = newSprite(texWidth, texHeight, 8, CREATECEL_CODED, &pyramidPal[32], xorTexs[1].bitmap);
+	sprTexture[2] = newSprite(texWidth, texHeight, 8, CREATECEL_CODED, pyramidPal, xorTexs2[1].bitmap);
+
+	for (i=0; i<3; ++i) {
+		sprTexture[i]->angle = 127;
+		sprTexture[i]->zoom = 127;
+		sprTexture[i]->posX = 280;
+		sprTexture[i]->posY = 40;
+		mapZoomRotateSprite(sprTexture[i]);
+	}
 
 	pyramidMesh[0] = initGenMesh(1024, xorTexs, MESH_OPTIONS_DEFAULT, MESH_PYRAMID1, NULL);
 	pyramidMesh[1] = initGenMesh(1024, xorTexs, MESH_OPTIONS_DEFAULT, MESH_PYRAMID2, NULL);
@@ -95,4 +129,7 @@ void effectRun()
 
 	transformGeometry(mesh);
 	renderTransformedGeometry(mesh);
+
+	renderTexture();
+	renderText();
 }
