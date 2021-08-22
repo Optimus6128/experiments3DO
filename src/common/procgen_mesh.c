@@ -120,6 +120,34 @@ Mesh *initGenMesh(int size, Texture *tex, int optionsFlags, int meshgenId, void 
 		}
 		break;
 
+		case MESH_PYRAMID3:
+		{
+			ms = initMesh(5, 5);
+
+			ms->vrtx[0].x = -size/2; ms->vrtx[0].y = -size/2; ms->vrtx[0].z = -size/2;
+			ms->vrtx[1].x = size/2; ms->vrtx[1].y = -size/2; ms->vrtx[1].z = -size/2;
+			ms->vrtx[2].x = size/2; ms->vrtx[2].y = -size/2; ms->vrtx[2].z = size/2;
+			ms->vrtx[3].x = -size/2; ms->vrtx[3].y = -size/2; ms->vrtx[3].z = size/2;
+			ms->vrtx[4].x = 0; ms->vrtx[4].y = size/2; ms->vrtx[4].z = 0;
+
+
+			ms->index[0] = 3; ms->index[1] = 2; ms->index[2] = 1; ms->index[3] = 0;
+			ms->index[4] = 0; ms->index[5] = 1; ms->index[6] = 4; ms->index[7] = 4;
+			ms->index[8] = 1; ms->index[9] = 2; ms->index[10] = 4; ms->index[11] = 4;
+			ms->index[12] = 2; ms->index[13] = 3; ms->index[14] = 4; ms->index[15] = 4;
+			ms->index[16] = 3; ms->index[17] = 0; ms->index[18] = 4; ms->index[19] = 4;
+
+			for (i=0; i<ms->quadsNum; i++) {
+				if (i==0) {
+					ms->quad[i].textureId = 0;
+				} else {
+					ms->quad[i].textureId = 1;
+				}
+				ms->quad[i].palId = 0;
+			}
+		}
+		break;
+
 		case MESH_GRID:
 		{
 			const int divisions = *((int*)params);

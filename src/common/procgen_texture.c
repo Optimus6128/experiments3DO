@@ -50,6 +50,30 @@ static void eraseHalfTextureTriangleArea(Texture *tex, int eraseTriangleOrientat
 	tex->pal[32 + eraseColor] = 0;
 }
 
+void squishTextureToTriangleArea(Texture *tex, int eraseTriangleOrientation)
+{
+	int x,y;
+
+	const int width = tex->width;
+	const int height = tex->height;
+
+	ubyte *src = tex->bitmap;
+	ubyte *dst = tex->bitmap;
+	ubyte *tempBuff = (ubyte*)AllocMem(width, MEMTYPE_TRACKSIZE);
+
+	// I will do one triangle orientation for now
+	for (y=0; y<height; ++y) {
+		memcpy(tempBuff, src, width);
+		for (x=0; x<width; ++x) {
+			const int xp = (x * (height - y)) / height;
+			*dst++ = *(tempBuff + xp);
+		}
+		src += width;
+	}
+
+	FreeMem(tempBuff, -1);
+}
+
 static void genTexture(int texgenId, void *params, Texture *tex)
 {
 	int i, x, y, xc, yc, c;
@@ -137,6 +161,16 @@ Texture *initGenTexturesTriangleHack(int width, int height, int bpp, uint16 *pal
 
 	tex = initGenTextures(width, height, bpp, pal, numPals, 2, texgenId, params);
 	eraseHalfTextureTriangleArea(&tex[1], TRI_AREA_LR_TOP, 0);
+
+	return tex;
+}
+
+Texture *initGenTexturesTriangleHack2(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, void *params)
+{
+	Texture *tex;
+
+	tex = initGenTextures(width, height, bpp, pal, numPals, 2, texgenId, params);
+	squishTextureToTriangleArea(&tex[1], TRI_AREA_LR_TOP);
 
 	return tex;
 }

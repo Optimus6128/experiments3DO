@@ -16,11 +16,10 @@
 #include "procgen_texture.h"
 
 
-static Mesh *pyramidMesh;
-static Mesh *pyramidMesh1, *pyramidMesh2;
+static Mesh *pyramidMesh[3];
 static uint16 *pyramidPal;
 
-static Texture *xorTexs;
+static Texture *xorTexs, *xorTexs2;
 
 static int rotX=0, rotY=0, rotZ=0;
 static int zoom=2048;
@@ -28,6 +27,7 @@ static int zoom=2048;
 const int rotVel = 1;
 const int zoomVel = 16;
 
+static int pyramidMeshIndex = 0;
 
 static void inputScript()
 {
@@ -56,11 +56,7 @@ static void inputScript()
 	}
 
 	if (isJoyButtonPressedOnce(JOY_BUTTON_C)) {
-		if (pyramidMesh == pyramidMesh1) {
-			pyramidMesh = pyramidMesh2;
-		} else {
-			pyramidMesh = pyramidMesh1;
-		}
+		pyramidMeshIndex = (pyramidMeshIndex + 1) % 3;
 	}
 
 	if (isJoyButtonPressed(JOY_BUTTON_LPAD)) {
@@ -79,19 +75,22 @@ void effectInit()
 	setPal(32,63, 48,64,192, 160,64,32, pyramidPal, 3);
 
 	xorTexs = initGenTexturesTriangleHack(128,128,8,pyramidPal,2,TEXGEN_XOR, NULL);
+	xorTexs2 = initGenTexturesTriangleHack2(128,128,8,pyramidPal,2,TEXGEN_XOR, NULL);
 
-	pyramidMesh1 = initGenMesh(1024, xorTexs, MESH_OPTIONS_DEFAULT, MESH_PYRAMID1, NULL);
-	pyramidMesh2 = initGenMesh(1024, xorTexs, MESH_OPTIONS_DEFAULT, MESH_PYRAMID2, NULL);
-	pyramidMesh = pyramidMesh1;
+	pyramidMesh[0] = initGenMesh(1024, xorTexs, MESH_OPTIONS_DEFAULT, MESH_PYRAMID1, NULL);
+	pyramidMesh[1] = initGenMesh(1024, xorTexs, MESH_OPTIONS_DEFAULT, MESH_PYRAMID2, NULL);
+	pyramidMesh[2] = initGenMesh(1024, xorTexs2, MESH_OPTIONS_DEFAULT, MESH_PYRAMID3, NULL);
 }
 
 void effectRun()
 {
+	Mesh *mesh = pyramidMesh[pyramidMeshIndex];
+
 	inputScript();
 	
-	setMeshPosition(pyramidMesh, 0, 0, zoom);
-	setMeshRotation(pyramidMesh, rotX, rotY, rotZ);
+	setMeshPosition(mesh, 0, 0, zoom);
+	setMeshRotation(mesh, rotX, rotY, rotZ);
 
-	transformGeometry(pyramidMesh);
-	renderTransformedGeometry(pyramidMesh);
+	transformGeometry(mesh);
+	renderTransformedGeometry(mesh);
 }
