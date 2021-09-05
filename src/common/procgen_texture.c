@@ -47,6 +47,7 @@ static void eraseHalfTextureTriangleArea(Texture *tex, int eraseTriangleOrientat
 			dst++;
 		}
 	}
+	// COMMENT OUT PALETTE BUG
 	tex->pal[32 + eraseColor] = 0;
 }
 
@@ -71,6 +72,7 @@ void squishTextureToTriangleArea(Texture *tex, int eraseTriangleOrientation)
 		src += width;
 	}
 
+	// COMMENT OUT PALETTE BUG
 	FreeMem(tempBuff, -1);
 }
 
@@ -160,6 +162,7 @@ Texture *initGenTexturesTriangleHack(int width, int height, int bpp, uint16 *pal
 	Texture *tex;
 
 	tex = initGenTextures(width, height, bpp, pal, numPals, 2, texgenId, params);
+	// COMMENT OUT PALETTE BUG
 	eraseHalfTextureTriangleArea(&tex[1], TRI_AREA_LR_TOP, 0);
 
 	return tex;
@@ -170,6 +173,7 @@ Texture *initGenTexturesTriangleHack2(int width, int height, int bpp, uint16 *pa
 	Texture *tex;
 
 	tex = initGenTextures(width, height, bpp, pal, numPals, 2, texgenId, params);
+	// COMMENT OUT PALETTE BUG
 	squishTextureToTriangleArea(&tex[1], TRI_AREA_LR_TOP);
 
 	return tex;

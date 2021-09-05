@@ -19,7 +19,6 @@
 static Sprite *unpackedRain[RAIN_LAYERS_NUM];
 static Sprite *packedRain[RAIN_LAYERS_NUM];
 static ubyte *unpackedRainBmp[RAIN_LAYERS_NUM];
-static ubyte *packedRainData[RAIN_LAYERS_NUM];
 static uint16 pal2[4];
 
 static bool showPackedRain = false;
@@ -67,8 +66,7 @@ void effectInit()
 
 	for (i=0; i<RAIN_LAYERS_NUM; ++i) {
 		unpackedRain[i] = newSprite(RAIN_LAYER_WIDTH, RAIN_LAYER_HEIGHT, 2, CREATECEL_CODED, pal2, unpackedRainBmp[i]);
-		packedRainData[i] = NULL;
-		packedRain[i] = newPackedSprite(RAIN_LAYER_WIDTH, RAIN_LAYER_HEIGHT, 2, CREATECEL_CODED, pal2, unpackedRainBmp[i], packedRainData[i]);
+		packedRain[i] = newPackedSprite(RAIN_LAYER_WIDTH, RAIN_LAYER_HEIGHT, 2, CREATECEL_CODED, pal2, unpackedRainBmp[i], NULL, 0);
 		totalPackedPercentage += packPercentage;
 	}
 }

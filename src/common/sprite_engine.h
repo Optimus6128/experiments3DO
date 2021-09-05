@@ -18,7 +18,7 @@ typedef struct Sprite
 
 
 Sprite *newSprite(int width, int height, int bpp, int type, uint16 *pal, ubyte *bmp);
-Sprite *newPackedSprite(int width, int height, int bpp, int type, uint16 *pal, ubyte *unpackedBmp, ubyte *packedData);
+Sprite *newPackedSprite(int width, int height, int bpp, int type, uint16 *pal, ubyte *unpackedBmp, ubyte *packedData, int transparentColor);
 
 void setPalette(Sprite *spr, uint16* pal);
 void setSpriteAlpha(Sprite *spr, bool enabled);

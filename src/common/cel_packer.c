@@ -75,7 +75,7 @@ static void extractPixelsToChunkyBytes(ubyte *unpackedLine, int width, int bpp)
 	}
 }
 
-static bool isChunkyPixelTransparent(int pixel, int type, int bpp, uint16 *pal)
+static bool isChunkyPixelTransparent(int pixel, int type, int bpp, uint16 *pal, int transparentColor)
 {
 	int palMax;
 	int palBpp = bpp;
@@ -84,11 +84,11 @@ static bool isChunkyPixelTransparent(int pixel, int type, int bpp, uint16 *pal)
 	
 	switch (type) {
 	case CREATECEL_CODED:
-		return (pal[pixel & palMax] == 0);
+		return (pal[pixel & palMax] == transparentColor);
 		break;
 
 	case CREATECEL_UNCODED:
-		return (pixel == 0);
+		return (pixel == transparentColor);
 		break;
 
 	default:
@@ -97,7 +97,7 @@ static bool isChunkyPixelTransparent(int pixel, int type, int bpp, uint16 *pal)
 	}
 }
 
-static pixelRepeatsType* getPixelRepeats(int *src, int length, int bpp, int type, uint16 *pal)
+static pixelRepeatsType* getPixelRepeats(int *src, int length, int bpp, int type, uint16 *pal, int transparentColor)
 {
 	static pixelRepeatsType prt;
 
@@ -111,7 +111,7 @@ static pixelRepeatsType* getPixelRepeats(int *src, int length, int bpp, int type
 		}
 	}
 
-	if (isChunkyPixelTransparent(pixel, type, bpp, pal)) {
+	if (isChunkyPixelTransparent(pixel, type, bpp, pal, transparentColor)) {
 		prt.type = PACK_TRANSPARENT;
 	} else {
 		prt.type = PACK_PACKED;
@@ -121,7 +121,7 @@ static pixelRepeatsType* getPixelRepeats(int *src, int length, int bpp, int type
 				prt.type = PACK_LITERAL;
 				--src;
 				pixel = *src;
-				if (!isChunkyPixelTransparent(pixel, type, bpp, pal)) {
+				if (!isChunkyPixelTransparent(pixel, type, bpp, pal, transparentColor)) {
 					for (x=2; x<length; ++x) {
 						if (count > 2) {
 							x -= count;
@@ -228,7 +228,7 @@ static void padLineBitsAndWriteAddressOffset(int addressOffsetIndex, int bpp)
 		tempBuff[addressOffsetIndex] = wordOffset & 255;
 }
 
-ubyte* createPackedDataFromUnpackedBmp(int width, int height, int bpp, int type, uint16 *pal, ubyte *unpackedBmp)
+ubyte* createPackedDataFromUnpackedBmp(int width, int height, int bpp, int type, uint16 *pal, ubyte *unpackedBmp, int transparentColor)
 {
 	int x, y;
 	int countBytes = 0;
@@ -251,7 +251,7 @@ ubyte* createPackedDataFromUnpackedBmp(int width, int height, int bpp, int type,
 			pixelRepeatsType *prt;
 			int length = width - x;
 			if (length > 64) length = 64;
-			prt = getPixelRepeats(&tempLine[x], length, bpp, type, pal);
+			prt = getPixelRepeats(&tempLine[x], length, bpp, type, pal, transparentColor);
 			writePixelRepeatToTempBuff(x, bpp, prt);
 			x += prt->pixelRepeats;
 		}

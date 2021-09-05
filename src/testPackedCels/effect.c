@@ -31,19 +31,16 @@
 static Sprite *unpackedSpr4;
 static Sprite *packedSpr4;
 static ubyte unpackedBmp4[SPRITE4_SIZE/2];
-static ubyte *packedData4 = NULL;
 static uint16 pal4[16];
 static uint16 pal8[32];
 
 static Sprite *unpackedSpr8;
 static Sprite *packedSpr8;
 static ubyte unpackedBmp8[SPRITE8_SIZE];
-static ubyte *packedData8 = NULL;
 
 static Sprite *unpackedSpr16;
 static Sprite *packedSpr16;
 static uint16 unpackedBmp16[SPRITE16_SIZE];
-static ubyte *packedData16 = NULL;
 
 static bool showPacked4 = false;
 static bool showPacked8 = false;
@@ -141,7 +138,7 @@ static void effectInit4()
 	generateUnpackedBmp4();
 
 	unpackedSpr4 = newSprite(SPRITE4_WIDTH, SPRITE4_HEIGHT, 4, CREATECEL_CODED, pal4, unpackedBmp4);
-	packedSpr4 = newPackedSprite(SPRITE4_WIDTH, SPRITE4_HEIGHT, 4, CREATECEL_CODED, pal4, unpackedBmp4, packedData4);
+	packedSpr4 = newPackedSprite(SPRITE4_WIDTH, SPRITE4_HEIGHT, 4, CREATECEL_CODED, pal4, unpackedBmp4, NULL, 0);
 	packedPer4 = packPercentage;
 }
 
@@ -150,7 +147,7 @@ static void effectInit8()
 	generateUnpackedBmp8();
 
 	unpackedSpr8 = newSprite(SPRITE8_WIDTH, SPRITE8_HEIGHT, 8, CREATECEL_CODED, pal8, unpackedBmp8);
-	packedSpr8 = newPackedSprite(SPRITE8_WIDTH, SPRITE8_HEIGHT, 8, CREATECEL_CODED, pal8, unpackedBmp8, packedData8);
+	packedSpr8 = newPackedSprite(SPRITE8_WIDTH, SPRITE8_HEIGHT, 8, CREATECEL_CODED, pal8, unpackedBmp8, NULL, 0);
 	packedPer8 = packPercentage;
 }
 
@@ -159,7 +156,7 @@ static void effectInit16()
 	generateUnpackedBmp16();
 
 	unpackedSpr16 = newSprite(SPRITE16_WIDTH, SPRITE16_HEIGHT, 16, CREATECEL_UNCODED, NULL, (ubyte*)unpackedBmp16);
-	packedSpr16 = newPackedSprite(SPRITE16_WIDTH, SPRITE16_HEIGHT, 16, CREATECEL_UNCODED, NULL, (ubyte*)unpackedBmp16, packedData16);
+	packedSpr16 = newPackedSprite(SPRITE16_WIDTH, SPRITE16_HEIGHT, 16, CREATECEL_UNCODED, NULL, (ubyte*)unpackedBmp16, NULL, 0);
 	packedPer16 = packPercentage;
 }
 
