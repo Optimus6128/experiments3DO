@@ -62,7 +62,7 @@ static void fasterMapCel(CCB *c, Point *q)
 	c->ccb_HDDY = (hdy1 - hdy0) >> shrHeight;
 }
 
-static void createRotationMatrixValues(int rotX, int rotY, int rotZ, int *rotVecs)
+void createRotationMatrixValues(int rotX, int rotY, int rotZ, int *rotVecs)
 {
 	const int cosxr = icos[rotX & 255];
 	const int cosyr = icos[rotY & 255];

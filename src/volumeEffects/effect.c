@@ -387,6 +387,39 @@ void effectInit()
 	updateMaria();
 }
 
+
+static void drawCelInfo(CCB *cel)
+{
+	drawNumber(64,0, (int)cel->ccb_NextPtr);
+	drawNumber(8,8, (int)cel->ccb_SourcePtr);
+	drawNumber(8,16, (int)cel->ccb_PLUTPtr);
+
+	drawNumber(8,32, cel->ccb_XPos);
+	drawNumber(8,40, cel->ccb_YPos);
+	drawNumber(8,48, cel->ccb_HDX);
+	drawNumber(8,56, cel->ccb_HDY);
+	drawNumber(8,64, cel->ccb_VDX);
+	drawNumber(8,72, cel->ccb_VDY);
+	drawNumber(8,80, cel->ccb_HDDX);
+	drawNumber(8,88, cel->ccb_HDDY);
+
+	drawNumber(8,104, cel->ccb_PIXC);
+	drawNumber(8,112, cel->ccb_PRE0);
+	drawNumber(8,120, cel->ccb_PRE1);
+
+	drawNumber(8,136, cel->ccb_Width);
+	drawNumber(8,144, cel->ccb_Height);
+}
+
+static void transformDotsHw(int rotX, int rotY, int rotZ)
+{
+    mat33f16 rotMat;
+
+    createRotationMatrixValues(rotX, rotY, rotZ, (int*)rotMat);
+
+    MulManyVec3Mat33_F16((vec3f16*)tv, (vec3f16*)mv, rotMat, DOTS_NUM);
+}
+
 static void renderMariaQuads(bool backToFront)
 {
 	int z;
@@ -397,8 +430,8 @@ static void renderMariaQuads(bool backToFront)
 	// A lot of this code will be wiped out and replaced with mesh_procgen generating quad volume slices and then my 3D engine handling things instead
 	// Here in this old example, I have basically duplicated code that could be done from the engine.
 	// I am quickly changing things so that at least it can compile without errors after the big refactor, but it won't work yet.
-	const int shrWidth = 8;//getShr(DOTS_DEPTH);
-	const int shrHeight = 8;//getShr(DOTS_DEPTH);
+	const int shrWidth = getShr(DOTS_DEPTH);
+	const int shrHeight = getShr(DOTS_DEPTH);
 
 	posXtrans = getMousePosition().x;
 	posYtrans = getMousePosition().y;
@@ -410,23 +443,23 @@ static void renderMariaQuads(bool backToFront)
 
 	for (z=0; z<DOTS_DEPTH; ++z) {
 		pz = tvPtr->z + posZtrans;
-		q[0].x = (((tvPtr->x + posXtrans) / pz) >> (FP_CORE - PROJ_SHR)) + SCREEN_WIDTH / 2;
-		q[0].y = (((tvPtr->y + posYtrans) / pz) >> (FP_CORE - PROJ_SHR)) + SCREEN_HEIGHT / 2;
+		q[0].x = ((((tvPtr->x + posXtrans) << PROJ_SHR) / pz)) + SCREEN_WIDTH / 2;
+		q[0].y = ((((tvPtr->y + posYtrans) << PROJ_SHR) / pz)) + SCREEN_HEIGHT / 2;
 		tvPtr++;
 
 		pz = tvPtr->z + posZtrans;
-		q[1].x = (((tvPtr->x + posXtrans) / pz) >> (FP_CORE - PROJ_SHR)) + SCREEN_WIDTH / 2;
-		q[1].y = (((tvPtr->y + posYtrans) / pz) >> (FP_CORE - PROJ_SHR)) + SCREEN_HEIGHT / 2;
+		q[1].x = ((((tvPtr->x + posXtrans) << PROJ_SHR) / pz)) + SCREEN_WIDTH / 2;
+		q[1].y = ((((tvPtr->y + posYtrans) << PROJ_SHR) / pz)) + SCREEN_HEIGHT / 2;
 		tvPtr++;
 
 		pz = tvPtr->z + posZtrans;
-		q[3].x = (((tvPtr->x + posXtrans) / pz) >> (FP_CORE - PROJ_SHR)) + SCREEN_WIDTH / 2;
-		q[3].y = (((tvPtr->y + posYtrans) / pz) >> (FP_CORE - PROJ_SHR)) + SCREEN_HEIGHT / 2;
+		q[3].x = ((((tvPtr->x + posXtrans) << PROJ_SHR) / pz)) + SCREEN_WIDTH / 2;
+		q[3].y = ((((tvPtr->y + posYtrans) << PROJ_SHR) / pz)) + SCREEN_HEIGHT / 2;
 		tvPtr++;
 
 		pz = tvPtr->z + posZtrans;
-		q[2].x = (((tvPtr->x + posXtrans) / pz) >> (FP_CORE - PROJ_SHR)) + SCREEN_WIDTH / 2;
-		q[2].y = (((tvPtr->y + posYtrans) / pz) >> (FP_CORE - PROJ_SHR)) + SCREEN_HEIGHT / 2;
+		q[2].x = ((((tvPtr->x + posXtrans) << PROJ_SHR) / pz)) + SCREEN_WIDTH / 2;
+		q[2].y = ((((tvPtr->y + posYtrans) << PROJ_SHR) / pz)) + SCREEN_HEIGHT / 2;
 		tvPtr++;
 
 		if (backToFront) {
@@ -464,6 +497,8 @@ static void renderMariaQuads(bool backToFront)
 		}
 	}
 
+	//drawCelInfo(dotCel[0]);
+
 	drawCels(dotCel[0]);
 }
 
@@ -486,6 +521,8 @@ static void render()
 	rotXtrans = 0;
 	rotYtrans = advRotate;
 	rotZtrans = 0;
+
+    transformDotsHw(rotXtrans, rotYtrans, rotZtrans);
 
 	renderMariaQuads(true);
 
