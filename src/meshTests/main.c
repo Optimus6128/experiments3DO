@@ -4,6 +4,6 @@
 
 int main()
 {
-	coreInit(effectInit, CORE_DEFAULT | CORE_NO_CLEAR_FRAME);
+	coreInit(effectInit, CORE_DEFAULT);
 	coreRun(effectRun);
 }
