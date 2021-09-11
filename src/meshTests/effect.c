@@ -2,7 +2,7 @@
 #include "effect_pyramids.h"
 #include "effect_soft.h"
 
-static enum { MESH_EFFECT_PYRAMIDS, MESH_EFFECT_SOFT };
+enum { MESH_EFFECT_PYRAMIDS, MESH_EFFECT_SOFT };
 
 static int meshEffect = MESH_EFFECT_SOFT;
 

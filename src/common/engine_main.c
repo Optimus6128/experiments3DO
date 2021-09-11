@@ -5,6 +5,7 @@
 #include "engine_mesh.h"
 #include "engine_texture.h"
 #include "engine_main.h"
+#include "engine_soft.h"
 
 #include "system_graphics.h"
 
@@ -111,12 +112,7 @@ static void rotateVerticesHw(Mesh *ms)
 	MulManyVec3Mat33_F16((vec3f16*)vertices, (vec3f16*)ms->vrtx, rotMat, ms->vrtxNum);
 }
 
-static void renderTransformedGeometryCELs(Mesh *ms)
-{
-	drawCels(ms->quad[0].cel);
-}
-
-static void prepareTransformedGeometryCELs(Mesh *ms)
+static void prepareTransformedMeshCELs(Mesh *ms)
 {
 	int i, j=0;
 	int *indices = ms->index;
@@ -158,19 +154,31 @@ static void useMapCelFunctionFast(bool enable)
 	}
 }
 
-void transformGeometry(Mesh *ms)
+static void transformMesh(Mesh *ms)
 {
 	rotateVerticesHw(ms);
 	translateAndProjectVertices(ms);
 }
 
-void renderTransformedGeometry(Mesh *ms)
+static void renderTransformedMesh(Mesh *ms)
 {
 	useMapCelFunctionFast(ms->useFastMapCel);
 	useCPUtestPolygonOrder(ms->useCPUccwTest);
 
-	prepareTransformedGeometryCELs(ms);
-	renderTransformedGeometryCELs(ms);
+	prepareTransformedMeshCELs(ms);
+	drawCels(ms->quad[0].cel);
+}
+
+void renderMesh(Mesh *ms)
+{
+	transformMesh(ms);
+	renderTransformedMesh(ms);
+}
+
+void renderMeshSoft(Mesh *ms)
+{
+	transformMesh(ms);
+	renderTransformedMeshSoft(ms, vertices);
 }
 
 void setScreenDimensions(int w, int h)

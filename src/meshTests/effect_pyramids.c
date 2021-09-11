@@ -41,7 +41,6 @@ bool halfSizeBlur = false;
 
 static Sprite *scanlinesSpr;
 static ubyte scanlinesBmp[(SCANLINES_SPR_WIDTH * SCANLINES_SPR_HEIGHT) / 8];
-static ubyte *scanlinesPackedData = NULL;
 static uint16 scanlinesPal[2];
 
 static void inputScript()
@@ -209,8 +208,7 @@ void effectPyramidsRun()
 	setMeshPosition(mesh, getMousePosition().x, -getMousePosition().y, zoom);
 	setMeshRotation(mesh, rotX, rotY, rotZ);
 
-	transformGeometry(mesh);
-	renderTransformedGeometry(mesh);
+	renderMesh(mesh);
 
 	if (testBlurIdea) {
 		drawSprite(scanlinesSpr);

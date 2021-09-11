@@ -11,10 +11,10 @@
 
 void initEngine(void);
 
-void transformGeometry(Mesh *ms);
-void renderTransformedGeometry(Mesh *ms);
+void renderMesh(Mesh *ms);
+void renderMeshSoft(Mesh *ms);
 
-void createRotationMatrixValues(int rotX, int rotY, int rotZ, int *rotVecs);
+void createRotationMatrixValues(int rotX, int rotY, int rotZ, int *rotVecs);	// I will hide this again after I fix the volume
 
 void setScreenDimensions(int w, int h);
 

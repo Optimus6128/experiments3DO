@@ -149,8 +149,7 @@ void effectRun()
 		setScreenDimensions(FB_WIDTH, FB_HEIGHT);
 
 			drawSprite(bgndSpr);
-			transformGeometry(cubeMeshBack);
-			renderTransformedGeometry(cubeMeshBack);
+			renderMesh(cubeMeshBack);
 
 		switchBuffer(false);
 		setScreenDimensions(SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -163,8 +162,7 @@ void effectRun()
 	setMeshPosition(cubeMesh, 0, 0, 512);
 	setMeshRotation(cubeMesh, 0, time, 0);
 
-	transformGeometry(cubeMesh);
-	renderTransformedGeometry(cubeMesh);
+	renderMesh(cubeMesh);
 
 	if (hwFeedback)
 		drawText(320-32, 0, "HARD");

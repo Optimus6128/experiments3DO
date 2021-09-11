@@ -70,6 +70,5 @@ void effectSoftRun()
 	/*setMeshPosition(mesh, 0, 0, zoom);
 	setMeshRotation(mesh, rotX, rotY, rotZ);
 
-	transformGeometry(mesh);
-	renderTransformedGeometry(mesh);*/
+	renderMeshSoft(mesh);*/
 }

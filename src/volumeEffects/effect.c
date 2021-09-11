@@ -512,8 +512,7 @@ static void renderTorch()
 	torchMesh->rotY = rotYtrans;
 	torchMesh->rotZ = rotZtrans;
 
-	transformGeometry(torchMesh);
-	renderTransformedGeometry(torchMesh);
+	renderMesh(torchMesh);
 }
 
 static void render()
