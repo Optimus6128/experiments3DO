@@ -32,6 +32,8 @@ void mapZoomRotateSprite(Sprite *spr);
 void mapStretchSpriteX(Sprite *spr);
 void mapStretchSpriteY(Sprite *spr);
 
+void *getSpriteBitmapData(Sprite *spr);
+
 void drawSprite(Sprite *spr);
 
 #endif

@@ -24,6 +24,10 @@ static int zoom=2048;
 const int rotVel = 3;
 const int zoomVel = 32;
 
+static Mesh *testMesh;
+static Texture *xorTex;
+
+
 static void inputScript()
 {
 	if (isJoyButtonPressed(JOY_BUTTON_LEFT)) {
@@ -61,14 +65,16 @@ static void inputScript()
 
 void effectSoftInit()
 {
+	xorTex = initGenTexture(32,32,8,NULL,1,TEXGEN_XOR, NULL);
+	testMesh = initGenMesh(1024, xorTex, MESH_OPTIONS_DEFAULT, MESH_CUBE, NULL);
 }
 
 void effectSoftRun()
 {
 	inputScript();
 
-	/*setMeshPosition(mesh, 0, 0, zoom);
-	setMeshRotation(mesh, rotX, rotY, rotZ);
+	setMeshPosition(testMesh, 0, 0, zoom);
+	setMeshRotation(testMesh, rotX, rotY, rotZ);
 
-	renderMeshSoft(mesh);*/
+	renderMeshSoft(testMesh);
 }

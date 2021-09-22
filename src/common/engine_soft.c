@@ -12,6 +12,15 @@
 
 #include "mathutil.h"
 
+static Sprite *sprSoftBuffer;
+
+static ubyte softBuffer[SCREEN_WIDTH * SCREEN_HEIGHT];
+
+static void renderSoftQuadOnScreen()
+{
+	drawSprite(sprSoftBuffer);
+}
+
 static void renderMeshSoft(Mesh *ms, Vertex *vertices)
 {
 	Point quad[4];
@@ -37,9 +46,27 @@ void renderTransformedMeshSoft(Mesh *ms, Vertex *vertices)
 {
 	renderMeshSoft(ms, vertices);
 
-	//renderSoftQuadOnScreen
+	renderSoftQuadOnScreen();
+}
+
+static void testInitRandomTexture()
+{
+	const int size = sprSoftBuffer->width * sprSoftBuffer->height;
+	ubyte *sprData = (ubyte*)getSpriteBitmapData(sprSoftBuffer);
+	int i;
+
+	for (i=0; i<size; ++i) {
+		*sprData++ = rand() & 31;
+	}
 }
 
 void initEngineSoft()
 {
+	static uint16 softBufferPal[32];
+
+	setPal(0,31, 0,0,0, 255,255,255, softBufferPal, 3);
+
+	sprSoftBuffer = newSprite(SCREEN_WIDTH, SCREEN_HEIGHT, 8, CREATECEL_CODED, softBufferPal, softBuffer);
+
+	testInitRandomTexture();
 }

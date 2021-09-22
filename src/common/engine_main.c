@@ -202,4 +202,6 @@ void initEngine()
 
 	useCPUtestPolygonOrder(false);
 	useMapCelFunctionFast(true);
+
+	initEngineSoft();
 }

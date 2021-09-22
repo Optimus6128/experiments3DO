@@ -140,6 +140,11 @@ void mapZoomRotateSprite(Sprite *spr)
 	spr->cel->ccb_YPos = (spr->posY << 16) + ((- hdy - vdy) << 8);
 }
 
+void *getSpriteBitmapData(Sprite *spr)
+{
+	return spr->cel->ccb_SourcePtr;
+}
+
 void drawSprite(Sprite *spr)
 {
 	drawCels(spr->cel);
