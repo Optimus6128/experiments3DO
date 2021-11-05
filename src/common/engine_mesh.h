@@ -47,6 +47,7 @@ void setMeshRotation(Mesh *ms, int rx, int ry, int rz);
 void setMeshPolygonOrder(Mesh *ms, bool cw, bool ccw);
 void setMeshTransparency(Mesh *ms, bool enable);
 void setMeshTranslucency(Mesh *ms, bool enable);
+void setMeshDottedDisplay(Mesh *ms, bool enable);
 
 void updateMeshCELs(Mesh *ms);
 

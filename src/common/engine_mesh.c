@@ -123,6 +123,11 @@ void setMeshTransparency(Mesh *ms, bool enable)
 	setMeshCELflags(ms, CCB_BGND, !enable);
 }
 
+void setMeshDottedDisplay(Mesh *ms, bool enable)
+{
+	setMeshCELflags(ms, CCB_MARIA, enable);
+}
+
 Mesh* initMesh(int vrtxNum, int quadsNum)
 {
 	Mesh *ms = (Mesh*)AllocMem(sizeof(Mesh), MEMTYPE_ANY);

@@ -2,7 +2,7 @@ cd src/packedRain
 call clean.bat
 cd../testPackedCels
 call clean.bat
-cd../feedbackCube
+cd../feedbackEffects
 call clean.bat
 cd../volumeEffects
 call clean.bat

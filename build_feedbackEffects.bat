@@ -1,5 +1,5 @@
 cd src
-cd feedbackCube
+cd feedbackEffects
 call build.bat
 call copy.bat
 cd..

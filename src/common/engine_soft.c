@@ -14,7 +14,7 @@
 
 static Sprite *sprSoftBuffer;
 
-static ubyte softBuffer[SCREEN_WIDTH * SCREEN_HEIGHT];
+static ubyte softBuffer[SCREEN_WIDTH * SCREEN_HEIGHT * 2];
 
 static void renderSoftQuadOnScreen()
 {
@@ -25,8 +25,8 @@ static void renderMeshSoft(Mesh *ms, Vertex *vertices)
 {
 	Point quad[4];
 	int *indices = ms->index;
-
 	int i,n;
+
 	for (i=0; i<ms->indexNum; i+=4)
 	{
 		quad[0].pt_X = vertices[indices[i]].x; quad[0].pt_Y = vertices[indices[i]].y;
@@ -38,35 +38,29 @@ static void renderMeshSoft(Mesh *ms, Vertex *vertices)
 
 		if (n > 0) {
 			// render
+			// shouldn't it be triangles?
+			// call different functions for points, wireframe, etc.. but which model structure?
 		}
 	}
 }
 
+static void clearSoftBuffer()
+{
+	memset(getSpriteBitmapData(sprSoftBuffer), 0, sprSoftBuffer->width * sprSoftBuffer->height * 2);
+}
+
 void renderTransformedMeshSoft(Mesh *ms, Vertex *vertices)
 {
+	clearSoftBuffer();
+
 	renderMeshSoft(ms, vertices);
 
 	renderSoftQuadOnScreen();
 }
 
-static void testInitRandomTexture()
-{
-	const int size = sprSoftBuffer->width * sprSoftBuffer->height;
-	ubyte *sprData = (ubyte*)getSpriteBitmapData(sprSoftBuffer);
-	int i;
 
-	for (i=0; i<size; ++i) {
-		*sprData++ = rand() & 31;
-	}
-}
 
 void initEngineSoft()
 {
-	static uint16 softBufferPal[32];
-
-	setPal(0,31, 0,0,0, 255,255,255, softBufferPal, 3);
-
-	sprSoftBuffer = newSprite(SCREEN_WIDTH, SCREEN_HEIGHT, 8, CREATECEL_CODED, softBufferPal, softBuffer);
-
-	testInitRandomTexture();
+	sprSoftBuffer = newSprite(SCREEN_WIDTH, SCREEN_HEIGHT, 16, CREATECEL_UNCODED, NULL, softBuffer);
 }

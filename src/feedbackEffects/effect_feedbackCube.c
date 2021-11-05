@@ -1,6 +1,6 @@
 #include "core.h"
 
-#include "effect.h"
+#include "effect_feedbackCube.h"
 
 #include "system_graphics.h"
 #include "tools.h"
@@ -120,7 +120,7 @@ static void inputScript()
 	}
 }
 
-void effectInit()
+void effectFeedbackCubeInit()
 {
 	feedbackTex0 = initFeedbackTexture(0, 0, FB_WIDTH, FB_HEIGHT, 0);
 	softFeedbackTex = initTexture(FB_WIDTH, FB_HEIGHT, 16, TEXTURE_TYPE_STATIC, NULL, NULL, 0);
@@ -135,7 +135,7 @@ void effectInit()
 	switchFeedback(hwFeedback);
 }
 
-void effectRun()
+void effectFeedbackCubeRun()
 {
 	const int time = getFrameNum();
 
