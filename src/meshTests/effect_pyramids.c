@@ -142,8 +142,8 @@ void effectPyramidsInit()
 		setPal(32,63, 0,0,127, 0,0,255, pyramidPal, 3);
 	}
 
-	xorTexs = initGenTexturesTriangleHack(texWidth,texHeight,8,pyramidPal,2,TEXGEN_XOR, NULL);
-	xorTexs2 = initGenTexturesTriangleHack2(texWidth,texHeight,8,pyramidPal,2,TEXGEN_XOR, NULL);
+	xorTexs = initGenTexturesTriangleHack(texWidth,texHeight,8,pyramidPal,2,TEXGEN_XOR, false, NULL);
+	xorTexs2 = initGenTexturesTriangleHack2(texWidth,texHeight,8,pyramidPal,2,TEXGEN_XOR, false, NULL);
 
 	sprTexture[0] = newSprite(texWidth, texHeight, 8, CREATECEL_CODED, pyramidPal, xorTexs[0].bitmap);
 	sprTexture[1] = newSprite(texWidth, texHeight, 8, CREATECEL_CODED, &pyramidPal[32], xorTexs[1].bitmap);

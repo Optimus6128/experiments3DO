@@ -65,7 +65,7 @@ static void inputScript()
 
 void effectSoftInit()
 {
-	xorTex = initGenTexture(32,32,8,NULL,1,TEXGEN_XOR, NULL);
+	xorTex = initGenTexture(32,32,8,NULL,1,TEXGEN_XOR, false, NULL);
 	testMesh = initGenMesh(1024, xorTex, MESH_OPTIONS_DEFAULT, MESH_CUBE, NULL);
 }
 

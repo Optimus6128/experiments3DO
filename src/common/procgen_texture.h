@@ -5,8 +5,8 @@
 
 enum {TEXGEN_EMPTY, TEXGEN_FLAT, TEXGEN_NOISE, TEXGEN_XOR, TEXGEN_GRID};
 
-Texture *initGenTexture(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, void *params);
-Texture *initGenTexturesTriangleHack(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, void *params);
-Texture *initGenTexturesTriangleHack2(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, void *params);
+Texture *initGenTexture(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, bool dynamic, void *params);
+Texture *initGenTexturesTriangleHack(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, bool dynamic, void *params);
+Texture *initGenTexturesTriangleHack2(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, bool dynamic, void *params);
 
 #endif

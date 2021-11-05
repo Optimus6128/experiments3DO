@@ -7,6 +7,16 @@
 #include "engine_texture.h"
 #include "mathutil.h"
 
+static int getPaletteColorsNum(int bpp)
+{
+	if (bpp <= 4) {
+		return bpp;
+	}
+	if (bpp <= 8) {
+		return 5;
+	}
+	return 0;
+}
 
 void updateMeshCELs(Mesh *ms)
 {
@@ -15,9 +25,9 @@ void updateMeshCELs(Mesh *ms)
 		Texture *tex = &ms->tex[ms->quad[i].textureId];
 
 		if (tex->type & TEXTURE_TYPE_DYNAMIC) {
-			CCB *cel = ms->quad[i].cel;
 			int woffset;
 			int vcnt;
+			CCB *cel = ms->quad[i].cel;
 
 			// In the future, also take account of offscreen buffer position too
 			if (tex->type & TEXTURE_TYPE_FEEDBACK) {
@@ -35,8 +45,7 @@ void updateMeshCELs(Mesh *ms)
 			// Should spare the magic numbers at some point
 			cel->ccb_PRE0 = (cel->ccb_PRE0 & ~(((1<<10) - 1)<<6)) | (vcnt << 6);
 			cel->ccb_PRE1 = (cel->ccb_PRE1 & (65536 - 1024)) | (woffset << 16) | tex->width;
-
-			cel->ccb_PLUTPtr = (uint16*)tex->pal[ms->quad[i].palId << 5];
+			cel->ccb_PLUTPtr = (uint16*)&tex->pal[ms->quad[i].palId << getPaletteColorsNum(tex->bpp)];
 		}
 	}
 }
@@ -54,7 +63,7 @@ void prepareCelList(Mesh *ms)
 
 		ms->quad[i].cel = CreateCel(tex->width, tex->height, tex->bpp, celType, tex->bitmap);
 		ms->quad[i].cel->ccb_SourcePtr = (CelData*)tex->bitmap;	// I used to have issues, fixed it on sprite_engine. In the future I'll simple replace CreateCel
-		ms->quad[i].cel->ccb_PLUTPtr = (uint16*)&tex->pal[ms->quad[i].palId << 5];
+		ms->quad[i].cel->ccb_PLUTPtr = (uint16*)&tex->pal[ms->quad[i].palId << getPaletteColorsNum(tex->bpp)];
 
 		ms->quad[i].cel->ccb_Flags &= ~CCB_ACW;	// Initially, ACW is off and only ACCW (counterclockwise) polygons are visible
 

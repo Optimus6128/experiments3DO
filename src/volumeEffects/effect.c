@@ -286,7 +286,7 @@ static Mesh *initTorchMesh()
 		ind[12] = viOff + 3; ind[13] = viOff + 7; ind[14] = viOff + 4; ind[15] = viOff + 0;
 	}
 	
-	torchTex = initGenTexture(16, 16, 8, NULL, 1, TEXGEN_NOISE, NULL);
+	torchTex = initGenTexture(16, 16, 8, NULL, 1, TEXGEN_NOISE, false, NULL);
 	setPal(0, 31, 48,40,32, 96,80,40, torchTex->pal, 3);
 	ms->tex = torchTex;
 

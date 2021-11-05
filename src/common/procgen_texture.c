@@ -136,12 +136,13 @@ static void genTexture(int texgenId, void *params, Texture *tex)
 	}
 }
 
-static Texture* initGenTextures(int width, int height, int bpp, uint16 *pal, ubyte numPals, ubyte numTextures, int texgenId, void *params)
+static Texture* initGenTextures(int width, int height, int bpp, uint16 *pal, ubyte numPals, ubyte numTextures, int texgenId, bool dynamic, void *params)
 {
 	int i;
 	Texture *tex;
 
 	int type = TEXTURE_TYPE_STATIC;
+	if (dynamic) type = TEXTURE_TYPE_DYNAMIC;
 	if (bpp <= 8 && numPals > 0) type |= TEXTURE_TYPE_PALLETIZED;
 
 	tex = initTextures(width, height, bpp, type, NULL, pal, numPals, numTextures);
@@ -152,27 +153,27 @@ static Texture* initGenTextures(int width, int height, int bpp, uint16 *pal, uby
 	return tex;
 }
 
-Texture* initGenTexture(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, void *params)
+Texture* initGenTexture(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, bool dynamic, void *params)
 {
-	return initGenTextures(width, height, bpp, pal, numPals, 1, texgenId, params);
+	return initGenTextures(width, height, bpp, pal, numPals, 1, texgenId, dynamic, params);
 }
 
-Texture *initGenTexturesTriangleHack(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, void *params)
+Texture *initGenTexturesTriangleHack(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, bool dynamic, void *params)
 {
 	Texture *tex;
 
-	tex = initGenTextures(width, height, bpp, pal, numPals, 2, texgenId, params);
+	tex = initGenTextures(width, height, bpp, pal, numPals, 2, texgenId, dynamic, params);
 	// COMMENT OUT PALETTE BUG
 	eraseHalfTextureTriangleArea(&tex[1], TRI_AREA_LR_TOP, 0);
 
 	return tex;
 }
 
-Texture *initGenTexturesTriangleHack2(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, void *params)
+Texture *initGenTexturesTriangleHack2(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, bool dynamic, void *params)
 {
 	Texture *tex;
 
-	tex = initGenTextures(width, height, bpp, pal, numPals, 2, texgenId, params);
+	tex = initGenTextures(width, height, bpp, pal, numPals, 2, texgenId, dynamic, params);
 	// COMMENT OUT PALETTE BUG
 	squishTextureToTriangleArea(&tex[1], TRI_AREA_LR_TOP);
 

@@ -21,7 +21,7 @@ static Mesh *draculMesh;
 Texture *flatTex;
 Texture *draculTex;
 
-uint16 flatPal[6] = { MakeRGB15(31,23,23), MakeRGB15(23,31,23), MakeRGB15(23,23,31), MakeRGB15(31,23,31), MakeRGB15(31,31,23), MakeRGB15(31,31,31) };
+uint16 flatPal[12] = { 0, MakeRGB15(31,23,23), 0, MakeRGB15(23,31,23), 0, MakeRGB15(23,23,31), 0, MakeRGB15(31,23,31), 0, MakeRGB15(31,31,23), 0, MakeRGB15(31,31,31) };
 
 static void inputScript()
 {
@@ -43,11 +43,17 @@ static void inputScript()
 
 void effectFeedbackOtherInit()
 {
+	int i;
 	ubyte flatCol = 255;
 
-	flatTex = initGenTexture(64, 64, 1, flatPal, 6, TEXGEN_FLAT, &flatCol);
+	flatTex = initGenTexture(64, 64, 1, flatPal, 6, TEXGEN_FLAT, true, &flatCol);
 	cubeMesh = initGenMesh(256, flatTex, MESH_OPTIONS_DEFAULT, MESH_CUBE, NULL);
 	setMeshDottedDisplay(cubeMesh, true);
+
+	for (i=0; i<6; ++i) {
+		cubeMesh->quad[i].palId = i;
+	}
+	updateMeshCELs(cubeMesh);
 
 	draculTex = loadTexture("data/draculin.cel");
 	draculMesh = initGenMesh(256, draculTex, MESH_OPTIONS_DEFAULT, MESH_CUBE, NULL);
@@ -56,11 +62,13 @@ void effectFeedbackOtherInit()
 void effectFeedbackOtherRun()
 {
 	const int time = getFrameNum();
+	int z = 1024 + 768 * sin(0.25f + time * 0.01f);
+	if (z > 1536) z = 1536;
 
 	inputScript();
 
-	setMeshPosition(cubeMesh, 0, 0, 512);
-	setMeshRotation(cubeMesh, time, time, time);
+	setMeshPosition(cubeMesh, 0, 0, z);
+	setMeshRotation(cubeMesh, time, time<<1, time>>1);
 	renderMesh(cubeMesh);
 
 	/*setMeshPosition(draculMesh, 0, 0, 512);
