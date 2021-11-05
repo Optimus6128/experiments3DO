@@ -25,7 +25,6 @@ static Mesh *cubeMesh;
 
 Texture *softFeedbackTex;
 Texture *feedbackTex0;
-Texture *feedbackTex1;
 Texture *draculTex;
 
 static Sprite *bgndSpr;
@@ -145,13 +144,13 @@ void effectFeedbackCubeRun()
 		setMeshPosition(cubeMeshBack, 0, 0, 512);
 		setMeshRotation(cubeMeshBack, time, time, time);
 
-		switchBuffer(true);
+		switchRenderToBuffer(true);
 		setScreenDimensions(FB_WIDTH, FB_HEIGHT);
 
 			drawSprite(bgndSpr);
 			renderMesh(cubeMeshBack);
 
-		switchBuffer(false);
+		switchRenderToBuffer(false);
 		setScreenDimensions(SCREEN_WIDTH, SCREEN_HEIGHT);
 
 		if (!hwFeedback)

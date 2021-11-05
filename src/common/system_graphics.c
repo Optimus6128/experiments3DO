@@ -151,12 +151,12 @@ uint32 getNumOffscreenBuffers()
 	return offscreenBuffersNum;
 }
 
-void switchBuffer(bool on)
+void switchRenderToBuffer(bool on)
 {
 	renderToBuffer = on;
 }
 
-void setBuffer(uint32 num)
+void setRenderBuffer(uint32 num)
 {
 	if (num > offscreenBuffersNum-1) num = offscreenBuffersNum-1;
 
@@ -171,6 +171,12 @@ void clearAllBuffers()
 	for(i=0; i<totalBuffersNum; ++i) {
 		memset(Bitmaps[i]->bm_Buffer, 0, Bitmaps[i]->bm_Width * Bitmaps[i]->bm_Height * 2);
 	}
+}
+
+void clearBackBuffer()
+{
+	ioInfo.ioi_Recv.iob_Buffer = getBackBuffer();
+	DoIO(gVRAMIOReq,&ioInfo);
 }
 
 void drawPixel(int px, int py, uint16 c)

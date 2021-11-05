@@ -44,7 +44,7 @@ void updateMeshCELs(Mesh *ms)
 
 			// Should spare the magic numbers at some point
 			cel->ccb_PRE0 = (cel->ccb_PRE0 & ~(((1<<10) - 1)<<6)) | (vcnt << 6);
-			cel->ccb_PRE1 = (cel->ccb_PRE1 & (65536 - 1024)) | (woffset << 16) | tex->width;
+			cel->ccb_PRE1 = (cel->ccb_PRE1 & (65536 - 1024)) | (woffset << 16) | (tex->width-1);
 			cel->ccb_PLUTPtr = (uint16*)&tex->pal[ms->quad[i].palId << getPaletteColorsNum(tex->bpp)];
 		}
 	}
