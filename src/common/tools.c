@@ -209,7 +209,7 @@ void displayFPS()
 		prevFrameNum = frameNum;
 	}
 
-	drawNumber(0, 0, fps);
+	drawNumber(8, 8, fps);
 }
 
 void displayMem()
