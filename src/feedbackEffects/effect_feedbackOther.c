@@ -15,6 +15,8 @@
 #include "procgen_mesh.h"
 #include "procgen_texture.h"
 
+#include "sprite_engine.h"
+
 enum { FBO_FX_DOTCUBE1, FBO_FX_DOTCUBE2, FBO_FX_MOSAIK, FBO_FX_SLIMECUBE };
 
 static int fbo_fx = FBO_FX_DOTCUBE2;
@@ -26,9 +28,10 @@ static Mesh *draculMesh;
 static Texture *flatTex;
 static Texture *draculTex;
 static Texture *feedbackTex0;
-
+static Sprite *feedbackSpr;
 
 uint16 flatPal[12] = { 0, MakeRGB15(31,23,23), 0, MakeRGB15(23,31,23), 0, MakeRGB15(23,23,31), 0, MakeRGB15(31,23,31), 0, MakeRGB15(31,31,23), 0, MakeRGB15(31,31,31) };
+
 
 static void inputScript()
 {
@@ -68,10 +71,11 @@ void effectFeedbackOtherInit()
 
 			if (fbo_fx==FBO_FX_DOTCUBE2) {
 				feedbackTex0 = initFeedbackTexture(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
-				//draculTex = loadTexture("data/draculin.cel");
 				planeMesh = initGenMesh(256, feedbackTex0, 0, MESH_PLANE, NULL);
 				setMeshDottedDisplay(planeMesh, true);
 				setMeshPolygonOrder(planeMesh, true, true);
+
+				feedbackSpr = newFeedbackSprite(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
 			}
 		}
 		break;
@@ -128,8 +132,13 @@ void effectFeedbackOtherRun()
 			renderFlatCube(time, 1024);
 
 			switchRenderToBuffer(false);
-			updateMeshCELs(planeMesh);
-			renderBufferPlane(time, (z>>1) - 80);
+			//updateMeshCELs(planeMesh);
+			//renderBufferPlane(time, (z>>1) - 80);
+
+			//setSpritePositionZoom(feedbackSpr, 160, 120, 256);
+			drawSprite(feedbackSpr);
+
+			drawBorderEdges(3,1, 161,121);
 		break;
 
 		case FBO_FX_MOSAIK:

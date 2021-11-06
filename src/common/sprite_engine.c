@@ -1,6 +1,7 @@
 #include "sprite_engine.h"
 #include "cel_packer.h"
 #include "system_graphics.h"
+#include "tools.h"
 
 static void rotatePoint(int *px, int *py, int angle)
 {
@@ -34,6 +35,15 @@ Sprite *newSprite(int width, int height, int bpp, int type, uint16 *pal, ubyte *
 	return spr;
 }
 
+Sprite *newFeedbackSprite(int posX, int posY, int width, int height, int bufferIndex)
+{
+	Sprite *spr = newSprite(width, height, 16, CREATECEL_UNCODED, NULL, (ubyte*)getBackBuffer());
+
+	setupWindowFeedbackCel(posX, posY, width, height, bufferIndex, spr->cel);
+
+	return spr;
+}
+
 Sprite *newPackedSprite(int width, int height, int bpp, int type, uint16 *pal, ubyte *unpackedBmp, ubyte *packedData, int transparentColor)
 {
 	Sprite *spr;
@@ -63,31 +73,14 @@ void setSpriteAlpha(Sprite *spr, bool enabled)
 		spr->cel->ccb_PIXC = SOLID_CEL;
 }
 
-void mapSprite(Sprite *spr)
+
+static void mapSprite(Sprite *spr)
 {
 	spr->cel->ccb_XPos = spr->posX << 16;
 	spr->cel->ccb_YPos = spr->posY << 16;
 }
 
-void mapStretchSpriteX(Sprite *spr)
-{
-	spr->cel->ccb_XPos = (spr->posX - (((spr->width >> 1) * spr->zoom) >> 8)) << 16;
-	spr->cel->ccb_YPos = (spr->posY - (spr->height >> 1)) << 16;
-
-	spr->cel->ccb_HDX = spr->zoom<<12;
-	spr->cel->ccb_VDY = 1<<16;
-}
-
-void mapStretchSpriteY(Sprite *spr)
-{
-	spr->cel->ccb_XPos = (spr->posX - (spr->width >> 1)) << 16;
-	spr->cel->ccb_YPos = (spr->posY - (((spr->height >> 1) * spr->zoom) >> 8)) << 16;
-
-	spr->cel->ccb_HDX = 1<<20;
-	spr->cel->ccb_VDY = spr->zoom<<8;
-}
-
-void mapZoomSprite(Sprite *spr)
+static void mapZoomSprite(Sprite *spr)
 {
 	spr->cel->ccb_XPos = (spr->posX - (((spr->width >> 1) * spr->zoom) >> 8)) << 16;
 	spr->cel->ccb_YPos = (spr->posY - (((spr->height >> 1) * spr->zoom) >> 8)) << 16;
@@ -96,7 +89,7 @@ void mapZoomSprite(Sprite *spr)
 	spr->cel->ccb_VDY = spr->zoom<<8;
 }
 
-void mapZoomSpriteCorner(Sprite *spr)   // could add enums in the future
+/*static void mapZoomSpriteCorner(Sprite *spr)   // could add enums in the future
 {
 	spr->cel->ccb_XPos = spr->posX << 16;
 	spr->cel->ccb_YPos = spr->posY << 16;
@@ -105,7 +98,7 @@ void mapZoomSpriteCorner(Sprite *spr)   // could add enums in the future
 	spr->cel->ccb_VDY = spr->zoom<<8;
 }
 
-void mapZoomSpriteOffset(Sprite *spr, int px, int py)
+static void mapZoomSpriteOffset(Sprite *spr, int px, int py)
 {
 	const int centerPixel = (spr->zoom >> 9) << 16;
 
@@ -114,9 +107,9 @@ void mapZoomSpriteOffset(Sprite *spr, int px, int py)
 
 	spr->cel->ccb_HDX = spr->zoom<<12;
 	spr->cel->ccb_VDY = spr->zoom<<8;
-}
+}*/
 
-void mapZoomRotateSprite(Sprite *spr)
+static void mapZoomRotateSprite(Sprite *spr)
 {
 	int hdx = spr->zoom;
 	int hdy = 0;
@@ -138,6 +131,33 @@ void mapZoomRotateSprite(Sprite *spr)
 
 	spr->cel->ccb_XPos = (spr->posX << 16) + ((- hdx - vdx) << 8);
 	spr->cel->ccb_YPos = (spr->posY << 16) + ((- hdy - vdy) << 8);
+}
+
+void setSpritePosition(Sprite *spr, int px, int py)
+{
+	spr->posX = px;
+	spr->posY = py;
+
+	mapSprite(spr);
+}
+
+void setSpritePositionZoom(Sprite *spr, int px, int py, int zoom)
+{
+	spr->posX = px;
+	spr->posY = py;
+	spr->zoom = zoom;
+
+	mapZoomSprite(spr);
+}
+
+void setSpritePositionZoomRotate(Sprite *spr, int px, int py, int zoom, int angle)
+{
+	spr->posX = px;
+	spr->posY = py;
+	spr->zoom = zoom;
+	spr->angle = angle;
+
+	mapZoomRotateSprite(spr);
 }
 
 void *getSpriteBitmapData(Sprite *spr)

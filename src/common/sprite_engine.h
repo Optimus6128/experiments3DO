@@ -19,18 +19,14 @@ typedef struct Sprite
 
 Sprite *newSprite(int width, int height, int bpp, int type, uint16 *pal, ubyte *bmp);
 Sprite *newPackedSprite(int width, int height, int bpp, int type, uint16 *pal, ubyte *unpackedBmp, ubyte *packedData, int transparentColor);
+Sprite *newFeedbackSprite(int posX, int posY, int width, int height, int bufferIndex);
 
 void setPalette(Sprite *spr, uint16* pal);
 void setSpriteAlpha(Sprite *spr, bool enabled);
 
-void mapSprite(Sprite *spr);
-void mapZoomSprite(Sprite *spr);
-void mapZoomSpriteCorner(Sprite *spr);
-void mapZoomSpriteOffset(Sprite *spr, int px, int py);
-void mapZoomRotateSprite(Sprite *spr);
-
-void mapStretchSpriteX(Sprite *spr);
-void mapStretchSpriteY(Sprite *spr);
+void setSpritePosition(Sprite *spr, int px, int py);
+void setSpritePositionZoom(Sprite *spr, int px, int py, int zoom);
+void setSpritePositionZoomRotate(Sprite *spr, int px, int py, int zoom, int angle);
 
 void *getSpriteBitmapData(Sprite *spr);
 
