@@ -22,7 +22,8 @@ Sprite *newPackedSprite(int width, int height, int bpp, int type, uint16 *pal, u
 Sprite *newFeedbackSprite(int posX, int posY, int width, int height, int bufferIndex);
 
 void setPalette(Sprite *spr, uint16* pal);
-void setSpriteAlpha(Sprite *spr, bool enabled);
+void setSpriteAlpha(Sprite *spr, bool enable);
+void setSpriteDottedDisplay(Sprite *spr, bool enable);
 
 void setSpritePosition(Sprite *spr, int px, int py);
 void setSpritePositionZoom(Sprite *spr, int px, int py, int zoom);

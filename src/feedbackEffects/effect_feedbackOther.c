@@ -17,17 +17,19 @@
 
 #include "sprite_engine.h"
 
+
 enum { FBO_FX_DOTCUBE1, FBO_FX_DOTCUBE2, FBO_FX_MOSAIK, FBO_FX_SLIMECUBE };
+
+#define CUBE_BUFFER_WIDTH 128
+#define CUBE_BUFFER_HEIGHT 128
 
 static int fbo_fx = FBO_FX_DOTCUBE2;
 
-static Mesh *planeMesh;
 static Mesh *cubeMesh;
 static Mesh *draculMesh;
 
 static Texture *flatTex;
 static Texture *draculTex;
-static Texture *feedbackTex0;
 static Sprite *feedbackSpr;
 
 uint16 flatPal[12] = { 0, MakeRGB15(31,23,23), 0, MakeRGB15(23,31,23), 0, MakeRGB15(23,23,31), 0, MakeRGB15(31,23,31), 0, MakeRGB15(31,31,23), 0, MakeRGB15(31,31,31) };
@@ -70,12 +72,8 @@ void effectFeedbackOtherInit()
 			updateMeshCELs(cubeMesh);
 
 			if (fbo_fx==FBO_FX_DOTCUBE2) {
-				feedbackTex0 = initFeedbackTexture(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
-				planeMesh = initGenMesh(256, feedbackTex0, 0, MESH_PLANE, NULL);
-				setMeshDottedDisplay(planeMesh, true);
-				setMeshPolygonOrder(planeMesh, true, true);
-
-				feedbackSpr = newFeedbackSprite(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
+				feedbackSpr = newFeedbackSprite(0, 0, CUBE_BUFFER_WIDTH, CUBE_BUFFER_HEIGHT, 0);
+				setSpriteDottedDisplay(feedbackSpr, true);
 			}
 		}
 		break;
@@ -105,40 +103,39 @@ static void renderFlatCube(int t, int z)
 	renderMesh(cubeMesh);
 }
 
-static void renderBufferPlane(int t, int z)
-{
-	setMeshPosition(planeMesh, 0, 0, z);
-	setMeshRotation(planeMesh, 0, 0, 0);
-	renderMesh(planeMesh);
-}
-
 void effectFeedbackOtherRun()
 {
 	const int time = getFrameNum();
-
-	int z = 1024 + 768 * sin(0.25f + time * 0.01f);
-	if (z > 1536) z = 1536;
 
 	inputScript();
 
 	switch(fbo_fx){
 		case FBO_FX_DOTCUBE1:
+		{
+			int z = 1024 + 768 * sin(0.25f + time * 0.01f);
+			if (z > 1536) z = 1536;
+
 			renderFlatCube(time, z);
+		}
 		break;
 
 		case FBO_FX_DOTCUBE2:
+		{
+			int z = (1.0f - cos(time * 0.01f)) * 2048;
+			if (z < 256) z = 256;
+
 			switchRenderToBuffer(true);
+			setScreenDimensions(CUBE_BUFFER_WIDTH, CUBE_BUFFER_HEIGHT);
 			clearBackBuffer();
 			renderFlatCube(time, 1024);
 
 			switchRenderToBuffer(false);
-			//updateMeshCELs(planeMesh);
-			//renderBufferPlane(time, (z>>1) - 80);
-
-			//setSpritePositionZoom(feedbackSpr, 160, 120, 256);
+			setScreenDimensions(SCREEN_WIDTH, SCREEN_HEIGHT);
+			setSpritePositionZoom(feedbackSpr, SCREEN_WIDTH/2, SCREEN_HEIGHT/2, z);
 			drawSprite(feedbackSpr);
 
-			drawBorderEdges(3,1, 161,121);
+			//drawBorderEdges(0,0, CUBE_BUFFER_WIDTH,CUBE_BUFFER_HEIGHT);
+		}
 		break;
 
 		case FBO_FX_MOSAIK:
