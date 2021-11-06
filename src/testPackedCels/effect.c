@@ -203,22 +203,14 @@ static void updateFromInput()
 
 static void renderZoomRotateSprite(Sprite *spr, int offsetX, int offsetY, int zoom, int angle)
 {
-	spr->angle = angle;
-	spr->zoom = zoom;
-	spr->posX = SCREEN_WIDTH / 2 + offsetX;
-	spr->posY = SCREEN_HEIGHT / 2 + offsetY;
-
-	mapZoomRotateSprite(spr);
+	setSpritePositionZoomRotate(spr, SCREEN_WIDTH / 2 + offsetX, SCREEN_HEIGHT / 2 + offsetY, zoom, angle);
 
 	drawSprite(spr);
 }
 
 static void renderScrollSprite(Sprite *spr, int posX, int posY)
 {
-	spr->posX = posX;
-	spr->posY = posY;
-
-	mapSprite(spr);
+	setSpritePosition(spr, posX, posY);
 
 	drawSprite(spr);
 }

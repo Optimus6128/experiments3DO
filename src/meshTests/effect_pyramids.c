@@ -150,11 +150,7 @@ void effectPyramidsInit()
 	sprTexture[2] = newSprite(texWidth, texHeight, 8, CREATECEL_CODED, pyramidPal, xorTexs2[1].bitmap);
 
 	for (i=0; i<3; ++i) {
-		sprTexture[i]->angle = 127;
-		sprTexture[i]->zoom = 127;
-		sprTexture[i]->posX = 280;
-		sprTexture[i]->posY = 40;
-		mapZoomRotateSprite(sprTexture[i]);
+		setSpritePositionZoomRotate(sprTexture[i], 280, 40, 127, 127);
 	}
 
 	pyramidMesh[0] = initGenMesh(1024, xorTexs, MESH_OPTIONS_DEFAULT, MESH_PYRAMID1, NULL);

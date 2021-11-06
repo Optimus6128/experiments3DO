@@ -4,7 +4,7 @@
 
 enum { MESH_EFFECT_PYRAMIDS, MESH_EFFECT_SOFT };
 
-static int meshEffect = MESH_EFFECT_SOFT;
+static int meshEffect = MESH_EFFECT_PYRAMIDS;
 
 void effectInit()
 {
