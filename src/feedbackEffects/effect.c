@@ -4,7 +4,7 @@
 
 enum { FEEDBACK_EFFECT_CUBE, FEEDBACK_EFFECT_OTHER };
 
-static int feedbackEffect = FEEDBACK_EFFECT_CUBE;
+static int feedbackEffect = FEEDBACK_EFFECT_OTHER;
 
 void effectInit()
 {
