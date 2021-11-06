@@ -209,7 +209,7 @@ void displayFPS()
 		prevFrameNum = frameNum;
 	}
 
-	drawNumber(8, 8, fps);
+	drawNumber(16, 16, fps);
 }
 
 void displayMem()
@@ -340,6 +340,7 @@ void setupWindowFeedbackCel(int posX, int posY, int width, int height, int buffe
 	int woffset;
 	int vcnt;
 
+	cel->ccb_Flags &= ~(CCB_ACSC | CCB_ALSC);	// Super Clipping will lock an LRFORM feedback texture. Disable it!
 	cel->ccb_Flags |= CCB_BGND;
 	cel->ccb_PRE1 |= PRE1_LRFORM;
 	cel->ccb_SourcePtr = (CelData*)(getBackBufferByIndex(bufferIndex) + (posY & ~1) * SCREEN_WIDTH + 2*posX);
