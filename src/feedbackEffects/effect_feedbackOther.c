@@ -17,11 +17,14 @@
 
 #include "sprite_engine.h"
 
-
-enum { FBO_FX_DOTCUBE1, FBO_FX_DOTCUBE2, FBO_FX_MOSAIK, FBO_FX_SLIMECUBE };
-
 #define CUBE_BUFFER_WIDTH 128
 #define CUBE_BUFFER_HEIGHT 128
+
+
+enum { FBO_FX_DOTCUBE1, FBO_FX_DOTCUBE2, FBO_FX_MOSAIK, FBO_FX_SLIMECUBE, FBO_FX_NUM };
+
+static bool fboFxInit[FBO_FX_NUM] = { false, false, false, false };
+static char *partName[FBO_FX_NUM] = { "REAL 3D DOTCUBE", "DESERT DREAM CUBE", "MOSAIK EFFECT", "SLIME CUBE" };
 
 static int fbo_fx = FBO_FX_DOTCUBE2;
 
@@ -35,24 +38,6 @@ static Sprite *feedbackSpr;
 uint16 flatPal[12] = { 0, MakeRGB15(31,23,23), 0, MakeRGB15(23,31,23), 0, MakeRGB15(23,23,31), 0, MakeRGB15(31,23,31), 0, MakeRGB15(31,31,23), 0, MakeRGB15(31,31,31) };
 
 
-static void inputScript()
-{
-	if (isJoyButtonPressedOnce(JOY_BUTTON_A)) {
-	}
-
-	if (isJoyButtonPressedOnce(JOY_BUTTON_B)) {
-	}
-
-	if (isJoyButtonPressedOnce(JOY_BUTTON_C)) {
-	}
-
-	if (isJoyButtonPressedOnce(JOY_BUTTON_LPAD)) {
-	}
-
-	if (isJoyButtonPressedOnce(JOY_BUTTON_RPAD)) {
-	}
-}
-
 void effectFeedbackOtherInit()
 {
 	switch(fbo_fx){
@@ -64,7 +49,6 @@ void effectFeedbackOtherInit()
 
 			flatTex = initGenTexture(64, 64, 1, flatPal, 6, TEXGEN_FLAT, true, &flatCol);
 			cubeMesh = initGenMesh(256, flatTex, MESH_OPTIONS_DEFAULT, MESH_CUBE, NULL);
-			setMeshDottedDisplay(cubeMesh, (fbo_fx==FBO_FX_DOTCUBE1));
 
 			for (i=0; i<6; ++i) {
 				cubeMesh->quad[i].palId = i;
@@ -86,6 +70,30 @@ void effectFeedbackOtherInit()
 
 		default:
 		break;
+	}
+}
+
+static void partChanged()
+{
+	if (!fboFxInit[fbo_fx]) {
+		effectFeedbackOtherInit();
+		fboFxInit[fbo_fx] = true;
+	}
+	setMeshDottedDisplay(cubeMesh, (fbo_fx==FBO_FX_DOTCUBE1));
+}
+
+static void inputScript()
+{
+	if (isJoyButtonPressedOnce(JOY_BUTTON_LPAD)) {
+		--fbo_fx;
+		if (fbo_fx < 0) fbo_fx = FBO_FX_DOTCUBE2;
+		partChanged();
+	}
+
+	if (isJoyButtonPressedOnce(JOY_BUTTON_RPAD)) {
+		++fbo_fx;
+		if (fbo_fx > FBO_FX_DOTCUBE2) fbo_fx = 0;
+		partChanged();
 	}
 }
 
@@ -149,4 +157,5 @@ void effectFeedbackOtherRun()
 		default:
 		break;
 	}
+	drawText(8, SCREEN_HEIGHT - 16, partName[fbo_fx]);
 }
