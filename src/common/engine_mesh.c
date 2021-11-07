@@ -31,11 +31,13 @@ void updateMeshCELs(Mesh *ms)
 
 			// In the future, also take account of offscreen buffer position too
 			if (tex->type & TEXTURE_TYPE_FEEDBACK) {
+				cel->ccb_Flags &= ~(CCB_ACSC | CCB_ALSC);
 				cel->ccb_PRE1 |= PRE1_LRFORM;
 				cel->ccb_SourcePtr = (CelData*)getBackBufferByIndex(tex->bufferIndex);
 				woffset = SCREEN_WIDTH - 2;
 				vcnt = (tex->height / 2) - 1;
 			} else {
+				cel->ccb_Flags |= (CCB_ACSC | CCB_ALSC);
 				cel->ccb_PRE1 &= ~PRE1_LRFORM;
 				cel->ccb_SourcePtr = (CelData*)tex->bitmap;
 				woffset = tex->width / 2 - 2;
@@ -67,7 +69,9 @@ void prepareCelList(Mesh *ms)
 
 		ms->quad[i].cel->ccb_Flags &= ~CCB_ACW;	// Initially, ACW is off and only ACCW (counterclockwise) polygons are visible
 
-		ms->quad[i].cel->ccb_Flags |= (CCB_ACSC | CCB_ALSC | CCB_BGND);
+		ms->quad[i].cel->ccb_Flags |= CCB_BGND;
+		if (!(tex->type & TEXTURE_TYPE_FEEDBACK))
+			ms->quad[i].cel->ccb_Flags |= (CCB_ACSC | CCB_ALSC);	// Enable Super Clipping only if Feedback Texture is not enabled, it might lock otherwise
 
 		if (i!=0) LinkCel(ms->quad[i-1].cel, ms->quad[i].cel);
 	}

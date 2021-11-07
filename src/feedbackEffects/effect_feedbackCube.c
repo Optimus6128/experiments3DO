@@ -35,6 +35,9 @@ static bool doFeedback = true;
 static bool hwFeedback = false;
 static bool translucency = false;
 
+static int cubeOffsetX = 0;
+static int cubeOffsetY = 0;
+
 
 static void genBackgroundTex()
 {
@@ -88,6 +91,8 @@ static void switchFeedback(bool on)
 
 static void inputScript()
 {
+	const int offsetSpeed = 4;
+
 	if (isJoyButtonPressedOnce(JOY_BUTTON_A)) {
 		hwFeedback = !hwFeedback;
 		switchFeedback(hwFeedback);
@@ -116,6 +121,23 @@ static void inputScript()
 		cubeMeshBack->useCPUccwTest = false;
 		setMeshPolygonOrder(cubeMesh, true, true);
 		setMeshPolygonOrder(cubeMeshBack, true, true);
+	}
+
+	if (isJoyButtonPressedOnce(JOY_BUTTON_START)) {
+		cubeOffsetX = 0;
+		cubeOffsetY = 0;
+	}
+	if (isJoyButtonPressed(JOY_BUTTON_UP)) {
+		cubeOffsetY += offsetSpeed;
+	}
+	if (isJoyButtonPressed(JOY_BUTTON_DOWN)) {
+		cubeOffsetY -= offsetSpeed;
+	}
+	if (isJoyButtonPressed(JOY_BUTTON_LEFT)) {
+		cubeOffsetX -= offsetSpeed;
+	}
+	if (isJoyButtonPressed(JOY_BUTTON_RIGHT)) {
+		cubeOffsetX += offsetSpeed;
 	}
 }
 
@@ -158,7 +180,7 @@ void effectFeedbackCubeRun()
 	}
 
 
-	setMeshPosition(cubeMesh, 0, 0, 512);
+	setMeshPosition(cubeMesh, cubeOffsetX, cubeOffsetY, 512);
 	setMeshRotation(cubeMesh, 0, time, 0);
 
 	renderMesh(cubeMesh);
