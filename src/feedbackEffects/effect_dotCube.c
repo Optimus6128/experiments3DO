@@ -1,6 +1,6 @@
 #include "core.h"
 
-#include "effect_feedbackOther.h"
+#include "effect_dotCube.h"
 
 #include "system_graphics.h"
 #include "tools.h"
@@ -21,24 +21,22 @@
 #define CUBE_BUFFER_HEIGHT 128
 
 
-enum { FBO_FX_DOTCUBE1, FBO_FX_DOTCUBE2, FBO_FX_MOSAIK, FBO_FX_SLIMECUBE, FBO_FX_NUM };
+enum { FBO_FX_DOTCUBE1, FBO_FX_DOTCUBE2, FBO_FX_NUM };
 
-static bool fboFxInit[FBO_FX_NUM] = { false, false, false, false };
-static char *partName[FBO_FX_NUM] = { "REAL 3D DOTCUBE", "DESERT DREAM CUBE", "MOSAIK EFFECT", "SLIME CUBE" };
+static bool fboFxInit[FBO_FX_NUM] = { false, false };
+static char *partName[FBO_FX_NUM] = { "REAL 3D DOTCUBE", "DESERT DREAM CUBE" };
 
 static int fbo_fx = FBO_FX_DOTCUBE2;
 
 static Mesh *cubeMesh;
-static Mesh *draculMesh;
 
 static Texture *flatTex;
-static Texture *draculTex;
 static Sprite *feedbackSpr;
 
 uint16 flatPal[12] = { 0, MakeRGB15(31,23,23), 0, MakeRGB15(23,31,23), 0, MakeRGB15(23,23,31), 0, MakeRGB15(31,23,31), 0, MakeRGB15(31,31,23), 0, MakeRGB15(31,31,31) };
 
 
-void effectFeedbackOtherInit()
+void effectDotcubeInit()
 {
 	switch(fbo_fx){
 		case FBO_FX_DOTCUBE1:
@@ -62,12 +60,6 @@ void effectFeedbackOtherInit()
 		}
 		break;
 
-		case FBO_FX_MOSAIK:
-		case FBO_FX_SLIMECUBE:
-			draculTex = loadTexture("data/draculin.cel");
-			draculMesh = initGenMesh(256, draculTex, MESH_OPTIONS_DEFAULT, MESH_CUBE, NULL);
-		break;
-
 		default:
 		break;
 	}
@@ -76,7 +68,7 @@ void effectFeedbackOtherInit()
 static void partChanged()
 {
 	if (!fboFxInit[fbo_fx]) {
-		effectFeedbackOtherInit();
+		effectDotcubeInit();
 		fboFxInit[fbo_fx] = true;
 	}
 	setMeshDottedDisplay(cubeMesh, (fbo_fx==FBO_FX_DOTCUBE1));
@@ -97,13 +89,6 @@ static void inputScript()
 	}
 }
 
-static void renderDraculCube(int t)
-{
-	setMeshPosition(draculMesh, 0, 0, 512);
-	setMeshRotation(draculMesh, t, t<<1, t>>1);
-	renderMesh(draculMesh);
-}
-
 static void renderFlatCube(int t, int z)
 {
 	setMeshPosition(cubeMesh, 0, 0, z);
@@ -111,7 +96,7 @@ static void renderFlatCube(int t, int z)
 	renderMesh(cubeMesh);
 }
 
-void effectFeedbackOtherRun()
+void effectDotcubeRun()
 {
 	const int time = getFrameNum();
 
@@ -144,14 +129,6 @@ void effectFeedbackOtherRun()
 
 			//drawBorderEdges(0,0, CUBE_BUFFER_WIDTH,CUBE_BUFFER_HEIGHT);
 		}
-		break;
-
-		case FBO_FX_MOSAIK:
-			renderDraculCube(time);
-		break;
-
-		case FBO_FX_SLIMECUBE:
-			renderDraculCube(time);
 		break;
 
 		default:
