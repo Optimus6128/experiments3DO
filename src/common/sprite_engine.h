@@ -20,6 +20,7 @@ typedef struct Sprite
 Sprite *newSprite(int width, int height, int bpp, int type, uint16 *pal, ubyte *bmp);
 Sprite *newPackedSprite(int width, int height, int bpp, int type, uint16 *pal, ubyte *unpackedBmp, ubyte *packedData, int transparentColor);
 Sprite *newFeedbackSprite(int posX, int posY, int width, int height, int bufferIndex);
+Sprite *loadSpriteCel(char *path);
 
 void setPalette(Sprite *spr, uint16* pal);
 void setSpriteAlpha(Sprite *spr, bool enable);
@@ -28,6 +29,9 @@ void setSpriteDottedDisplay(Sprite *spr, bool enable);
 void setSpritePosition(Sprite *spr, int px, int py);
 void setSpritePositionZoom(Sprite *spr, int px, int py, int zoom);
 void setSpritePositionZoomRotate(Sprite *spr, int px, int py, int zoom, int angle);
+
+void mapZoomSpriteToQuad(Sprite *spr, int ulX, int ulY, int lrX, int lrY);
+void mapFeedbackSpriteToNewFramebufferArea(int ulX, int ulY, int lrX, int lrY, int bufferIndex, Sprite *spr);
 
 void *getSpriteBitmapData(Sprite *spr);
 

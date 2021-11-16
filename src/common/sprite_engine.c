@@ -60,6 +60,23 @@ Sprite *newPackedSprite(int width, int height, int bpp, int type, uint16 *pal, u
 	return spr;
 }
 
+Sprite *loadSpriteCel(char *path)
+{
+	Sprite *spr;
+	CCB *tempCel;
+	int size;
+
+	tempCel = LoadCel(path, MEMTYPE_ANY);
+	spr = newSprite(tempCel->ccb_Width, tempCel->ccb_Height, 16, CREATECEL_UNCODED, NULL, NULL);
+
+	size = (tempCel->ccb_Width * tempCel->ccb_Height * 16) / 8;
+	memcpy(spr->cel->ccb_SourcePtr, tempCel->ccb_SourcePtr, size);
+
+	UnloadCel(tempCel);
+
+	return spr;
+}
+
 void setPalette(Sprite *spr, uint16* pal)
 {
 	spr->cel->ccb_PLUTPtr = (PLUTChunk*)pal;
@@ -139,6 +156,29 @@ static void mapZoomRotateSprite(Sprite *spr)
 
 	spr->cel->ccb_XPos = (spr->posX << 16) + ((- hdx - vdx) << 8);
 	spr->cel->ccb_YPos = (spr->posY << 16) + ((- hdy - vdy) << 8);
+}
+
+void mapZoomSpriteToQuad(Sprite *spr, int ulX, int ulY, int lrX, int lrY)
+{
+	spr->cel->ccb_XPos = ulX << 16;
+	spr->cel->ccb_YPos = ulY << 16;
+
+	// Could be faster if they were power of two, but now it's a quick hack
+	spr->cel->ccb_HDX = ((lrX-ulX+1) << 20) / spr->width;
+	spr->cel->ccb_HDY = 0;
+	spr->cel->ccb_VDX = 0;
+	spr->cel->ccb_VDY = ((lrY-ulY+1) << 16) / spr->height;
+}
+
+void mapFeedbackSpriteToNewFramebufferArea(int ulX, int ulY, int lrX, int lrY, int bufferIndex, Sprite *spr)
+{
+	const int newWidth = (lrX-ulX+1) & ~1;
+	const int newHeight = (lrY-ulY+1) & ~1;
+
+	spr->width = newWidth;
+	spr->height = newHeight;
+
+	setupWindowFeedbackCel(ulX, ulY, newWidth, newHeight, bufferIndex, spr->cel);
 }
 
 void setSpritePosition(Sprite *spr, int px, int py)
