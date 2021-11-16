@@ -98,7 +98,7 @@ static void renderRain()
 {
 	const int layersOnScreen = RAIN_LAYERS_NUM;
 	const int time = getFrameNum();
-	const int angle = (64 << 16) + (SinF16(time * 30000) << 3);	// 90 degrees
+	const int angle = (64 << 8) + ((SinF16(time * 30000) << 3) >> 8);
 
 	int i;
 	for (i=0; i<layersOnScreen; ++i) {

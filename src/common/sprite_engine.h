@@ -11,6 +11,9 @@ typedef struct Sprite
 
 	int posX, posY;
 	int angle, zoom;
+	// Zoom and Angle are 20:8
+	// zoom : 1<<8 means 1x, 2<<8 means 2x, 128 means x0.5
+	// angle: 1<<8 means 1 degree, 90<<8 is right angle
 
 	CCB *cel;
 	Point quad[4];

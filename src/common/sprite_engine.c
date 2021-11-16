@@ -3,17 +3,6 @@
 #include "system_graphics.h"
 #include "tools.h"
 
-static void rotatePoint(int *px, int *py, int angle)
-{
-	int tempX = *px;
-	int tempY = *py;
-
-	int isin = SinF16(angle);
-	int icos = CosF16(angle);
-
-	*px = ((tempX * icos + tempY * isin) >> 16);
-	*py = ((tempX * isin - tempY * icos) >> 16);
-}
 
 Sprite *newSprite(int width, int height, int bpp, int type, uint16 *pal, ubyte *bmp)
 {
@@ -114,46 +103,23 @@ static void mapZoomSprite(Sprite *spr)
 	spr->cel->ccb_VDY = spr->zoom<<8;
 }
 
-/*static void mapZoomSpriteCorner(Sprite *spr)   // could add enums in the future
-{
-	spr->cel->ccb_XPos = spr->posX << 16;
-	spr->cel->ccb_YPos = spr->posY << 16;
-
-	spr->cel->ccb_HDX = spr->zoom<<12;
-	spr->cel->ccb_VDY = spr->zoom<<8;
-}
-
-static void mapZoomSpriteOffset(Sprite *spr, int px, int py)
-{
-	const int centerPixel = (spr->zoom >> 9) << 16;
-
-	spr->cel->ccb_XPos = ((spr->posX - ((px * spr->zoom) >> 8)) << 16) - centerPixel;
-	spr->cel->ccb_YPos = ((spr->posY - ((py * spr->zoom) >> 8)) << 16) - centerPixel;
-
-	spr->cel->ccb_HDX = spr->zoom<<12;
-	spr->cel->ccb_VDY = spr->zoom<<8;
-}*/
-
 static void mapZoomRotateSprite(Sprite *spr)
 {
-	int hdx = spr->zoom;
-	int hdy = 0;
-	int vdx = 0;
-	int vdy = spr->zoom;
-
-	rotatePoint(&hdx, &hdy, spr->angle);
-	rotatePoint(&vdx, &vdy, spr->angle);
+	int hdx = (spr->zoom * CosF16(spr->angle<<8)) >> 16;
+	int hdy = (spr->zoom * -SinF16(spr->angle<<8)) >> 16;
+	int vdx = -hdy;
+	int vdy = hdx;
 
 	spr->cel->ccb_HDX = hdx << 12;
 	spr->cel->ccb_HDY = hdy << 12;
 	spr->cel->ccb_VDX = vdx << 8;
 	spr->cel->ccb_VDY = vdy << 8;
 
+	// sub to move to center of the sprite
 	hdx *= (spr->width >> 1);
 	hdy *= (spr->width >> 1);
 	vdx *= (spr->height >> 1);
 	vdy *= (spr->height >> 1);
-
 	spr->cel->ccb_XPos = (spr->posX << 16) + ((- hdx - vdx) << 8);
 	spr->cel->ccb_YPos = (spr->posY << 16) + ((- hdy - vdy) << 8);
 }

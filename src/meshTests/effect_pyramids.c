@@ -18,7 +18,7 @@
 #include "sprite_engine.h"
 
 
-static bool testBlurIdea = true;
+static bool testBlurIdea = false;
 
 static Mesh *pyramidMesh[3];
 // COMMENT OUT PALETTE BUG
@@ -150,7 +150,7 @@ void effectPyramidsInit()
 	sprTexture[2] = newSprite(texWidth, texHeight, 8, CREATECEL_CODED, pyramidPal, xorTexs2[1].bitmap);
 
 	for (i=0; i<3; ++i) {
-		setSpritePositionZoomRotate(sprTexture[i], 280, 40, 127, 127);
+		setSpritePositionZoom(sprTexture[i], 280, 40, 127);
 	}
 
 	pyramidMesh[0] = initGenMesh(1024, xorTexs, MESH_OPTIONS_DEFAULT, MESH_PYRAMID1, NULL);

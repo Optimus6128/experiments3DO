@@ -245,7 +245,7 @@ static void renderText()
 
 static void render4(const int time)
 {
-	const int angle = -time << 16;
+	const int angle = -time << 8;
 	const int px = (SinF16(time * 40000) * 48) >> 16;
 	const int py = (SinF16(time * 50000) * 32) >> 16;
 
@@ -258,7 +258,7 @@ static void render4(const int time)
 static void render8(const int time)
 {
 	int i;
-	const int angle = time << 16;
+	const int angle = time << 8;
 
 	const int numStars = 15;
 
