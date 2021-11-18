@@ -4,6 +4,7 @@
 #include "core.h"
 #include "timerutils.h"
 #include "system_graphics.h"
+#include "input.h"
 
 static unsigned char bitfonts[] = {0,0,0,0,0,0,0,0,
 4,12,8,24,16,0,32,0,
@@ -75,22 +76,26 @@ static uchar fontsBmp[NUM_FONTS * FONT_SIZE];
 static uint16 fontsPal[FONTS_PAL_SIZE];
 static uchar fontsMap[FONTS_MAP_SIZE];
 
-bool fontsAreReady = false;
+static bool fontsAreReady = false;
 
-// -------------------------------------
+static CCB *selectionBarCel = NULL;
 
-static Item timerIOreq;
+static Item timerIOreq = -1;
 
 
 void initTimer()
 {
-	timerIOreq = GetTimerIOReq();
+	if (timerIOreq < 0) {
+		timerIOreq = GetTimerIOReq();
+	}
 }
 
 void initFonts()
 {
 	int i = 0;
 	int n, x, y;
+
+	if (fontsAreReady) return;
 
 	for (n=0; n<FONTS_PAL_SIZE; ++n) {
 		fontsPal[n] = MakeRGB15(n, n, n);
@@ -250,6 +255,67 @@ void displayBuffers()
 	drawNumber(xp + 6*8, yp, getNumVramBuffers());
 	drawText(xp, yp+8, "OFFS: ");
 	drawNumber(xp + 6*8, yp+8, getNumOffscreenBuffers());
+}
+
+static void renderEffectSelectorBar(int px, int py, int length)
+{
+	if (!selectionBarCel) {
+		selectionBarCel = CreateBackdropCel(SCREEN_WIDTH, 8, 0x7FFF, 100);
+		selectionBarCel->ccb_Flags |= CCB_PXOR;
+		selectionBarCel->ccb_PIXC = 0x1F80;
+	}
+
+	selectionBarCel->ccb_XPos = px << 16;
+	selectionBarCel->ccb_YPos = py << 16;
+	selectionBarCel->ccb_HDX = length << 20;
+
+	drawCels(selectionBarCel);
+}
+
+int runEffectSelector(char **str, int size)
+{
+	int i;
+	int selection = 0;
+	const int px = 24;
+	const int py = 16;
+
+	coreInit(NULL, CORE_VRAM_SINGLEBUFFER | CORE_NO_CLEAR_FRAME);
+
+	// Display menu once
+	for (i=0; i<size; ++i) {
+		drawText(px, py+i*FONT_WIDTH, str[i]);
+	}
+	renderEffectSelectorBar(px, py, strlen(str[selection])*FONT_WIDTH);
+
+	do {
+		int moveOffset = 0;
+
+		updateInput();
+
+		if (isJoyButtonPressedOnce(JOY_BUTTON_UP)) {
+			if (selection > 0) {
+				moveOffset = -1;
+			}
+		}
+		if (isJoyButtonPressedOnce(JOY_BUTTON_DOWN)) {
+			if (selection < size-1) {
+				moveOffset = 1;
+			}
+		}
+		if (isJoyButtonPressedOnce(JOY_BUTTON_A) || isJoyButtonPressedOnce(JOY_BUTTON_START)) {
+			DeleteCel(selectionBarCel);
+			deInitGraphics();
+			return selection;
+		}
+
+		if (moveOffset!=0) {
+			renderEffectSelectorBar(px, py + selection*FONT_WIDTH, strlen(str[selection])*FONT_WIDTH);
+			selection += moveOffset;
+			renderEffectSelectorBar(px, py + selection*FONT_WIDTH, strlen(str[selection])*FONT_WIDTH);
+		}
+
+		displayScreen();
+	} while(true);
 }
 
 void setPalWithFades(int c0, int c1, int r0, int g0, int b0, int r1, int g1, int b1, uint16* pal, int numFades, int r2, int g2, int b2)

@@ -16,10 +16,16 @@ static bool menu = false;
 
 static void initSystem()
 {
-	OpenMathFolio();
-	OpenGraphicsFolio();
-	InitEventUtility(1,0,LC_Observer);
-	OpenAudioFolio();
+	static bool systemIsInit = false;
+
+	if (!systemIsInit) {
+		OpenMathFolio();
+		OpenGraphicsFolio();
+		InitEventUtility(1,0,LC_Observer);
+		OpenAudioFolio();
+
+		systemIsInit = true;
+	}
 }
 
 static void initGraphicsOptions(uint32 flags)
@@ -33,14 +39,12 @@ static void initGraphicsOptions(uint32 flags)
 
 	initGraphics(numVramBuffers, numOffscreenBuffers, horizontalAntialiasing, verticalAntialiasing);
 
-	if (flags & CORE_NO_VSYNC) setVsync(false);
-	if (flags & CORE_NO_CLEAR_FRAME) setClearFrame(false);
+	setVsync(!(flags & CORE_NO_VSYNC));
+	setClearFrame(!(flags & CORE_NO_CLEAR_FRAME));
 }
 
 void coreInit(void(*initFunc)(), uint32 flags)
 {
-
-
 	initSystem();
 	initGraphicsOptions(flags);
 	initInput();
@@ -50,7 +54,7 @@ void coreInit(void(*initFunc)(), uint32 flags)
 	initMathUtil();
 	initEngine();
 
-	initFunc();
+	if (initFunc) initFunc();
 
 	showFps = (flags & CORE_SHOW_FPS);
 	showMem = (flags & CORE_SHOW_MEM);

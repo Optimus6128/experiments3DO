@@ -12,7 +12,7 @@
 
 #include "mathutil.h"
 
-static Sprite *sprSoftBuffer;
+static Sprite *sprSoftBuffer = NULL;
 
 static ubyte softBuffer[SCREEN_WIDTH * SCREEN_HEIGHT * 2];
 
@@ -62,5 +62,5 @@ void renderTransformedMeshSoft(Mesh *ms, Vertex *vertices)
 
 void initEngineSoft()
 {
-	sprSoftBuffer = newSprite(SCREEN_WIDTH, SCREEN_HEIGHT, 16, CREATECEL_UNCODED, NULL, softBuffer);
+	if (!sprSoftBuffer) sprSoftBuffer = newSprite(SCREEN_WIDTH, SCREEN_HEIGHT, 16, CREATECEL_UNCODED, NULL, softBuffer);
 }

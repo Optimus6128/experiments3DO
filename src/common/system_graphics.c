@@ -4,14 +4,14 @@
 #include "system_graphics.h"
 #include "tools.h"
 
-static bool vsync = true;
-static bool clearFrame = true;
+static bool vsync;
+static bool clearFrame;
 
 static Item gVRAMIOReq;
 static Item vsyncItem;
 
-static int vramBuffersNum = DEFAULT_VRAM_BUFFERS_NUM;
-static int offscreenBuffersNum = DEFAULT_OFFSCREEN_BUFFERS_NUM;
+static int vramBuffersNum;
+static int offscreenBuffersNum;
 
 static Item *BitmapItems;
 static Item **BufferItems;
@@ -22,11 +22,10 @@ static ScreenContext screen;
 
 static IOInfo ioInfo;
 
-static int screenPage = 0;
-static int frameNum = 0;
-
-bool renderToBuffer = false;
-static uint32 bufferIndex = 0;
+static int screenPage;
+static int frameNum;
+bool renderToBuffer;
+static uint32 bufferIndex;
 
 void initSPORTwriteValue(uint32 value)
 {
@@ -60,8 +59,15 @@ static bool testIfTotalBuffersFitInVRAM(uint32 totalNumBuffers)
 void initGraphics(uint32 numVramBuffers, uint32 numOffscreenBuffers, bool horizontalAntialiasing, bool verticalAntialiasing)
 {
 	int i;
-	int width,height;
 	uint32 totalBuffersNum;
+
+	screenPage = 0;
+	frameNum = 0;
+	bufferIndex = 0;
+	renderToBuffer = false;
+
+	vramBuffersNum = DEFAULT_VRAM_BUFFERS_NUM;
+	offscreenBuffersNum = DEFAULT_OFFSCREEN_BUFFERS_NUM;
 
 	if (numVramBuffers !=0 || numOffscreenBuffers != 0) {	// if both vram and offscreen buffers are 0, we will use the defaults anyway
 		vramBuffersNum = numVramBuffers;
@@ -78,14 +84,17 @@ void initGraphics(uint32 numVramBuffers, uint32 numOffscreenBuffers, bool horizo
 		}
 	}
 
-	if (totalBuffersNum > 0)	// else something went wrong
+	if (totalBuffersNum > 0) {
 		CreateBasicDisplay(&screen, DI_TYPE_DEFAULT, totalBuffersNum);	// DI_TYPE_DEFAULT = 0 (NTSC)
+	} else {
+		return; // else something went wrong
+	}
 
 
-	BitmapItems = (Item*)AllocMem(sizeof(Item) * totalBuffersNum, MEMTYPE_ANY);
-	BufferItems = (Item**)AllocMem(sizeof(Item*) * offscreenBuffersNum, MEMTYPE_ANY);
-	Bitmaps = (Bitmap**)AllocMem(sizeof(Bitmap*) * totalBuffersNum, MEMTYPE_ANY);
-	Buffers = (Bitmap**)AllocMem(sizeof(Bitmap*) * offscreenBuffersNum, MEMTYPE_ANY);
+	BitmapItems = (Item*)AllocMem(sizeof(Item) * totalBuffersNum, MEMTYPE_TRACKSIZE);
+	BufferItems = (Item**)AllocMem(sizeof(Item*) * offscreenBuffersNum, MEMTYPE_TRACKSIZE);
+	Bitmaps = (Bitmap**)AllocMem(sizeof(Bitmap*) * totalBuffersNum, MEMTYPE_TRACKSIZE);
+	Buffers = (Bitmap**)AllocMem(sizeof(Bitmap*) * offscreenBuffersNum, MEMTYPE_TRACKSIZE);
 
 	for(i=0; i<totalBuffersNum; ++i) {
 		BitmapItems[i] = screen.sc_BitmapItems[i];
@@ -104,14 +113,27 @@ void initGraphics(uint32 numVramBuffers, uint32 numOffscreenBuffers, bool horizo
 		BufferItems[i] = &BitmapItems[vramBuffersNum + i];
 	}
 
-	width = Bitmaps[0]->bm_Width;
-	height = Bitmaps[0]->bm_Height;
-
 	gVRAMIOReq = CreateVRAMIOReq(); // Obtain an IOReq for all SPORT operations
 
 	initSPORTwriteValue(0);
 
 	vsyncItem = GetVBLIOReq();
+}
+
+void deInitGraphics()
+{
+	const uint32 totalBuffersNum = vramBuffersNum + offscreenBuffersNum;
+
+	if (totalBuffersNum > 0) {
+		FreeMem(BitmapItems, -1);
+		FreeMem(BufferItems, -1);
+		FreeMem(Bitmaps, -1);
+		FreeMem(Buffers, -1);
+
+		DeleteBasicDisplay(&screen);
+		DeleteVBLIOReq(vsyncItem);
+		DeleteVRAMIOReq(gVRAMIOReq);
+	}
 }
 
 void loadAndSetBackgroundImage(char *path, ubyte *screenBuffer)

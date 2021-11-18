@@ -12,6 +12,7 @@
 #define DEFAULT_OFFSCREEN_BUFFERS_NUM 1
 
 void initGraphics(uint32 numVramBuffers, uint32 numOffscreenBuffers, bool horizontalAntialiasing, bool verticalAntialiasing);
+void deInitGraphics(void);
 void displayScreen(void);
 void debugUpdate(void);
 void drawCels(CCB *cels);
