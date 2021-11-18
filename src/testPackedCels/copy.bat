@@ -1,2 +1,0 @@
-make copy
-pause

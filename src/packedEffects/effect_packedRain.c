@@ -1,6 +1,6 @@
 #include "core.h"
 
-#include "effect.h"
+#include "effect_packedRain.h"
 
 #include "system_graphics.h"
 #include "tools.h"
@@ -54,7 +54,7 @@ static void generateUnpackedRain()
 	setPal(1,3, 160,192,255, 255,255,255, pal2, 3);
 }
 
-void effectInit()
+void effectPackedRainInit()
 {
 	int i;
 	
@@ -124,7 +124,7 @@ static void render()
 	renderText();
 }
 
-void effectRun()
+void effectPackedRainRun()
 {
 	updateFromInput();
 

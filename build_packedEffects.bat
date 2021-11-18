@@ -1,5 +1,5 @@
 cd src
-cd testPackedCels
+cd packedEffects
 call build.bat
 call copy.bat
 cd..

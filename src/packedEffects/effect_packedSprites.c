@@ -1,6 +1,6 @@
 #include "core.h"
 
-#include "effect.h"
+#include "effect_packedSprites.h"
 
 #include "system_graphics.h"
 #include "tools.h"
@@ -160,7 +160,7 @@ static void effectInit16()
 	packedPer16 = packPercentage;
 }
 
-void effectInit()
+void effectPackedSpritesInit()
 {
 	loadAndSetBackgroundImage("data/background.img", (ubyte*)getBackBuffer());
 
@@ -294,7 +294,7 @@ static void render(const int time)
 	renderText();
 }
 
-void effectRun()
+void effectPackedSpritesRun()
 {
 	updateFromInput();
 
