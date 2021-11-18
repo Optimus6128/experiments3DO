@@ -1,6 +1,6 @@
 #include "core.h"
 
-#include "effect_pyramids.h"
+#include "effect_meshPyramids.h"
 
 #include "system_graphics.h"
 #include "tools.h"
@@ -123,7 +123,7 @@ static void initScanlinesSprite()
 	scanlinesSpr->cel->ccb_Flags |= CCB_BGND;
 }
 
-void effectPyramidsInit()
+void effectMeshPyramidsInit()
 {
 	int i;
 
@@ -195,7 +195,7 @@ static void matrixBlurTest(int vecsNum)
 	MulManyVec4Mat44_F16(dst, src, mat4c, vecsNum);
 }
 
-void effectPyramidsRun()
+void effectMeshPyramidsRun()
 {
 	Mesh *mesh = pyramidMesh[pyramidMeshIndex];
 

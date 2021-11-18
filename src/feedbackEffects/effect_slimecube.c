@@ -22,7 +22,7 @@ static Sprite *feedbackLineSpr[4*4*4][30]; // 4 Backbuffers, (4*80)*(4*60) = 320
 
 void effectSlimecubeInit()
 {
-	draculTex = loadTexture("data/draculin.cel");
+	draculTex = loadTexture("data/draculin64.cel");
 	draculMesh = initGenMesh(256, draculTex, MESH_OPTIONS_DEFAULT, MESH_CUBE, NULL);
 }
 

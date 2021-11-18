@@ -1,6 +1,6 @@
 #include "core.h"
 
-#include "effect_soft.h"
+#include "effect_meshSoft.h"
 
 #include "system_graphics.h"
 #include "tools.h"
@@ -63,13 +63,13 @@ static void inputScript()
 	}
 }
 
-void effectSoftInit()
+void effectMeshSoftInit()
 {
 	xorTex = initGenTexture(32,32,8,NULL,1,TEXGEN_XOR, false, NULL);
 	testMesh = initGenMesh(1024, xorTex, MESH_OPTIONS_DEFAULT, MESH_CUBE, NULL);
 }
 
-void effectSoftRun()
+void effectMeshSoftRun()
 {
 	inputScript();
 
