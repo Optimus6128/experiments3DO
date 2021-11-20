@@ -444,3 +444,19 @@ void drawBorderEdges(int posX, int posY, int width, int height)
 		*(vram + offY1) = col;
 	}
 }
+
+int getCelBpp(CCB *cel)
+{
+	static int celBppValueToBits[8] = { 0,1,2,4,6,8,16,0 };
+
+	return celBppValueToBits[cel->ccb_PRE0 & 7];
+}
+
+int getCelDataSizeInBytes(CCB *cel)
+{
+	int bpp = getCelBpp(cel);
+	if (bpp == 6) bpp = 8;
+
+	// doesn't account yet for packed cels or tiny cels (less than 8 bytes row width) with padding
+	return (cel->ccb_Width * cel->ccb_Height * bpp) >> 3;
+}

@@ -38,4 +38,7 @@ void drawBorderEdges(int posX, int posY, int width, int height);
 
 void setupWindowFeedbackCel(int posX, int posY, int width, int height, int bufferIndex, CCB *cel);
 
+int getCelBpp(CCB *cel);
+int getCelDataSizeInBytes(CCB *cel);
+
 #endif

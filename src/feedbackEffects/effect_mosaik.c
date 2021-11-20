@@ -56,7 +56,7 @@ static void renderScrollBackground()
 	if (scrollY <= 0 || scrollY >= 240) {
 		scrollYdir = -scrollYdir;
 	}
-	starryBack->ccb_SourcePtr = (CelData*)(origBackSourcePtr + scrollY * 160);
+	starryBack->ccb_SourcePtr = (CelData*)(origBackSourcePtr + scrollY * 80);
 
 	drawCels(starryBack);
 }

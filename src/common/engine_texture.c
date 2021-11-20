@@ -73,14 +73,12 @@ Texture *loadTexture(char *path)
 {
 	CCB *tempCel = LoadCel(path, MEMTYPE_ANY);
 
-	Texture *tex = initTexture(tempCel->ccb_Width, tempCel->ccb_Height, 16, TEXTURE_TYPE_STATIC, NULL, NULL, 0);
+	Texture *tex = initTexture(tempCel->ccb_Width, tempCel->ccb_Height, getCelBpp(tempCel), TEXTURE_TYPE_STATIC, NULL, NULL, 0);
 		// 16bit is the only bpp CEL type extracted from BMPTo3DOCel for now (which is what I currently use to make CEL files and testing)
 		// In the future, I'll try to deduce this from the CEL bits anyway (I already know how, just too lazy to find out again)
 		// Update: BMPTo3DOCel is shit! It saves right now the same format as BMPTo3DOImage (for VRAM structure to use with SPORT copy) instead of the most common linear CEL bitmap structure
 
-	const int size = (tex->width * tex->height * tex->bpp) / 8;
-
-	memcpy(tex->bitmap, tempCel->ccb_SourcePtr, size);
+	memcpy(tex->bitmap, tempCel->ccb_SourcePtr, getCelDataSizeInBytes(tempCel));
 
 	UnloadCel(tempCel);
 
