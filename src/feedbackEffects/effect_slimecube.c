@@ -32,23 +32,39 @@ static Mesh *draculMesh;
 static Texture *draculTex;
 static Sprite **feedbackLineSpr;
 
-const int spriteLinesPerRegion = (SCREEN_HEIGHT / FRAME_SUB_Y) / 2;
+const int spriteLines = (SCREEN_HEIGHT / FRAME_SUB_Y) / 2;
 const int screenRegionsNum = FRAME_SUB_X * FRAME_SUB_Y;
 
 static int regIter = 0;
-static int totalRegions;
+static int linesZoom = 1;
+
+static void scaleLineSprites(int zoom)
+{
+	int i;
+	const int sprWidth = SCREEN_WIDTH / FRAME_SUB_X;
+	const int sprHeight = 2;
+	const int lineOffY = sprHeight * zoom;
+	const int totalHeight = sprHeight * spriteLines;
+	const int ulX = (SCREEN_WIDTH - zoom * sprWidth) >> 1;
+	int ulY = (SCREEN_HEIGHT - zoom * totalHeight) >> 1;
+
+	for (i=0; i<spriteLines; ++i) {
+		mapZoomSpriteToQuad(feedbackLineSpr[i], ulX, ulY, ulX + zoom * sprWidth, ulY + lineOffY);
+		ulY += lineOffY;
+	}
+}
 
 static void initFeedbackLineSprites()
 {
 	int i;
+	feedbackLineSpr = (Sprite**)AllocMem(sizeof(Sprite*) * spriteLines, MEMTYPE_ANY);
 
-	totalRegions = screenRegionsNum * getNumOffscreenBuffers();
-	feedbackLineSpr = (Sprite**)AllocMem(sizeof(Sprite*) * totalRegions * spriteLinesPerRegion, MEMTYPE_ANY);
-
-	// Testing with fullscreen buffers, not the final solution
-	for (i=0; i<getNumOffscreenBuffers(); ++i) {
-		feedbackLineSpr[i] = newFeedbackSprite(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, i);
+	for (i=0; i<spriteLines; ++i) {
+		feedbackLineSpr[i] = newFeedbackSprite(0, 0, SCREEN_WIDTH / FRAME_SUB_X, 2, 0);
+		LinkCel(feedbackLineSpr[i-1]->cel, feedbackLineSpr[i]->cel);
 	}
+
+	scaleLineSprites(1);
 }
 
 void effectSlimecubeInit()
@@ -82,11 +98,23 @@ static BufferRegionInfo *getBufferRegionInfoFromNum(int num)
 	return &regionInfo;
 }
 
+static void inputScript()
+{
+	if (isJoyButtonPressedOnce(JOY_BUTTON_A)) {
+		if(++linesZoom>3) linesZoom = 1;
+		scaleLineSprites(linesZoom);
+	}
+}
+
 void effectSlimecubeRun()
 {
+	int i;
+	const int totalRegions = screenRegionsNum * getNumOffscreenBuffers();
 	const int time = getFrameNum();
 
 	BufferRegionInfo *regionInfo = getBufferRegionInfoFromNum(regIter);
+
+	inputScript();
 
 	switchRenderToBuffer(true);
 	setRenderBuffer(regionInfo->index);
@@ -94,9 +122,17 @@ void effectSlimecubeRun()
 	clearBackBuffer();
 	renderDraculCube(time);
 
+	for (i=0; i<spriteLines; ++i) {
+		int posX, posY;
+		//regionInfo = getBufferRegionInfoFromNum(regIter);
+
+		posX = regionInfo->posX;
+		posY = regionInfo->posY + (i<<1);
+		mapFeedbackSpriteToNewFramebufferArea(posX, posY, posX + regionInfo->width, posY + 2, regionInfo->index, feedbackLineSpr[i]);
+	}
+
 	switchRenderToBuffer(false);
-	//mapFeedbackSpriteToNewFramebufferArea(0,0, shrinkX, shrinkY, 1, feedbackLineSpr);
-	drawSprite(feedbackLineSpr[regionInfo->index]);
+	drawSprite(feedbackLineSpr[0]);
 
 	//drawBorderEdges(regionPosX, regionPosY, regionWidth, regionHeight);
 
