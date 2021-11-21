@@ -16,6 +16,6 @@ void renderMeshSoft(Mesh *ms);
 
 void createRotationMatrixValues(int rotX, int rotY, int rotZ, int *rotVecs);	// I will hide this again after I fix the volume
 
-void setScreenDimensions(int w, int h);
+void setScreenRegion(int posX, int posY, int width, int height);
 
 #endif

@@ -118,12 +118,12 @@ void effectDotcubeRun()
 			if (z < 256) z = 256;
 
 			switchRenderToBuffer(true);
-			setScreenDimensions(CUBE_BUFFER_WIDTH, CUBE_BUFFER_HEIGHT);
+			setScreenRegion(0, 0, CUBE_BUFFER_WIDTH, CUBE_BUFFER_HEIGHT);
 			clearBackBuffer();
 			renderFlatCube(time, 1024);
 
 			switchRenderToBuffer(false);
-			setScreenDimensions(SCREEN_WIDTH, SCREEN_HEIGHT);
+			setScreenRegion(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 			setSpritePositionZoom(feedbackSpr, SCREEN_WIDTH/2, SCREEN_HEIGHT/2, z);
 			drawSprite(feedbackSpr);
 

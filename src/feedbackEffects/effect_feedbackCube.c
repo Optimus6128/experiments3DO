@@ -167,13 +167,13 @@ void effectFeedbackCubeRun()
 		setMeshRotation(cubeMeshBack, time, time, time);
 
 		switchRenderToBuffer(true);
-		setScreenDimensions(FB_WIDTH, FB_HEIGHT);
+		setScreenRegion(0, 0, FB_WIDTH, FB_HEIGHT);
 
 			drawSprite(bgndSpr);
 			renderMesh(cubeMeshBack);
 
 		switchRenderToBuffer(false);
-		setScreenDimensions(SCREEN_WIDTH, SCREEN_HEIGHT);
+		setScreenRegion(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
 
 		if (!hwFeedback)
 			copyBufferToTexture();

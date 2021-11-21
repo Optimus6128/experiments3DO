@@ -17,6 +17,8 @@ static Vertex vertices[MAX_VERTICES_NUM];
 static int icos[256], isin[256];
 static uint32 recZ[NUM_REC_Z];
 
+static int screenOffsetX = 0;
+static int screenOffsetY = 0;
 static int screenWidth = SCREEN_WIDTH;
 static int screenHeight = SCREEN_HEIGHT;
 
@@ -89,16 +91,19 @@ static void translateAndProjectVertices(Mesh *ms)
 	const int posY = ms->posY;
 	const int posZ = ms->posZ;
 
-	register int i;
+	int i;
 	const int lvNum = ms->vrtxNum;
+
+	const int offsetX = screenOffsetX + (screenWidth >> 1);
+	const int offsetY = screenOffsetY + (screenHeight >> 1);
 
 	for (i=0; i<lvNum; i++)
 	{
 		const int vz = vertices[i].z + posZ;
 		if (vz > 0) {
 			const int recDivZ = recZ[vz];
-			vertices[i].x = screenWidth / 2 + ((((vertices[i].x + posX) << PROJ_SHR) * recDivZ) >> REC_FPSHR);
-			vertices[i].y = screenHeight / 2 - ((((vertices[i].y + posY) << PROJ_SHR) * recDivZ) >> REC_FPSHR);
+			vertices[i].x = offsetX + ((((vertices[i].x + posX) << PROJ_SHR) * recDivZ) >> REC_FPSHR);
+			vertices[i].y = offsetY - ((((vertices[i].y + posY) << PROJ_SHR) * recDivZ) >> REC_FPSHR);
 		}
 	}
 }
@@ -181,10 +186,17 @@ void renderMeshSoft(Mesh *ms)
 	renderTransformedMeshSoft(ms, vertices);
 }
 
-void setScreenDimensions(int w, int h)
+void setScreenRegion(int posX, int posY, int width, int height)
 {
-	screenWidth = w;
-	screenHeight = h;
+	// In the future I can do some of it origin clipping on the hardware API
+	// however the new width/height is still needed for the CPU to offset the 3d transformations to the center
+
+	// Doom used SetClipWidth, SetClipHeight, SetClipOrigin but in other code like the STNICCC I couldn't make them work, maybe need some more init somewhere else
+
+	screenOffsetX = posX;
+	screenOffsetY = posY;
+	screenWidth = width;
+	screenHeight = height;
 }
 
 void initEngine()
