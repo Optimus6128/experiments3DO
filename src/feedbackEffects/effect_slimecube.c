@@ -32,10 +32,13 @@ static Mesh *draculMesh;
 static Texture *draculTex;
 static Sprite **feedbackLineSpr;
 
+CCB *eraseCel;
+
 const int spriteLines = (SCREEN_HEIGHT / FRAME_SUB_Y) / 2;
 const int screenRegionsNum = FRAME_SUB_X * FRAME_SUB_Y;
 
 static int regIter = 0;
+static int totalRegions;
 static int linesZoom = 1;
 
 static void scaleLineSprites(int zoom)
@@ -71,13 +74,19 @@ void effectSlimecubeInit()
 {
 	initFeedbackLineSprites();
 
+	totalRegions = screenRegionsNum * getNumOffscreenBuffers();
+
 	draculTex = loadTexture("data/draculin64.cel");
 	draculMesh = initGenMesh(256, draculTex, MESH_OPTIONS_DEFAULT, MESH_CUBE, NULL);
+
+	eraseCel = CreateBackdropCel(SCREEN_WIDTH / FRAME_SUB_X, SCREEN_HEIGHT / FRAME_SUB_Y, 0, 100);
+	eraseCel->ccb_Flags |= CCB_BGND;
 }
 
 static void renderDraculCube(int t)
 {
-	setMeshPosition(draculMesh, 0, 0, 1408);
+	setMeshPosition(draculMesh, 0, 0, 1408);	//4x3
+	//setMeshPosition(draculMesh, 0, 0, 960);	// 2x2
 	setMeshRotation(draculMesh, t, t<<1, t>>1);
 	renderMesh(draculMesh);
 }
@@ -106,10 +115,20 @@ static void inputScript()
 	}
 }
 
+static int getBackInTimeIter(int presentIter, int line, int t)
+{
+	const int waveAmp = totalRegions >> 2;
+	const int wave = (((SinF16((3*line+2*t) << 16) + 65536) * waveAmp) >> 16) + (((SinF16((2*line-t) << 16) + 65536) * waveAmp) >> 16);
+
+	int pastIter = presentIter - wave;
+	if (pastIter < 0) pastIter += totalRegions;
+
+	return pastIter;
+}
+
 void effectSlimecubeRun()
 {
 	int i;
-	const int totalRegions = screenRegionsNum * getNumOffscreenBuffers();
 	const int time = getFrameNum();
 
 	BufferRegionInfo *regionInfo = getBufferRegionInfoFromNum(regIter);
@@ -119,12 +138,16 @@ void effectSlimecubeRun()
 	switchRenderToBuffer(true);
 	setRenderBuffer(regionInfo->index);
 	setScreenRegion(regionInfo->posX, regionInfo->posY, regionInfo->width, regionInfo->height);
-	clearBackBuffer();
+
+	eraseCel->ccb_XPos = regionInfo->posX << 16;
+	eraseCel->ccb_YPos = regionInfo->posY << 16;
+	drawCels(eraseCel);
+
 	renderDraculCube(time);
 
 	for (i=0; i<spriteLines; ++i) {
 		int posX, posY;
-		//regionInfo = getBufferRegionInfoFromNum(regIter);
+		regionInfo = getBufferRegionInfoFromNum(getBackInTimeIter(regIter, i, time));
 
 		posX = regionInfo->posX;
 		posY = regionInfo->posY + (i<<1);
