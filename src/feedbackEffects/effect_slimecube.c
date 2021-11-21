@@ -20,6 +20,14 @@
 #define FRAME_SUB_X 4
 #define FRAME_SUB_Y 3
 
+typedef struct BufferRegionInfo
+{
+	int index;
+	int posX, posY;
+	int width, height;
+}BufferRegionInfo;
+
+
 static Mesh *draculMesh;
 static Texture *draculTex;
 static Sprite **feedbackLineSpr;
@@ -27,15 +35,15 @@ static Sprite **feedbackLineSpr;
 const int spriteLinesPerRegion = (SCREEN_HEIGHT / FRAME_SUB_Y) / 2;
 const int screenRegionsNum = FRAME_SUB_X * FRAME_SUB_Y;
 
-static int regIndex = 0;
-static int regBuffIndex = 0;
+static int regIter = 0;
+static int totalRegions;
 
 static void initFeedbackLineSprites()
 {
 	int i;
-	const int numOfLineSprites = screenRegionsNum * getNumOffscreenBuffers() * spriteLinesPerRegion;
 
-	feedbackLineSpr = (Sprite**)AllocMem(sizeof(Sprite*) * numOfLineSprites, MEMTYPE_ANY);
+	totalRegions = screenRegionsNum * getNumOffscreenBuffers();
+	feedbackLineSpr = (Sprite**)AllocMem(sizeof(Sprite*) * totalRegions * spriteLinesPerRegion, MEMTYPE_ANY);
 
 	// Testing with fullscreen buffers, not the final solution
 	for (i=0; i<getNumOffscreenBuffers(); ++i) {
@@ -58,41 +66,39 @@ static void renderDraculCube(int t)
 	renderMesh(draculMesh);
 }
 
-static void cycleRegions()
+static BufferRegionInfo *getBufferRegionInfoFromNum(int num)
 {
-	++regIndex;
-	if (regIndex==screenRegionsNum) {
-		regIndex = 0;
-		++regBuffIndex;
-		if (regBuffIndex==getNumOffscreenBuffers()) {
-			regBuffIndex = 0;
-		}
-	}
+	static BufferRegionInfo regionInfo;
+
+	const int regX = num % FRAME_SUB_X;
+	const int regY = (num / FRAME_SUB_X) % FRAME_SUB_Y;
+
+	regionInfo.index = num / screenRegionsNum;
+	regionInfo.width = SCREEN_WIDTH / FRAME_SUB_X;
+	regionInfo.height = SCREEN_HEIGHT / FRAME_SUB_Y;
+	regionInfo.posX = regX * regionInfo.width;
+	regionInfo.posY = regY * regionInfo.height;
+
+	return &regionInfo;
 }
 
 void effectSlimecubeRun()
 {
 	const int time = getFrameNum();
 
-	const int regX = regIndex % FRAME_SUB_X;
-	const int regY = (regIndex / FRAME_SUB_X) % FRAME_SUB_Y;
-
-	const int regionWidth = SCREEN_WIDTH / FRAME_SUB_X;
-	const int regionHeight = SCREEN_HEIGHT / FRAME_SUB_Y;
-	const int regionPosX = regX * regionWidth;
-	const int regionPosY = regY * regionHeight;
+	BufferRegionInfo *regionInfo = getBufferRegionInfoFromNum(regIter);
 
 	switchRenderToBuffer(true);
-	setRenderBuffer(regBuffIndex);
-	setScreenRegion(regionPosX, regionPosY, regionWidth, regionHeight);
-	//clearBackBuffer();
+	setRenderBuffer(regionInfo->index);
+	setScreenRegion(regionInfo->posX, regionInfo->posY, regionInfo->width, regionInfo->height);
+	clearBackBuffer();
 	renderDraculCube(time);
 
 	switchRenderToBuffer(false);
 	//mapFeedbackSpriteToNewFramebufferArea(0,0, shrinkX, shrinkY, 1, feedbackLineSpr);
-	drawSprite(feedbackLineSpr[regBuffIndex]);
+	drawSprite(feedbackLineSpr[regionInfo->index]);
 
 	//drawBorderEdges(regionPosX, regionPosY, regionWidth, regionHeight);
 
-	cycleRegions();
+	regIter = (regIter + 1) % totalRegions;
 }
