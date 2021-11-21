@@ -32,7 +32,7 @@ ubyte bgndBmp[FB_SIZE];
 
 static bool flipPolygons = false;
 static bool doFeedback = true;
-static bool hwFeedback = false;
+static bool hwFeedback = true;
 static bool translucency = false;
 
 static int cubeOffsetX = 0;

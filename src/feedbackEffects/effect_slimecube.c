@@ -64,7 +64,7 @@ static void initFeedbackLineSprites()
 
 	for (i=0; i<spriteLines; ++i) {
 		feedbackLineSpr[i] = newFeedbackSprite(0, 0, SCREEN_WIDTH / FRAME_SUB_X, 2, 0);
-		LinkCel(feedbackLineSpr[i-1]->cel, feedbackLineSpr[i]->cel);
+		if (i>0) LinkCel(feedbackLineSpr[i-1]->cel, feedbackLineSpr[i]->cel);
 	}
 
 	scaleLineSprites(1);
