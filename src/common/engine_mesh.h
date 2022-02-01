@@ -10,7 +10,6 @@
 
 typedef struct QuadData
 {
-	CCB *cel;
 	ubyte textureId;
 	ubyte palId;
 }QuadData;
@@ -24,6 +23,7 @@ typedef struct Mesh
 	int indexNum;
 
 	QuadData *quad;
+	CCB *cel;
 	int quadsNum;
 
 	Texture *tex;

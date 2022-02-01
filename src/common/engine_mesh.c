@@ -27,7 +27,7 @@ void updateMeshCELs(Mesh *ms)
 		if (tex->type & TEXTURE_TYPE_DYNAMIC) {
 			int woffset;
 			int vcnt;
-			CCB *cel = ms->quad[i].cel;
+			CCB *cel = ms->cel;
 
 			// In the future, also take account of offscreen buffer position too
 			if (tex->type & TEXTURE_TYPE_FEEDBACK) {
@@ -152,6 +152,7 @@ Mesh* initMesh(int vrtxNum, int quadsNum)
 	ms->vrtx = (Vertex*)AllocMem(ms->vrtxNum * sizeof(Vertex), MEMTYPE_ANY);
 	ms->index = (int*)AllocMem(ms->indexNum * sizeof(int), MEMTYPE_ANY);
 	ms->quad = (QuadData*)AllocMem(ms->quadsNum * sizeof(QuadData), MEMTYPE_ANY);
+	ms->cel = 
 
 	return ms;
 }
