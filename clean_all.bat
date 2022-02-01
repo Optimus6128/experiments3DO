@@ -4,5 +4,7 @@ cd../meshTests
 call clean.bat
 cd../packedEffects
 call clean.bat
+cd../spriteTests
+call clean.bat
 cd../volumeEffects
 call clean.bat
