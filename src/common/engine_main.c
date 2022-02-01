@@ -1,6 +1,7 @@
 #include "core.h"
 
 #include "tools.h"
+#include "cel_helpers.h"
 
 #include "engine_mesh.h"
 #include "engine_texture.h"
@@ -29,8 +30,8 @@ static void(*mapcelFunc)(CCB*, Point*);
 
 static void fasterMapCel(CCB *c, Point *q)
 {
-	const int shrWidth = shr[c->ccb_Width];
-	const int shrHeight = shr[c->ccb_Height];
+	const int shrWidth = shr[getCelWidth(c)];
+	const int shrHeight = shr[getCelHeight(c)];
 
 	const int q0x = q[0].pt_X;
 	const int q0y = q[0].pt_Y;
@@ -119,9 +120,10 @@ static void rotateVerticesHw(Mesh *ms)
 
 static void prepareTransformedMeshCELs(Mesh *ms)
 {
-	int i, j=0;
+	int i;
 	int *indices = ms->index;
 	Point quad[4];
+	CCB *cel = ms->cel;
 
 	int n = 1;
 	for (i=0; i<ms->indexNum; i+=4)
@@ -136,12 +138,12 @@ static void prepareTransformedMeshCELs(Mesh *ms)
 		}
 
 		if (!polygonOrderTestCPU || n > 0) {
-			ms->quad[j].cel->ccb_Flags &= ~CCB_SKIP;
-			mapcelFunc(ms->quad[j].cel, quad);
+			cel->ccb_Flags &= ~CCB_SKIP;
+			mapcelFunc(cel, quad);
 		} else {
-			ms->quad[j].cel->ccb_Flags |= CCB_SKIP;
+			cel->ccb_Flags |= CCB_SKIP;
 		}
-		++j;
+		++cel;
 	}
 }
 
@@ -171,7 +173,7 @@ static void renderTransformedMesh(Mesh *ms)
 	useCPUtestPolygonOrder(ms->useCPUccwTest);
 
 	prepareTransformedMeshCELs(ms);
-	drawCels(ms->quad[0].cel);
+	drawCels(ms->cel);
 }
 
 void renderMesh(Mesh *ms)

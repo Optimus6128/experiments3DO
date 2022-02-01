@@ -1,6 +1,7 @@
 #include "core.h"
 
 #include "tools.h"
+#include "cel_helpers.h"
 #include "system_graphics.h"
 
 #include "engine_mesh.h"
@@ -55,38 +56,44 @@ void updateMeshCELs(Mesh *ms)
 void prepareCelList(Mesh *ms)
 {
 	int i;
+
 	for (i=0; i<ms->quadsNum; i++)
 	{
 		Texture *tex = &ms->tex[ms->quad[i].textureId];
+		CCB *cel = &ms->cel[i];
 
-		int32 celType = CREATECEL_UNCODED;
+		int celType = CEL_TYPE_UNCODED;
 		if (tex->type & TEXTURE_TYPE_PALLETIZED)
-			celType = CREATECEL_CODED;
+			celType = CEL_TYPE_CODED;
 
-		ms->quad[i].cel = CreateCel(tex->width, tex->height, tex->bpp, celType, tex->bitmap);
-		ms->quad[i].cel->ccb_SourcePtr = (CelData*)tex->bitmap;	// I used to have issues, fixed it on sprite_engine. In the future I'll simple replace CreateCel
-		ms->quad[i].cel->ccb_PLUTPtr = (uint16*)&tex->pal[ms->quad[i].palId << getPaletteColorsNum(tex->bpp)];
+		initCel(tex->width, tex->height, tex->bpp, celType, cel);
+		setupCelData((uint16*)&tex->pal[ms->quad[i].palId << getPaletteColorsNum(tex->bpp)], tex->bitmap, cel);
 
-		ms->quad[i].cel->ccb_Flags &= ~CCB_ACW;	// Initially, ACW is off and only ACCW (counterclockwise) polygons are visible
+		cel->ccb_PLUTPtr = (uint16*)&tex->pal[ms->quad[i].palId << getPaletteColorsNum(tex->bpp)];
 
-		ms->quad[i].cel->ccb_Flags |= CCB_BGND;
+		cel->ccb_Flags &= ~CCB_ACW;	// Initially, ACW is off and only ACCW (counterclockwise) polygons are visible
+
+		cel->ccb_Flags |= CCB_BGND;
 		if (!(tex->type & TEXTURE_TYPE_FEEDBACK))
-			ms->quad[i].cel->ccb_Flags |= (CCB_ACSC | CCB_ALSC);	// Enable Super Clipping only if Feedback Texture is not enabled, it might lock otherwise
+			cel->ccb_Flags |= (CCB_ACSC | CCB_ALSC);	// Enable Super Clipping only if Feedback Texture is not enabled, it might lock otherwise
 
-		if (i!=0) LinkCel(ms->quad[i-1].cel, ms->quad[i].cel);
+		if (i!=0) LinkCel(&ms->cel[i-1], &ms->cel[i]);
 	}
-	ms->quad[ms->quadsNum-1].cel->ccb_Flags |= CCB_LAST;
+	ms->cel[ms->quadsNum-1].ccb_Flags |= CCB_LAST;
 }
 
 static void setMeshCELflags(Mesh *ms, uint32 flags, bool enable)
 {
 	int i;
+	CCB *cel = ms->cel;
+
 	for (i=0; i<ms->quadsNum; i++) {
 		if (enable) {
-			ms->quad[i].cel->ccb_Flags |= flags;
+			cel->ccb_Flags |= flags;
 		} else {
-			ms->quad[i].cel->ccb_Flags &= ~flags;
+			cel->ccb_Flags &= ~flags;
 		}
+		++cel;
 	}
 }
 
@@ -122,12 +129,15 @@ void setMeshPolygonOrder(Mesh *ms, bool cw, bool ccw)
 void setMeshTranslucency(Mesh *ms, bool enable)
 {
 	int i;
+	CCB *cel = ms->cel;
+
 	for (i=0; i<ms->quadsNum; i++) {
 		if (enable) {
-			ms->quad[i].cel->ccb_PIXC = TRANSLUCENT_CEL;
+			cel->ccb_PIXC = TRANSLUCENT_CEL;
 		} else {
-			ms->quad[i].cel->ccb_PIXC = SOLID_CEL;
+			cel->ccb_PIXC = SOLID_CEL;
 		}
+		++cel;
 	}
 }
 
@@ -152,7 +162,7 @@ Mesh* initMesh(int vrtxNum, int quadsNum)
 	ms->vrtx = (Vertex*)AllocMem(ms->vrtxNum * sizeof(Vertex), MEMTYPE_ANY);
 	ms->index = (int*)AllocMem(ms->indexNum * sizeof(int), MEMTYPE_ANY);
 	ms->quad = (QuadData*)AllocMem(ms->quadsNum * sizeof(QuadData), MEMTYPE_ANY);
-	ms->cel = 
+	ms->cel = (CCB*)AllocMem(ms->quadsNum * sizeof(CCB), MEMTYPE_ANY);
 
 	return ms;
 }

@@ -33,14 +33,12 @@ static void setDefaultCelValues(CCB *cel)
 
 int getCelWidth(CCB *cel)
 {
-	// will implement in the future
-	return 0;
+	return (cel->ccb_PRE1 & PRE1_TLHPCNT_MASK) + PRE1_TLHPCNT_PREFETCH;
 }
 
 int getCelHeight(CCB *cel)
 {
-	// will implement in the future
-	return 0;
+	return ((cel->ccb_PRE0 & PRE0_VCNT_MASK) >> PRE0_VCNT_SHIFT) + PRE0_VCNT_PREFETCH;
 }
 
 int getCelBpp(CCB *cel)
@@ -111,7 +109,7 @@ void setCelType(int type, CCB *cel)
 	cel->ccb_Flags &= ~CCB_PACKED;
 
 	if (type & CEL_TYPE_UNCODED) cel->ccb_PRE0 |= PRE0_LINEAR;
-	if (type & CEL_PACKED) cel->ccb_Flags |= CCB_PACKED;
+	if (type & CEL_TYPE_PACKED) cel->ccb_Flags |= CCB_PACKED;
 }
 
 void setCelPalette(uint16 *pal, CCB *cel)
