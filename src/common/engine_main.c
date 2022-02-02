@@ -3,6 +3,7 @@
 #include "tools.h"
 #include "cel_helpers.h"
 
+#include "engine_main.h"
 #include "engine_mesh.h"
 #include "engine_texture.h"
 #include "engine_main.h"
@@ -86,14 +87,15 @@ void createRotationMatrixValues(int rotX, int rotY, int rotZ, int *rotVecs)
 	*rotVecs = (FIXED_MUL(cosxr, cosyr, FP_BASE)) << FP_BASE_TO_CORE;
 }
 
-static void translateAndProjectVertices(Mesh *ms)
+static void translateAndProjectVertices(Object3D *obj)
 {
-	const int posX = ms->posX;
-	const int posY = ms->posY;
-	const int posZ = ms->posZ;
-
 	int i;
-	const int lvNum = ms->vrtxNum;
+
+	const int posX = obj->mesh->posX;
+	const int posY = obj->mesh->posY;
+	const int posZ = obj->mesh->posZ;
+
+	const int lvNum = obj->mesh->vrtxNum;
 
 	const int offsetX = screenOffsetX + (screenWidth >> 1);
 	const int offsetY = screenOffsetY + (screenHeight >> 1);
@@ -109,13 +111,13 @@ static void translateAndProjectVertices(Mesh *ms)
 	}
 }
 
-static void rotateVerticesHw(Mesh *ms)
+static void rotateVerticesHw(Object3D *obj)
 {
 	mat33f16 rotMat;
 
-	createRotationMatrixValues(ms->rotX, ms->rotY, ms->rotZ, (int*)rotMat);
+	createRotationMatrixValues(obj->mesh->rotX, obj->mesh->rotY, obj->mesh->rotZ, (int*)rotMat);
 
-	MulManyVec3Mat33_F16((vec3f16*)vertices, (vec3f16*)ms->vrtx, rotMat, ms->vrtxNum);
+	MulManyVec3Mat33_F16((vec3f16*)vertices, (vec3f16*)obj->mesh->vrtx, rotMat, obj->mesh->vrtxNum);
 }
 
 static void prepareTransformedMeshCELs(Mesh *ms)
@@ -161,31 +163,31 @@ static void useMapCelFunctionFast(bool enable)
 	}
 }
 
-static void transformMesh(Mesh *ms)
+static void transformMesh(Object3D *obj)
 {
-	rotateVerticesHw(ms);
-	translateAndProjectVertices(ms);
+	rotateVerticesHw(obj);
+	translateAndProjectVertices(obj);
 }
 
-static void renderTransformedMesh(Mesh *ms)
+static void renderTransformedMesh(Object3D *obj)
 {
-	useMapCelFunctionFast(ms->useFastMapCel);
-	useCPUtestPolygonOrder(ms->useCPUccwTest);
+	useMapCelFunctionFast(false);	// Should deduce it or maybe mark the polygons if textures are power of two. Using the slower option for now.
+	useCPUtestPolygonOrder(true);	// the CEL clockwise clipping sucks anyway. In the future we my add this option as a state or per object maybe..
 
-	prepareTransformedMeshCELs(ms);
-	drawCels(ms->cel);
+	prepareTransformedMeshCELs(obj->mesh);
+	drawCels(obj->ms->cel);
 }
 
-void renderMesh(Mesh *ms)
+void renderObject3D(Object3D *obj)
 {
-	transformMesh(ms);
-	renderTransformedMesh(ms);
+	transformMesh(obj);
+	renderTransformedMesh(obj);
 }
 
-void renderMeshSoft(Mesh *ms)
+void renderObject3Dsoft(Object3D *obj)
 {
-	transformMesh(ms);
-	renderTransformedMeshSoft(ms, vertices);
+	transformMesh(obj);
+	renderTransformedMeshSoft(obj->mesh, vertices);
 }
 
 void setScreenRegion(int posX, int posY, int width, int height)
@@ -199,6 +201,32 @@ void setScreenRegion(int posX, int posY, int width, int height)
 	screenOffsetY = posY;
 	screenWidth = width;
 	screenHeight = height;
+}
+
+Object3D* initObject3D(Mesh *ms)
+{
+	Object3D *obj = (Object3D*)AllocMem(sizeof(Object3D), MEMTYPE_ANY);
+
+	obj->mesh = ms;
+	
+	obj->posX = obj->posY = obj->posZ = 0;
+	obj->rotX = obj->rotY = obj->rotZ = 0;
+
+	return obj;
+}
+
+void setObject3Dpos(Object3D *obj, int px, int py, int pz)
+{
+	obj->posX = px;
+	obj->posY = py;
+	obj->posZ = pz;
+}
+
+void setObject3Drot(Object3D *obj, int rx, int ry, int rz)
+{
+	obj->rotX = rx;
+	obj->rotY = ry;
+	obj->rotZ = rz;
 }
 
 void initEngine()
