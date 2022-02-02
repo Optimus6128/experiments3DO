@@ -21,7 +21,7 @@ static int getPaletteColorsNum(int bpp)
 
 void updateMeshCELs(Mesh *ms)
 {
-	if (ms->renderType & MESH_RENDER_HARD) {
+	if (ms->renderType & MESH_OPTION_RENDER_HARD) {
 		int i;
 		for (i=0; i<ms->quadsNum; i++) {
 			Texture *tex = &ms->tex[ms->quad[i].textureId];
@@ -57,7 +57,7 @@ void updateMeshCELs(Mesh *ms)
 
 void prepareCelList(Mesh *ms)
 {
-	if (ms->renderType & MESH_RENDER_HARD) {
+	if (ms->renderType & MESH_OPTION_RENDER_HARD) {
 		int i;
 
 		for (i=0; i<ms->quadsNum; i++)
@@ -88,7 +88,7 @@ void prepareCelList(Mesh *ms)
 
 static void setMeshCELflags(Mesh *ms, uint32 flags, bool enable)
 {
-	if (ms->renderType & MESH_RENDER_HARD) {
+	if (ms->renderType & MESH_OPTION_RENDER_HARD) {
 		int i;
 		CCB *cel = ms->cel;
 
@@ -105,7 +105,7 @@ static void setMeshCELflags(Mesh *ms, uint32 flags, bool enable)
 
 void setMeshPolygonOrder(Mesh *ms, bool cw, bool ccw)
 {
-	if (ms->renderType & MESH_RENDER_HARD) {
+	if (ms->renderType & MESH_OPTION_RENDER_HARD) {
 		if (cw) {
 			setMeshCELflags(ms, CCB_ACW, true);
 		} else {
@@ -122,7 +122,7 @@ void setMeshPolygonOrder(Mesh *ms, bool cw, bool ccw)
 
 void setMeshTranslucency(Mesh *ms, bool enable)
 {
-	if (ms->renderType & MESH_RENDER_HARD) {
+	if (ms->renderType & MESH_OPTION_RENDER_HARD) {
 		int i;
 		CCB *cel = ms->cel;
 
@@ -139,14 +139,14 @@ void setMeshTranslucency(Mesh *ms, bool enable)
 
 void setMeshTransparency(Mesh *ms, bool enable)
 {
-	if (ms->renderType & MESH_RENDER_HARD) {
+	if (ms->renderType & MESH_OPTION_RENDER_HARD) {
 		setMeshCELflags(ms, CCB_BGND, !enable);
 	}
 }
 
 void setMeshDottedDisplay(Mesh *ms, bool enable)
 {
-	if (ms->renderType & MESH_RENDER_HARD) {
+	if (ms->renderType & MESH_OPTION_RENDER_HARD) {
 		setMeshCELflags(ms, CCB_MARIA, enable);
 	}
 }
@@ -163,10 +163,10 @@ Mesh* initMesh(int vrtxNum, int quadsNum, int renderType)
 	ms->index = (int*)AllocMem(ms->indexNum * sizeof(int), MEMTYPE_ANY);
 	ms->quad = (QuadData*)AllocMem(ms->quadsNum * sizeof(QuadData), MEMTYPE_ANY);
 
-	if (renderType & MESH_RENDER_HARD) {
+	if (renderType & MESH_OPTION_RENDER_HARD) {
 		ms->cel = (CCB*)AllocMem(ms->quadsNum * sizeof(CCB), MEMTYPE_ANY);
 	}
-	if (renderType & MESH_RENDER_SOFT) {
+	if (renderType & MESH_OPTION_RENDER_SOFT) {
 		ms->indexCol = (uint32*)AllocMem(ms->indexNum * sizeof(uint32), MEMTYPE_ANY);
 		ms->indexTC = (TexCoords*)AllocMem(ms->indexNum * sizeof(TexCoords), MEMTYPE_ANY);
 	}

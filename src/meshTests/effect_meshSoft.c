@@ -27,6 +27,7 @@ const int zoomVel = 32;
 static Mesh *testMesh;
 static Texture *xorTex;
 
+static Object3D *testObj;
 
 static void inputScript()
 {
@@ -67,14 +68,15 @@ void effectMeshSoftInit()
 {
 	xorTex = initGenTexture(32,32,8,NULL,1,TEXGEN_XOR, false, NULL);
 	testMesh = initGenMesh(1024, xorTex, MESH_OPTIONS_DEFAULT, MESH_CUBE, NULL);
+	testObj = initObject3D(testMesh);
 }
 
 void effectMeshSoftRun()
 {
 	inputScript();
 
-	setMeshPosition(testMesh, 0, 0, zoom);
-	setMeshRotation(testMesh, rotX, rotY, rotZ);
+	setObject3Dpos(testObj, 0, 0, zoom);
+	setObject3Drot(testObj, rotX, rotY, rotZ);
 
-	renderMeshSoft(testMesh);
+	renderObject3Dsoft(testObj);
 }

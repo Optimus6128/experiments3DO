@@ -4,14 +4,9 @@
 #include "engine_texture.h"
 #include "mathutil.h"
 
-#define MESH_OPTION_FAST_MAPCEL		(1 << 0)
-#define MESH_OPTION_CPU_CCW_TEST	(1 << 1)
-#define MESH_OPTIONS_DEFAULT (MESH_OPTION_FAST_MAPCEL | MESH_OPTION_CPU_CCW_TEST)
-
-enum {
-	MESH_RENDER_SOFT = 1,
-	MESH_RENDER_HARD = 2	// Can have (MESH_RENDER_SOFT | MESH_RENDER_HARD) for both
-};
+#define MESH_OPTION_RENDER_SOFT		(1 << 0)
+#define MESH_OPTION_RENDER_HARD		(1 << 1)
+#define MESH_OPTIONS_DEFAULT MESH_OPTION_RENDER_HARD
 
 typedef struct QuadData
 {

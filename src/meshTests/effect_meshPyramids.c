@@ -24,6 +24,8 @@ static Mesh *pyramidMesh[3];
 // COMMENT OUT PALETTE BUG
 //static uint16 *pyramidPal;
 
+static Object3D *pyramidObj[3];
+
 static Texture *xorTexs, *xorTexs2;
 static Sprite *sprTexture[3];
 
@@ -33,7 +35,7 @@ static int zoom=2048;
 const int rotVel = 3;
 const int zoomVel = 32;
 
-static int pyramidMeshIndex = 0;
+static int pyramidObjIndex = 0;
 bool halfSizeBlur = false;
 
 #define SCANLINES_SPR_WIDTH 320
@@ -70,7 +72,7 @@ static void inputScript()
 	}
 
 	if (isJoyButtonPressedOnce(JOY_BUTTON_C)) {
-		pyramidMeshIndex = (pyramidMeshIndex + 1) % 3;
+		pyramidObjIndex = (pyramidObjIndex + 1) % 3;
 	}
 
 	if (isJoyButtonPressed(JOY_BUTTON_LPAD)) {
@@ -90,14 +92,14 @@ static void renderText()
 {
 	char title[10];
 
-	sprintf(title, "Method %d\0", pyramidMeshIndex+1);
+	sprintf(title, "Method %d\0", pyramidObjIndex+1);
 
 	drawText(8,224, title);
 }
 
 static void renderTexture()
 {
-	drawSprite(sprTexture[pyramidMeshIndex]);
+	drawSprite(sprTexture[pyramidObjIndex]);
 }
 
 static void initScanlinesSprite()
@@ -157,6 +159,10 @@ void effectMeshPyramidsInit()
 	pyramidMesh[1] = initGenMesh(1024, xorTexs, MESH_OPTIONS_DEFAULT, MESH_PYRAMID2, NULL);
 	pyramidMesh[2] = initGenMesh(1024, xorTexs2, MESH_OPTIONS_DEFAULT, MESH_PYRAMID3, NULL);
 
+	for (i=0; i<3; ++i) {
+		pyramidObj[i] = initObject3D(pyramidMesh[i]);
+	}
+
 	setMeshTransparency(pyramidMesh[1], true);
 
 	initScanlinesSprite();
@@ -197,14 +203,14 @@ static void matrixBlurTest(int vecsNum)
 
 void effectMeshPyramidsRun()
 {
-	Mesh *mesh = pyramidMesh[pyramidMeshIndex];
+	Object3D *obj = pyramidObj[pyramidObjIndex];
 
 	inputScript();
 
-	setMeshPosition(mesh, getMousePosition().x, -getMousePosition().y, zoom);
-	setMeshRotation(mesh, rotX, rotY, rotZ);
+	setObject3Dpos(obj, getMousePosition().x, -getMousePosition().y, zoom);
+	setObject3Drot(obj, rotX, rotY, rotZ);
 
-	renderMesh(mesh);
+	renderObject3D(obj);
 
 	if (testBlurIdea) {
 		drawSprite(scanlinesSpr);

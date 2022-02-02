@@ -20,7 +20,7 @@ Mesh *initGenMesh(int size, Texture *tex, int optionsFlags, int meshgenId, void 
 		default:
 		case MESH_PLANE:
 		{
-			ms = initMesh(4, 1);
+			ms = initMesh(4, 1, optionsFlags);
 
 			ms->vrtx[0].x = -size/2; ms->vrtx[0].y = -size/2; ms->vrtx[0].z = 0;
 			ms->vrtx[1].x = size/2; ms->vrtx[1].y = -size/2; ms->vrtx[1].z = 0;
@@ -37,7 +37,7 @@ Mesh *initGenMesh(int size, Texture *tex, int optionsFlags, int meshgenId, void 
 
 		case MESH_CUBE:
 		{
-			ms = initMesh(8, 6);
+			ms = initMesh(8, 6, optionsFlags);
 
 			ms->vrtx[0].x = -size/2; ms->vrtx[0].y = -size/2; ms->vrtx[0].z = -size/2;
 			ms->vrtx[1].x = size/2; ms->vrtx[1].y = -size/2; ms->vrtx[1].z = -size/2;
@@ -64,7 +64,7 @@ Mesh *initGenMesh(int size, Texture *tex, int optionsFlags, int meshgenId, void 
 
 		case MESH_PYRAMID1:
 		{
-			ms = initMesh(5, 5);
+			ms = initMesh(5, 5, optionsFlags);
 
 			ms->vrtx[0].x = -size/2; ms->vrtx[0].y = -size/2; ms->vrtx[0].z = -size/2;
 			ms->vrtx[1].x = size/2; ms->vrtx[1].y = -size/2; ms->vrtx[1].z = -size/2;
@@ -88,7 +88,7 @@ Mesh *initGenMesh(int size, Texture *tex, int optionsFlags, int meshgenId, void 
 
 		case MESH_PYRAMID2:
 		{
-			ms = initMesh(9, 5);
+			ms = initMesh(9, 5, optionsFlags);
 
 			ms->vrtx[0].x = -size/2; ms->vrtx[0].y = -size/2; ms->vrtx[0].z = -size/2;
 			ms->vrtx[1].x = size/2; ms->vrtx[1].y = -size/2; ms->vrtx[1].z = -size/2;
@@ -122,7 +122,7 @@ Mesh *initGenMesh(int size, Texture *tex, int optionsFlags, int meshgenId, void 
 
 		case MESH_PYRAMID3:
 		{
-			ms = initMesh(5, 5);
+			ms = initMesh(5, 5, optionsFlags);
 
 			ms->vrtx[0].x = -size/2; ms->vrtx[0].y = -size/2; ms->vrtx[0].z = -size/2;
 			ms->vrtx[1].x = size/2; ms->vrtx[1].y = -size/2; ms->vrtx[1].z = -size/2;
@@ -154,7 +154,7 @@ Mesh *initGenMesh(int size, Texture *tex, int optionsFlags, int meshgenId, void 
 			const int vrtxNum = (divisions + 1) * (divisions + 1);
 			const int quadsNum = divisions * divisions;
 
-			ms = initMesh(vrtxNum, quadsNum);
+			ms = initMesh(vrtxNum, quadsNum, optionsFlags);
 
 			dx = size / divisions;
 			dy = size / divisions;
@@ -195,8 +195,6 @@ Mesh *initGenMesh(int size, Texture *tex, int optionsFlags, int meshgenId, void 
 	}
 
 	ms->tex = tex;
-	ms->useFastMapCel = (optionsFlags & MESH_OPTION_FAST_MAPCEL);
-	ms->useCPUccwTest = (optionsFlags & MESH_OPTION_CPU_CCW_TEST);
 
 	prepareCelList(ms);
 

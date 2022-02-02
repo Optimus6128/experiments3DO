@@ -91,9 +91,9 @@ static void translateAndProjectVertices(Object3D *obj)
 {
 	int i;
 
-	const int posX = obj->mesh->posX;
-	const int posY = obj->mesh->posY;
-	const int posZ = obj->mesh->posZ;
+	const int posX = obj->posX;
+	const int posY = obj->posY;
+	const int posZ = obj->posZ;
 
 	const int lvNum = obj->mesh->vrtxNum;
 
@@ -115,7 +115,7 @@ static void rotateVerticesHw(Object3D *obj)
 {
 	mat33f16 rotMat;
 
-	createRotationMatrixValues(obj->mesh->rotX, obj->mesh->rotY, obj->mesh->rotZ, (int*)rotMat);
+	createRotationMatrixValues(obj->rotX, obj->rotY, obj->rotZ, (int*)rotMat);
 
 	MulManyVec3Mat33_F16((vec3f16*)vertices, (vec3f16*)obj->mesh->vrtx, rotMat, obj->mesh->vrtxNum);
 }
@@ -175,7 +175,7 @@ static void renderTransformedMesh(Object3D *obj)
 	useCPUtestPolygonOrder(true);	// the CEL clockwise clipping sucks anyway. In the future we my add this option as a state or per object maybe..
 
 	prepareTransformedMeshCELs(obj->mesh);
-	drawCels(obj->ms->cel);
+	drawCels(obj->mesh->cel);
 }
 
 void renderObject3D(Object3D *obj)
