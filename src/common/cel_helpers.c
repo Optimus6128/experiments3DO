@@ -80,6 +80,8 @@ void setCelWidth(int width, CCB *cel)
 	} else {
 		cel->ccb_PRE1 = (cel->ccb_PRE1 & ~PRE1_WOFFSET10_MASK) | (woffset << PRE1_WOFFSET10_SHIFT);
 	}
+
+	cel->ccb_Width = width;	// in the future in full replace we won't save this, Lib3DO functions need it right now!
 }
 
 void setCelHeight(int height, CCB *cel)
@@ -87,6 +89,8 @@ void setCelHeight(int height, CCB *cel)
 	if (height < 1 || height > 1024) return;
 
 	cel->ccb_PRE0 = (cel->ccb_PRE0 & ~PRE0_VCNT_MASK) | ((height - PRE0_VCNT_PREFETCH) << PRE0_VCNT_SHIFT);
+
+	cel->ccb_Height = height;	// in the future in full replace we won't save this, Lib3DO functions need it right now!
 }
 
 void setCelBpp(int bpp, CCB *cel)
