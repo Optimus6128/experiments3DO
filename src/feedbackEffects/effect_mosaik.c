@@ -18,6 +18,7 @@
 #include "celutils.h"
 
 static Mesh *draculMesh;
+static Object3D *draculObj;
 static Texture *draculTex;
 
 static Sprite *feedbackSpr1;
@@ -35,6 +36,7 @@ void effectMosaikInit()
 
 	draculTex = loadTexture("data/draculin64.cel");
 	draculMesh = initGenMesh(256, draculTex, MESH_OPTIONS_DEFAULT, MESH_CUBE, NULL);
+	draculObj = initObject3D(draculMesh);
 
 	feedbackSpr1 = newFeedbackSprite(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
 	feedbackSpr2 = newFeedbackSprite(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 1);
@@ -42,9 +44,9 @@ void effectMosaikInit()
 
 static void renderDraculCube(int t)
 {
-	setMeshPosition(draculMesh, 0, 0, 512);
-	setMeshRotation(draculMesh, t, t<<1, t>>1);
-	renderMesh(draculMesh);
+	setObject3Dpos(draculObj, 0, 0, 512);
+	setObject3Drot(draculObj, t, t<<1, t>>1);
+	renderObject3D(draculObj);
 }
 
 static void renderScrollBackground()

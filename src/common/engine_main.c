@@ -149,11 +149,6 @@ static void prepareTransformedMeshCELs(Mesh *ms)
 	}
 }
 
-static void useCPUtestPolygonOrder(bool enable)
-{
-	polygonOrderTestCPU = enable;
-}
-
 static void useMapCelFunctionFast(bool enable)
 {
 	if (enable) {
@@ -227,6 +222,11 @@ void setObject3Drot(Object3D *obj, int rx, int ry, int rz)
 	obj->rotX = rx;
 	obj->rotY = ry;
 	obj->rotZ = rz;
+}
+
+void useCPUtestPolygonOrder(bool enable)
+{
+	polygonOrderTestCPU = enable;
 }
 
 void initEngine()

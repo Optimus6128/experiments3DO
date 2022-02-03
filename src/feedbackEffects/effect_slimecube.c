@@ -29,6 +29,7 @@ typedef struct BufferRegionInfo
 
 
 static Mesh *draculMesh;
+static Object3D *draculObj;
 static Texture *draculTex;
 static Sprite **feedbackLineSpr;
 
@@ -78,6 +79,7 @@ void effectSlimecubeInit()
 
 	draculTex = loadTexture("data/draculin64.cel");
 	draculMesh = initGenMesh(256, draculTex, MESH_OPTIONS_DEFAULT, MESH_CUBE, NULL);
+	draculObj = initObject3D(draculMesh);
 
 	eraseCel = CreateBackdropCel(SCREEN_WIDTH / FRAME_SUB_X, SCREEN_HEIGHT / FRAME_SUB_Y, 0, 100);
 	eraseCel->ccb_Flags |= CCB_BGND;
@@ -85,10 +87,10 @@ void effectSlimecubeInit()
 
 static void renderDraculCube(int t)
 {
-	setMeshPosition(draculMesh, 0, 0, 1408);	//4x3
-	//setMeshPosition(draculMesh, 0, 0, 960);	// 2x2
-	setMeshRotation(draculMesh, t, t<<1, t>>1);
-	renderMesh(draculMesh);
+	setObject3Dpos(draculObj, 0, 0, 1408);	//4x3
+	//setObject3Dpos(draculObj, 0, 0, 960);	// 2x2
+	setObject3Drot(draculObj, t, t<<1, t>>1);
+	renderObject3D(draculObj);
 }
 
 static BufferRegionInfo *getBufferRegionInfoFromNum(int num)

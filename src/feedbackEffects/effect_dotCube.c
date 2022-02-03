@@ -29,6 +29,7 @@ static char *partName[FBO_FX_NUM] = { "REAL 3D DOTCUBE", "DESERT DREAM CUBE" };
 static int fbo_fx = FBO_FX_DOTCUBE2;
 
 static Mesh *cubeMesh;
+static Object3D *cubeObj;
 
 static Texture *flatTex;
 static Sprite *feedbackSpr;
@@ -47,6 +48,7 @@ void effectDotcubeInit()
 
 			flatTex = initGenTexture(64, 64, 1, flatPal, 6, TEXGEN_FLAT, true, &flatCol);
 			cubeMesh = initGenMesh(256, flatTex, MESH_OPTIONS_DEFAULT, MESH_CUBE, NULL);
+			cubeObj = initObject3D(cubeMesh);
 
 			for (i=0; i<6; ++i) {
 				cubeMesh->quad[i].palId = i;
@@ -91,9 +93,9 @@ static void inputScript()
 
 static void renderFlatCube(int t, int z)
 {
-	setMeshPosition(cubeMesh, 0, 0, z);
-	setMeshRotation(cubeMesh, t, t<<1, t>>1);
-	renderMesh(cubeMesh);
+	setObject3Dpos(cubeObj, 0, 0, z);
+	setObject3Drot(cubeObj, t, t<<1, t>>1);
+	renderObject3D(cubeObj);
 }
 
 void effectDotcubeRun()

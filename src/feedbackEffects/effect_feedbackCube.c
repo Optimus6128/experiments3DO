@@ -22,6 +22,8 @@
 
 static Mesh *cubeMeshBack;
 static Mesh *cubeMesh;
+static Object3D *cubeBackObj;
+static Object3D *cubeObj;
 
 Texture *softFeedbackTex;
 Texture *feedbackTex0;
@@ -104,8 +106,7 @@ static void inputScript()
 
 	if (isJoyButtonPressedOnce(JOY_BUTTON_C)) {
 		flipPolygons = !flipPolygons;
-		cubeMesh->useCPUccwTest = !flipPolygons;
-		cubeMeshBack->useCPUccwTest = !flipPolygons;
+		useCPUtestPolygonOrder(!flipPolygons);
 		setMeshPolygonOrder(cubeMesh, flipPolygons, !flipPolygons);
 		setMeshPolygonOrder(cubeMeshBack, flipPolygons, !flipPolygons);
 	}
@@ -117,8 +118,7 @@ static void inputScript()
 	}
 
 	if (isJoyButtonPressedOnce(JOY_BUTTON_RPAD)) {
-		cubeMesh->useCPUccwTest = false;
-		cubeMeshBack->useCPUccwTest = false;
+		useCPUtestPolygonOrder(false);
 		setMeshPolygonOrder(cubeMesh, true, true);
 		setMeshPolygonOrder(cubeMeshBack, true, true);
 	}
@@ -147,8 +147,10 @@ void effectFeedbackCubeInit()
 	softFeedbackTex = initTexture(FB_WIDTH, FB_HEIGHT, 16, TEXTURE_TYPE_STATIC, NULL, NULL, 0);
 	draculTex = loadTexture("data/draculin.cel");
 
-	cubeMesh = initGenMesh(256, feedbackTex0, MESH_OPTION_CPU_CCW_TEST, MESH_CUBE, NULL);
+	cubeMesh = initGenMesh(256, feedbackTex0, MESH_OPTIONS_DEFAULT, MESH_CUBE, NULL);
 	cubeMeshBack = initGenMesh(256, draculTex, MESH_OPTIONS_DEFAULT, MESH_CUBE, NULL);
+	cubeObj = initObject3D(cubeMesh);
+	cubeBackObj = initObject3D(cubeMeshBack);
 
 	bgndSpr = newSprite(FB_WIDTH, FB_HEIGHT, 8, CREATECEL_UNCODED, NULL, bgndBmp);
 	genBackgroundTex();
@@ -163,14 +165,14 @@ void effectFeedbackCubeRun()
 	inputScript();
 
 	if (doFeedback) {
-		setMeshPosition(cubeMeshBack, 0, 0, 512);
-		setMeshRotation(cubeMeshBack, time, time, time);
+		setObject3Dpos(cubeBackObj, 0, 0, 512);
+		setObject3Drot(cubeBackObj, time, time, time);
 
 		switchRenderToBuffer(true);
 		setScreenRegion(0, 0, FB_WIDTH, FB_HEIGHT);
 
 			drawSprite(bgndSpr);
-			renderMesh(cubeMeshBack);
+			renderObject3D(cubeBackObj);
 
 		switchRenderToBuffer(false);
 		setScreenRegion(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -180,10 +182,10 @@ void effectFeedbackCubeRun()
 	}
 
 
-	setMeshPosition(cubeMesh, cubeOffsetX, cubeOffsetY, 512);
-	setMeshRotation(cubeMesh, 0, time, 0);
+	setObject3Dpos(cubeObj, cubeOffsetX, cubeOffsetY, 512);
+	setObject3Drot(cubeObj, 0, time, 0);
 
-	renderMesh(cubeMesh);
+	renderObject3D(cubeObj);
 
 	if (hwFeedback)
 		drawText(320-32, 0, "HARD");
