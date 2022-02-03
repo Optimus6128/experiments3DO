@@ -72,6 +72,7 @@ static int rotZtrans;
 
 static ubyte randbase[RANDTAB_SIZE];
 static Mesh *torchMesh;
+static Object3D *torchObj;
 static Texture *torchTex;
 
 static void updateBlending()
@@ -254,7 +255,7 @@ static Mesh *initTorchMesh()
 	const int y3 = -2*size;
 	const int y4 = y3-size/4;
 
-	Mesh* ms = initMesh(16, 12);
+	Mesh* ms = initMesh(16, 12, MESH_OPTION_RENDER_HARD);
 
 	ms->vrtx[0].x = -r1; ms->vrtx[0].y = y1; ms->vrtx[0].z = -r1;
 	ms->vrtx[1].x = r1; ms->vrtx[1].y = y1; ms->vrtx[1].z = -r1;
@@ -380,6 +381,7 @@ void effectInit()
 	}
 
 	torchMesh = initTorchMesh();
+	torchObj = initObject3D(torchMesh);
 
 	updateFx();
 
@@ -504,15 +506,15 @@ static void renderMariaQuads(bool backToFront)
 
 static void renderTorch()
 {
-	torchMesh->posX = posXtrans;
-	torchMesh->posY = -posYtrans - 256;
-	torchMesh->posZ = posZtrans;
+	torchObj->posX = posXtrans;
+	torchObj->posY = -posYtrans - 256;
+	torchObj->posZ = posZtrans;
 
-	torchMesh->rotX = rotXtrans;
-	torchMesh->rotY = rotYtrans;
-	torchMesh->rotZ = rotZtrans;
+	torchObj->rotX = rotXtrans;
+	torchObj->rotY = rotYtrans;
+	torchObj->rotZ = rotZtrans;
 
-	renderMesh(torchMesh);
+	renderObject3D(torchObj);
 }
 
 static void render()
