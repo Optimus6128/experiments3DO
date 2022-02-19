@@ -135,7 +135,7 @@ static void prepareTransformedMeshCELs(Mesh *ms)
 		qpt[1].pt_X = vertices[indices[index]].x; qpt[1].pt_Y = vertices[indices[index]].y; ++index;
 		qpt[2].pt_X = vertices[indices[index]].x; qpt[2].pt_Y = vertices[indices[index]].y; ++index;
 		if (i < ms->quadsNum) {	// first come the quads
-			qpt[3].pt_X = vertices[indices[i+3]].x; qpt[3].pt_Y = vertices[indices[i+3]].y; ++index;
+			qpt[3].pt_X = vertices[indices[index]].x; qpt[3].pt_Y = vertices[indices[index]].y; ++index;
 		} else {	// then the triangles
 			qpt[3].pt_X = qpt[2].pt_X; qpt[3].pt_Y = qpt[2].pt_Y;
 		}

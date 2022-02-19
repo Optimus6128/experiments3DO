@@ -255,7 +255,7 @@ static Mesh *initTorchMesh()
 	const int y3 = -2*size;
 	const int y4 = y3-size/4;
 
-	Mesh* ms = initMesh(16, 12, MESH_OPTION_RENDER_HARD);
+	Mesh* ms = initMesh(16,12,0, MESH_OPTION_RENDER_HARD);
 
 	ms->vrtx[0].x = -r1; ms->vrtx[0].y = y1; ms->vrtx[0].z = -r1;
 	ms->vrtx[1].x = r1; ms->vrtx[1].y = y1; ms->vrtx[1].z = -r1;
@@ -292,8 +292,8 @@ static Mesh *initTorchMesh()
 	ms->tex = torchTex;
 
 	for (i=0; i<ms->quadsNum; i++) {
-		ms->quad[i].textureId = 0;
-		ms->quad[i].palId = 0;
+		ms->poly[i].textureId = 0;
+		ms->poly[i].palId = 0;
 	}
 	
 	prepareCelList(ms);

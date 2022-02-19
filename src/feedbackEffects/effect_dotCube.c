@@ -51,7 +51,7 @@ void effectDotcubeInit()
 			cubeObj = initObject3D(cubeMesh);
 
 			for (i=0; i<6; ++i) {
-				cubeMesh->quad[i].palId = i;
+				cubeMesh->poly[i].palId = i;
 			}
 			updateMeshCELs(cubeMesh);
 

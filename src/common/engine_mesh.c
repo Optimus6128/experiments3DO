@@ -155,13 +155,13 @@ void setMeshDottedDisplay(Mesh *ms, bool enable)
 Mesh* initMesh(int vrtxNum, int quadsNum, int trianglesNum, int renderType)
 {
 	Mesh *ms = (Mesh*)AllocMem(sizeof(Mesh), MEMTYPE_ANY);
-	const int polysNum = ms->quadsNum + ms->trianglesNum;
+	const int polysNum = quadsNum + trianglesNum;
 
 	ms->vrtxNum = vrtxNum;
 	ms->quadsNum = quadsNum;
 	ms->trianglesNum = trianglesNum;
 
-	ms->indexNum = 4 * ms->quadsNum + 3 * ms->trianglesNum;
+	ms->indexNum = 4*quadsNum + 3*trianglesNum;
 	ms->vrtx = (Vertex*)AllocMem(ms->vrtxNum * sizeof(Vertex), MEMTYPE_ANY);
 	ms->index = (int*)AllocMem(ms->indexNum * sizeof(int), MEMTYPE_ANY);
 	ms->poly = (PolyData*)AllocMem(polysNum * sizeof(PolyData), MEMTYPE_ANY);
