@@ -1,8 +1,8 @@
 #include "core.h"
 
-#include "tools.h"
 #include "system_graphics.h"
 #include "engine_texture.h"
+#include "cel_helpers.h"
 
 void setupTexture(int width, int height, int bpp, int type, ubyte *bmp, uint16 *pal, ubyte numPals, Texture *tex)
 {

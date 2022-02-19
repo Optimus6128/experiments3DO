@@ -23,23 +23,18 @@ static void renderSoftQuadOnScreen()
 
 static void renderMeshSoft(Mesh *ms, Vertex *vertices)
 {
-	Point quad[4];
-	int *indices = ms->index;
+	Vertex *pt0, *pt1, *pt2;
 	int i,n;
 
-	for (i=0; i<ms->indexNum; i+=4)
-	{
-		quad[0].pt_X = vertices[indices[i]].x; quad[0].pt_Y = vertices[indices[i]].y;
-		quad[1].pt_X = vertices[indices[i+1]].x; quad[1].pt_Y = vertices[indices[i+1]].y;
-		quad[2].pt_X = vertices[indices[i+2]].x; quad[2].pt_Y = vertices[indices[i+2]].y;
-		quad[3].pt_X = vertices[indices[i+3]].x; quad[3].pt_Y = vertices[indices[i+3]].y;
+	int *currIndex = &ms->index[ms->quadsNum];	// at the end of quad indices start the triangle indices
+	for (i=0; i<ms->trianglesNum; ++i) {
+		pt0 = &vertices[*currIndex++];
+		pt1 = &vertices[*currIndex++];
+		pt2 = &vertices[*currIndex++];
 
-		n = (quad[0].pt_X - quad[1].pt_X) * (quad[2].pt_Y - quad[1].pt_Y) - (quad[2].pt_X - quad[1].pt_X) * (quad[0].pt_Y - quad[1].pt_Y);
-
+		n = (pt0->x - pt1->x) * (pt2->y - pt1->y) - (pt2->x - pt1->x) * (pt0->y - pt1->y);
 		if (n > 0) {
-			// render
-			// shouldn't it be triangles?
-			// call different functions for points, wireframe, etc.. but which model structure?
+
 		}
 	}
 }

@@ -22,9 +22,10 @@ static int getPaletteColorsNum(int bpp)
 void updateMeshCELs(Mesh *ms)
 {
 	if (ms->renderType & MESH_OPTION_RENDER_HARD) {
+		const int polysNum = ms->quadsNum + ms->trianglesNum;
 		int i;
-		for (i=0; i<ms->quadsNum; i++) {
-			Texture *tex = &ms->tex[ms->quad[i].textureId];
+		for (i=0; i<polysNum; i++) {
+			Texture *tex = &ms->tex[ms->poly[i].textureId];
 
 			if (tex->type & TEXTURE_TYPE_DYNAMIC) {
 				int woffset;
@@ -49,7 +50,7 @@ void updateMeshCELs(Mesh *ms)
 				// Should spare the magic numbers at some point
 				cel->ccb_PRE0 = (cel->ccb_PRE0 & ~(((1<<10) - 1)<<6)) | (vcnt << 6);
 				cel->ccb_PRE1 = (cel->ccb_PRE1 & (65536 - 1024)) | (woffset << 16) | (tex->width-1);
-				cel->ccb_PLUTPtr = (uint16*)&tex->pal[ms->quad[i].palId << getPaletteColorsNum(tex->bpp)];
+				cel->ccb_PLUTPtr = (uint16*)&tex->pal[ms->poly[i].palId << getPaletteColorsNum(tex->bpp)];
 			}
 		}
 	}
@@ -58,11 +59,11 @@ void updateMeshCELs(Mesh *ms)
 void prepareCelList(Mesh *ms)
 {
 	if (ms->renderType & MESH_OPTION_RENDER_HARD) {
+		const int polysNum = ms->quadsNum + ms->trianglesNum;
 		int i;
-
-		for (i=0; i<ms->quadsNum; i++)
+		for (i=0; i<polysNum; i++)
 		{
-			Texture *tex = &ms->tex[ms->quad[i].textureId];
+			Texture *tex = &ms->tex[ms->poly[i].textureId];
 			CCB *cel = &ms->cel[i];
 
 			int celType = CEL_TYPE_UNCODED;
@@ -70,9 +71,9 @@ void prepareCelList(Mesh *ms)
 				celType = CEL_TYPE_CODED;
 
 			initCel(tex->width, tex->height, tex->bpp, celType, cel);
-			setupCelData((uint16*)&tex->pal[ms->quad[i].palId << getPaletteColorsNum(tex->bpp)], tex->bitmap, cel);
+			setupCelData((uint16*)&tex->pal[ms->poly[i].palId << getPaletteColorsNum(tex->bpp)], tex->bitmap, cel);
 
-			cel->ccb_PLUTPtr = (uint16*)&tex->pal[ms->quad[i].palId << getPaletteColorsNum(tex->bpp)];
+			cel->ccb_PLUTPtr = (uint16*)&tex->pal[ms->poly[i].palId << getPaletteColorsNum(tex->bpp)];
 
 			cel->ccb_Flags &= ~CCB_ACW;	// Initially, ACW is off and only ACCW (counterclockwise) polygons are visible
 
@@ -82,17 +83,17 @@ void prepareCelList(Mesh *ms)
 
 			if (i!=0) LinkCel(&ms->cel[i-1], &ms->cel[i]);
 		}
-		ms->cel[ms->quadsNum-1].ccb_Flags |= CCB_LAST;
+		ms->cel[polysNum-1].ccb_Flags |= CCB_LAST;
 	}
 }
 
 static void setMeshCELflags(Mesh *ms, uint32 flags, bool enable)
 {
 	if (ms->renderType & MESH_OPTION_RENDER_HARD) {
-		int i;
+		const int polysNum = ms->quadsNum + ms->trianglesNum;
 		CCB *cel = ms->cel;
-
-		for (i=0; i<ms->quadsNum; i++) {
+		int i;
+		for (i=0; i<polysNum; i++) {
 			if (enable) {
 				cel->ccb_Flags |= flags;
 			} else {
@@ -123,10 +124,10 @@ void setMeshPolygonOrder(Mesh *ms, bool cw, bool ccw)
 void setMeshTranslucency(Mesh *ms, bool enable)
 {
 	if (ms->renderType & MESH_OPTION_RENDER_HARD) {
-		int i;
+		const int polysNum = ms->quadsNum + ms->trianglesNum;
 		CCB *cel = ms->cel;
-
-		for (i=0; i<ms->quadsNum; i++) {
+		int i;
+		for (i=0; i<polysNum; i++) {
 			if (enable) {
 				cel->ccb_PIXC = TRANSLUCENT_CEL;
 			} else {
@@ -151,20 +152,22 @@ void setMeshDottedDisplay(Mesh *ms, bool enable)
 	}
 }
 
-Mesh* initMesh(int vrtxNum, int quadsNum, int renderType)
+Mesh* initMesh(int vrtxNum, int quadsNum, int trianglesNum, int renderType)
 {
 	Mesh *ms = (Mesh*)AllocMem(sizeof(Mesh), MEMTYPE_ANY);
+	const int polysNum = ms->quadsNum + ms->trianglesNum;
 
 	ms->vrtxNum = vrtxNum;
 	ms->quadsNum = quadsNum;
+	ms->trianglesNum = trianglesNum;
 
-	ms->indexNum = ms->quadsNum << 2;
+	ms->indexNum = 4 * ms->quadsNum + 3 * ms->trianglesNum;
 	ms->vrtx = (Vertex*)AllocMem(ms->vrtxNum * sizeof(Vertex), MEMTYPE_ANY);
 	ms->index = (int*)AllocMem(ms->indexNum * sizeof(int), MEMTYPE_ANY);
-	ms->quad = (QuadData*)AllocMem(ms->quadsNum * sizeof(QuadData), MEMTYPE_ANY);
+	ms->poly = (PolyData*)AllocMem(polysNum * sizeof(PolyData), MEMTYPE_ANY);
 
 	if (renderType & MESH_OPTION_RENDER_HARD) {
-		ms->cel = (CCB*)AllocMem(ms->quadsNum * sizeof(CCB), MEMTYPE_ANY);
+		ms->cel = (CCB*)AllocMem(polysNum * sizeof(CCB), MEMTYPE_ANY);
 	}
 	if (renderType & MESH_OPTION_RENDER_SOFT) {
 		ms->indexCol = (uint32*)AllocMem(ms->indexNum * sizeof(uint32), MEMTYPE_ANY);

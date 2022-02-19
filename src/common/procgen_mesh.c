@@ -20,7 +20,7 @@ Mesh *initGenMesh(int size, Texture *tex, int optionsFlags, int meshgenId, void 
 		default:
 		case MESH_PLANE:
 		{
-			ms = initMesh(4, 1, optionsFlags);
+			ms = initMesh(4,1,0, optionsFlags);
 
 			ms->vrtx[0].x = -size/2; ms->vrtx[0].y = -size/2; ms->vrtx[0].z = 0;
 			ms->vrtx[1].x = size/2; ms->vrtx[1].y = -size/2; ms->vrtx[1].z = 0;
@@ -30,14 +30,14 @@ Mesh *initGenMesh(int size, Texture *tex, int optionsFlags, int meshgenId, void 
 			for (i=0; i<4; i++)
 				ms->index[i] = i;
 
-			ms->quad[0].textureId = 0;
-			ms->quad[0].palId = 0;
+			ms->poly[0].textureId = 0;
+			ms->poly[0].palId = 0;
 		}
 		break;
 
 		case MESH_CUBE:
 		{
-			ms = initMesh(8, 6, optionsFlags);
+			ms = initMesh(8,6,0, optionsFlags);
 
 			ms->vrtx[0].x = -size/2; ms->vrtx[0].y = -size/2; ms->vrtx[0].z = -size/2;
 			ms->vrtx[1].x = size/2; ms->vrtx[1].y = -size/2; ms->vrtx[1].z = -size/2;
@@ -56,15 +56,15 @@ Mesh *initGenMesh(int size, Texture *tex, int optionsFlags, int meshgenId, void 
 			ms->index[20] = 5; ms->index[21] = 4; ms->index[22] = 1; ms->index[23] = 0;
 
 			for (i=0; i<ms->quadsNum; i++) {
-				ms->quad[i].textureId = 0;
-				ms->quad[i].palId = 0;
+				ms->poly[i].textureId = 0;
+				ms->poly[i].palId = 0;
 			}
 		}
 		break;
 
 		case MESH_PYRAMID1:
 		{
-			ms = initMesh(5, 5, optionsFlags);
+			ms = initMesh(5,5,0, optionsFlags);
 
 			ms->vrtx[0].x = -size/2; ms->vrtx[0].y = -size/2; ms->vrtx[0].z = -size/2;
 			ms->vrtx[1].x = size/2; ms->vrtx[1].y = -size/2; ms->vrtx[1].z = -size/2;
@@ -80,15 +80,15 @@ Mesh *initGenMesh(int size, Texture *tex, int optionsFlags, int meshgenId, void 
 			ms->index[16] = 3; ms->index[17] = 0; ms->index[18] = 4; ms->index[19] = 4;
 
 			for (i=0; i<ms->quadsNum; i++) {
-				ms->quad[i].textureId = 0;
-				ms->quad[i].palId = 0;
+				ms->poly[i].textureId = 0;
+				ms->poly[i].palId = 0;
 			}
 		}
 		break;
 
 		case MESH_PYRAMID2:
 		{
-			ms = initMesh(9, 5, optionsFlags);
+			ms = initMesh(9,5,0, optionsFlags);
 
 			ms->vrtx[0].x = -size/2; ms->vrtx[0].y = -size/2; ms->vrtx[0].z = -size/2;
 			ms->vrtx[1].x = size/2; ms->vrtx[1].y = -size/2; ms->vrtx[1].z = -size/2;
@@ -110,11 +110,11 @@ Mesh *initGenMesh(int size, Texture *tex, int optionsFlags, int meshgenId, void 
 
 			for (i=0; i<ms->quadsNum; i++) {
 				if (i==0) {
-					ms->quad[i].textureId = 0;
-					ms->quad[i].palId = 0;
+					ms->poly[i].textureId = 0;
+					ms->poly[i].palId = 0;
 				} else {
-					ms->quad[i].textureId = 1;
-					ms->quad[i].palId = 1;
+					ms->poly[i].textureId = 1;
+					ms->poly[i].palId = 1;
 				}
 			}
 		}
@@ -122,7 +122,7 @@ Mesh *initGenMesh(int size, Texture *tex, int optionsFlags, int meshgenId, void 
 
 		case MESH_PYRAMID3:
 		{
-			ms = initMesh(5, 5, optionsFlags);
+			ms = initMesh(5,5,0, optionsFlags);
 
 			ms->vrtx[0].x = -size/2; ms->vrtx[0].y = -size/2; ms->vrtx[0].z = -size/2;
 			ms->vrtx[1].x = size/2; ms->vrtx[1].y = -size/2; ms->vrtx[1].z = -size/2;
@@ -139,11 +139,11 @@ Mesh *initGenMesh(int size, Texture *tex, int optionsFlags, int meshgenId, void 
 
 			for (i=0; i<ms->quadsNum; i++) {
 				if (i==0) {
-					ms->quad[i].textureId = 0;
+					ms->poly[i].textureId = 0;
 				} else {
-					ms->quad[i].textureId = 1;
+					ms->poly[i].textureId = 1;
 				}
-				ms->quad[i].palId = 0;
+				ms->poly[i].palId = 0;
 			}
 		}
 		break;
@@ -154,7 +154,7 @@ Mesh *initGenMesh(int size, Texture *tex, int optionsFlags, int meshgenId, void 
 			const int vrtxNum = (divisions + 1) * (divisions + 1);
 			const int quadsNum = divisions * divisions;
 
-			ms = initMesh(vrtxNum, quadsNum, optionsFlags);
+			ms = initMesh(vrtxNum, quadsNum, 0, optionsFlags);
 
 			dx = size / divisions;
 			dy = size / divisions;
@@ -187,8 +187,8 @@ Mesh *initGenMesh(int size, Texture *tex, int optionsFlags, int meshgenId, void 
 			}
 
 			for (i=0; i<ms->quadsNum; i++) {
-				ms->quad[i].textureId = 0;
-				ms->quad[i].palId = 0;
+				ms->poly[i].textureId = 0;
+				ms->poly[i].palId = 0;
 			}
 		}
 		break;

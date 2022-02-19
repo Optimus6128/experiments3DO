@@ -32,8 +32,8 @@ static Sprite *sprTexture[3];
 static int rotX=0, rotY=0, rotZ=0;
 static int zoom=2048;
 
-const int rotVel = 3;
-const int zoomVel = 32;
+static const int rotVel = 3;
+static const int zoomVel = 32;
 
 static int pyramidObjIndex = 0;
 bool halfSizeBlur = false;

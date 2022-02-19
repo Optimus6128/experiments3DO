@@ -124,24 +124,29 @@ static void prepareTransformedMeshCELs(Mesh *ms)
 {
 	int i;
 	int *indices = ms->index;
-	Point quad[4];
+	Point qpt[4];
 	CCB *cel = ms->cel;
+	const int polysNum = ms->quadsNum + ms->trianglesNum;
 
 	int n = 1;
-	for (i=0; i<ms->indexNum; i+=4)
-	{
-		quad[0].pt_X = vertices[indices[i]].x; quad[0].pt_Y = vertices[indices[i]].y;
-		quad[1].pt_X = vertices[indices[i+1]].x; quad[1].pt_Y = vertices[indices[i+1]].y;
-		quad[2].pt_X = vertices[indices[i+2]].x; quad[2].pt_Y = vertices[indices[i+2]].y;
-		quad[3].pt_X = vertices[indices[i+3]].x; quad[3].pt_Y = vertices[indices[i+3]].y;
+	int index = 0;
+	for (i=0; i<polysNum; ++i) {
+		qpt[0].pt_X = vertices[indices[index]].x; qpt[0].pt_Y = vertices[indices[index]].y; ++index;
+		qpt[1].pt_X = vertices[indices[index]].x; qpt[1].pt_Y = vertices[indices[index]].y; ++index;
+		qpt[2].pt_X = vertices[indices[index]].x; qpt[2].pt_Y = vertices[indices[index]].y; ++index;
+		if (i < ms->quadsNum) {	// first come the quads
+			qpt[3].pt_X = vertices[indices[i+3]].x; qpt[3].pt_Y = vertices[indices[i+3]].y; ++index;
+		} else {	// then the triangles
+			qpt[3].pt_X = qpt[2].pt_X; qpt[3].pt_Y = qpt[2].pt_Y;
+		}
 
 		if (polygonOrderTestCPU) {
-			n = (quad[0].pt_X - quad[1].pt_X) * (quad[2].pt_Y - quad[1].pt_Y) - (quad[2].pt_X - quad[1].pt_X) * (quad[0].pt_Y - quad[1].pt_Y);
+			n = (qpt[0].pt_X - qpt[1].pt_X) * (qpt[2].pt_Y - qpt[1].pt_Y) - (qpt[2].pt_X - qpt[1].pt_X) * (qpt[0].pt_Y - qpt[1].pt_Y);
 		}
 
 		if (!polygonOrderTestCPU || n > 0) {
 			cel->ccb_Flags &= ~CCB_SKIP;
-			mapcelFunc(cel, quad);
+			mapcelFunc(cel, qpt);
 		} else {
 			cel->ccb_Flags |= CCB_SKIP;
 		}

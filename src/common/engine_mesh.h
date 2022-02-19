@@ -8,11 +8,11 @@
 #define MESH_OPTION_RENDER_HARD		(1 << 1)
 #define MESH_OPTIONS_DEFAULT MESH_OPTION_RENDER_HARD
 
-typedef struct QuadData
+typedef struct PolyData
 {
-	ubyte textureId;
-	ubyte palId;
-}QuadData;
+	int textureId;
+	int palId;
+}PolyData;
 
 typedef struct TexCoords
 {
@@ -26,22 +26,24 @@ typedef struct Mesh
 
 	int *index;
 	int indexNum;
-	
-	QuadData *quad;
+
+	PolyData *poly;
 	int quadsNum;
+	int trianglesNum;
+	// indices should be stored in a way that first come the quads and then the triangles
 
 	CCB *cel;
 	uint32 *indexCol;
 	TexCoords *indexTC;
 
 	Texture *tex;
-	ubyte texturesNum;
+	int texturesNum;
 
 	int renderType;
 }Mesh;
 
 
-Mesh* initMesh(int vrtxNum, int quadsNum, int renderType);
+Mesh* initMesh(int vrtxNum, int quadsNum, int trianglesNum, int renderType);
 // TODO: Mesh *loadMesh(char *path);
 
 void prepareCelList(Mesh *ms);

@@ -1,7 +1,7 @@
 #include "sprite_engine.h"
 #include "cel_packer.h"
 #include "system_graphics.h"
-#include "tools.h"
+#include "cel_helpers.h"
 
 
 Sprite *newSprite(int width, int height, int bpp, int type, uint16 *pal, ubyte *bmp)

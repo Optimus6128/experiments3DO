@@ -29,4 +29,7 @@ void setCelType(int type, CCB *cel);
 void setCelPalette(uint16 *pal, CCB *cel);
 void setCelBitmap(void *bitmap, CCB *cel);
 
+int getCelDataSizeInBytes(CCB *cel);
+void setupWindowFeedbackCel(int posX, int posY, int width, int height, int bufferIndex, CCB *cel);
+
 #endif
