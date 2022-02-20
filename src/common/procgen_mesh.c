@@ -279,6 +279,50 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			setAllPolyData(ms,4,0,0);
 		}
 		break;
+		
+		case MESH_SQUARE_COLUMNOID:
+		{
+			const int procPointsNum = params.numProcPoints;
+			Point2D *procPoints = params.procPoints;
+
+			const int vrtxNum = procPointsNum * 4;
+			const int polysNum = (procPointsNum-1) * 4;
+			const int indicesNum = polysNum * 4;
+
+			ms = initMesh(vrtxNum, polysNum, indicesNum, optionsFlags);
+
+			setCurrentVertex(ms->vrtx);
+			setCurrentIndex(ms->index);
+
+			for (i=0; i<procPointsNum; ++i) {
+				const int r = procPoints->x;
+				const int y = procPoints->y;
+
+				addVertex(-r, y, -r);
+				addVertex( r, y, -r);
+				addVertex( r, y,  r);
+				addVertex(-r, y,  r);
+
+				++procPoints;
+			}
+
+			for (i=0; i<procPointsNum-1; ++i) {
+				const int viOff = i * 4;
+
+				addQuadIndices(viOff + 0, viOff + 4, viOff + 5, viOff + 1);
+				addQuadIndices(viOff + 1, viOff + 5, viOff + 6, viOff + 2);
+				addQuadIndices(viOff + 2, viOff + 6, viOff + 7, viOff + 3);
+				addQuadIndices(viOff + 3, viOff + 7, viOff + 4, viOff + 0);
+			}
+
+			setAllPolyData(ms,4,0,0);
+		}
+		break;
+		
+		case MESH_VOLUME_SLICES:
+		{
+		}
+		break;
 	}
 
 	ms->tex = tex;
@@ -303,6 +347,17 @@ MeshgenParams makeMeshgenGridParams(int size, int divisions)
 
 	params.size = size;
 	params.divisions = divisions;
+
+	return params;
+}
+
+MeshgenParams makeMeshgenSquareColumnoidParams(int size, Point2D *points, int numPoints)
+{
+	MeshgenParams params;
+
+	params.size = size;
+	params.procPoints = points;
+	params.numProcPoints = numPoints;
 
 	return params;
 }

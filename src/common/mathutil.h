@@ -28,10 +28,21 @@ typedef struct Point2D
     int x, y;
 }Point2D;
 
+typedef struct Point2Darray
+{
+	Point2D *points;
+	int currentIndex;
+	int pointsNum;
+}Point2Darray;
+
 extern int shr[257];
 
 int getRand(int from, int to);
 int getShr(int n);
 void initMathUtil(void);
+
+Point2Darray *initPoint2Darray(int numPoints);
+void addPoint2D(Point2Darray *ptArray, int x, int y);
+void destroyPoint2Darray(Point2Darray *ptArray);
 
 #endif

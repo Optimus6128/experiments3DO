@@ -9,6 +9,7 @@
 #include "engine_main.h"
 #include "engine_mesh.h"
 #include "engine_texture.h"
+#include "procgen_mesh.h"
 #include "procgen_texture.h"
 
 #define DOTS_WIDTH 2
@@ -73,7 +74,7 @@ static int rotZtrans;
 static ubyte randbase[RANDTAB_SIZE];
 static Mesh *torchMesh;
 static Object3D *torchObj;
-static Texture *torchTex;
+
 
 static void updateBlending()
 {
@@ -242,11 +243,14 @@ static void updateFx()
 	updateFire();
 }
 
+
+
 static Mesh *initTorchMesh()
 {
 	const int size = 256;
+	Mesh *ms;
+	Texture *torchTex;
 
-	int i;
 	const int r1 = size/2;
 	const int r2 = size/5;
 	const int r3 = size/12;
@@ -255,49 +259,18 @@ static Mesh *initTorchMesh()
 	const int y3 = -2*size;
 	const int y4 = y3-size/4;
 
-	Mesh* ms = initMesh(16,12,48, MESH_OPTION_RENDER_HARD);
+	Point2Darray *ptArray = initPoint2Darray(4);
+	addPoint2D(ptArray, r1,y1);
+	addPoint2D(ptArray, r2,y2);
+	addPoint2D(ptArray, r2,y3);
+	addPoint2D(ptArray, r3,y4);
 
-	ms->vrtx[0].x = -r1; ms->vrtx[0].y = y1; ms->vrtx[0].z = -r1;
-	ms->vrtx[1].x = r1; ms->vrtx[1].y = y1; ms->vrtx[1].z = -r1;
-	ms->vrtx[2].x = r1; ms->vrtx[2].y = y1; ms->vrtx[2].z = r1;
-	ms->vrtx[3].x = -r1; ms->vrtx[3].y = y1; ms->vrtx[3].z = r1;
-
-	ms->vrtx[4].x = -r2; ms->vrtx[4].y = y2; ms->vrtx[4].z = -r2;
-	ms->vrtx[5].x = r2; ms->vrtx[5].y = y2; ms->vrtx[5].z = -r2;
-	ms->vrtx[6].x = r2; ms->vrtx[6].y = y2; ms->vrtx[6].z = r2;
-	ms->vrtx[7].x = -r2; ms->vrtx[7].y = y2; ms->vrtx[7].z = r2;
-
-	ms->vrtx[8].x = -r2; ms->vrtx[8].y = y3; ms->vrtx[8].z = -r2;
-	ms->vrtx[9].x = r2; ms->vrtx[9].y = y3; ms->vrtx[9].z = -r2;
-	ms->vrtx[10].x = r2; ms->vrtx[10].y = y3; ms->vrtx[10].z = r2;
-	ms->vrtx[11].x = -r2; ms->vrtx[11].y = y3; ms->vrtx[11].z = r2;
-
-	ms->vrtx[12].x = -r3; ms->vrtx[12].y = y4; ms->vrtx[12].z = -r3;
-	ms->vrtx[13].x = r3; ms->vrtx[13].y = y4; ms->vrtx[13].z = -r3;
-	ms->vrtx[14].x = r3; ms->vrtx[14].y = y4; ms->vrtx[14].z = r3;
-	ms->vrtx[15].x = -r3; ms->vrtx[15].y = y4; ms->vrtx[15].z = r3;
-
-	for (i=0; i<3; ++i) {
-		int *ind = &ms->index[i*16];
-		const int viOff = i * 4;
-
-		ind[0] = viOff + 0; ind[1] = viOff + 4; ind[2] = viOff + 5; ind[3] = viOff + 1;
-		ind[4] = viOff + 1; ind[5] = viOff + 5; ind[6] = viOff + 6; ind[7] = viOff + 2;
-		ind[8] = viOff + 2; ind[9] = viOff + 6; ind[10] = viOff + 7; ind[11] = viOff + 3;
-		ind[12] = viOff + 3; ind[13] = viOff + 7; ind[14] = viOff + 4; ind[15] = viOff + 0;
-	}
-	
 	torchTex = initGenTexture(16, 16, 8, NULL, 1, TEXGEN_NOISE, false, NULL);
 	setPal(0, 31, 48,40,32, 96,80,40, torchTex->pal, 3);
-	ms->tex = torchTex;
 
-	for (i=0; i<ms->polysNum; i++) {
-		ms->poly[i].numPoints = 4;
-		ms->poly[i].textureId = 0;
-		ms->poly[i].palId = 0;
-	}
-	
-	prepareCelList(ms);
+	ms = initGenMesh(MESH_SQUARE_COLUMNOID, makeMeshgenSquareColumnoidParams(size, ptArray->points, 4), MESH_OPTIONS_DEFAULT, torchTex);
+
+	destroyPoint2Darray(ptArray);
 
 	return ms;
 }
