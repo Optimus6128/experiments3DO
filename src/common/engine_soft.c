@@ -26,11 +26,11 @@ static void renderMeshSoft(Mesh *ms, Vertex *vertices)
 	Vertex *pt0, *pt1, *pt2;
 	int i,n;
 
-	int *currIndex = &ms->index[ms->quadsNum * 4];	// at the end of quad indices start the triangle indices
-	for (i=0; i<ms->trianglesNum; ++i) {
-		pt0 = &vertices[*currIndex++];
-		pt1 = &vertices[*currIndex++];
-		pt2 = &vertices[*currIndex++];
+	int *index = ms->index;	// will assume all triangles for the soft renderer for now
+	for (i=0; i<ms->polysNum; ++i) {
+		pt0 = &vertices[*index++];
+		pt1 = &vertices[*index++];
+		pt2 = &vertices[*index++];
 
 		n = (pt0->x - pt1->x) * (pt2->y - pt1->y) - (pt2->x - pt1->x) * (pt0->y - pt1->y);
 		if (n > 0) {

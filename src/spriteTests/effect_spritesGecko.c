@@ -20,8 +20,6 @@ void effectSpritesGeckoInit()
 	int x,y;
 	int i=0;
 
-int fuck;
-
 	geckoCel = LoadCel("data/gecko2.cel", MEMTYPE_CEL);	// original CEL image is 192x160, split this in 48x40 regions of size 4x4 (SPR_W * SPR_H)
 
 	mg_width = geckoCel->ccb_Width / SPR_W;

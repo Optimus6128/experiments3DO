@@ -10,8 +10,10 @@
 
 typedef struct PolyData
 {
-	int textureId;
-	int palId;
+	ubyte numPoints;
+	ubyte textureId;
+	ubyte palId;
+	ubyte dummy;	// dummy to keep it 32bit aligned (could use it for more poly info in the future)
 }PolyData;
 
 typedef struct TexCoords
@@ -22,15 +24,13 @@ typedef struct TexCoords
 typedef struct Mesh
 {
 	Vertex *vrtx;
-	int vrtxNum;
+	int verticesNum;
 
 	int *index;
-	int indexNum;
+	int indicesNum;
 
 	PolyData *poly;
-	int quadsNum;
-	int trianglesNum;
-	// indices should be stored in a way that first come the quads and then the triangles
+	int polysNum;
 
 	CCB *cel;
 	uint32 *indexCol;
@@ -43,13 +43,11 @@ typedef struct Mesh
 }Mesh;
 
 
-Mesh* initMesh(int vrtxNum, int quadsNum, int trianglesNum, int renderType);
+Mesh* initMesh(int verticesNum, int polysNum, int indicesNum, int renderType);
 // TODO: Mesh *loadMesh(char *path);
 
 void prepareCelList(Mesh *ms);
 
-//void setMeshPosition(Mesh *ms, int px, int py, int pz);
-//void setMeshRotation(Mesh *ms, int rx, int ry, int rz);
 void setMeshPolygonOrder(Mesh *ms, bool cw, bool ccw);
 void setMeshTransparency(Mesh *ms, bool enable);
 void setMeshTranslucency(Mesh *ms, bool enable);

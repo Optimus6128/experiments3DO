@@ -22,9 +22,8 @@ static int getPaletteColorsNum(int bpp)
 void updateMeshCELs(Mesh *ms)
 {
 	if (ms->renderType & MESH_OPTION_RENDER_HARD) {
-		const int polysNum = ms->quadsNum + ms->trianglesNum;
 		int i;
-		for (i=0; i<polysNum; i++) {
+		for (i=0; i<ms->polysNum; i++) {
 			Texture *tex = &ms->tex[ms->poly[i].textureId];
 
 			if (tex->type & TEXTURE_TYPE_DYNAMIC) {
@@ -59,9 +58,8 @@ void updateMeshCELs(Mesh *ms)
 void prepareCelList(Mesh *ms)
 {
 	if (ms->renderType & MESH_OPTION_RENDER_HARD) {
-		const int polysNum = ms->quadsNum + ms->trianglesNum;
 		int i;
-		for (i=0; i<polysNum; i++)
+		for (i=0; i<ms->polysNum; i++)
 		{
 			Texture *tex = &ms->tex[ms->poly[i].textureId];
 			CCB *cel = &ms->cel[i];
@@ -83,17 +81,16 @@ void prepareCelList(Mesh *ms)
 
 			if (i!=0) LinkCel(&ms->cel[i-1], &ms->cel[i]);
 		}
-		ms->cel[polysNum-1].ccb_Flags |= CCB_LAST;
+		ms->cel[ms->polysNum-1].ccb_Flags |= CCB_LAST;
 	}
 }
 
 static void setMeshCELflags(Mesh *ms, uint32 flags, bool enable)
 {
 	if (ms->renderType & MESH_OPTION_RENDER_HARD) {
-		const int polysNum = ms->quadsNum + ms->trianglesNum;
 		CCB *cel = ms->cel;
 		int i;
-		for (i=0; i<polysNum; i++) {
+		for (i=0; i<ms->polysNum; i++) {
 			if (enable) {
 				cel->ccb_Flags |= flags;
 			} else {
@@ -124,10 +121,9 @@ void setMeshPolygonOrder(Mesh *ms, bool cw, bool ccw)
 void setMeshTranslucency(Mesh *ms, bool enable)
 {
 	if (ms->renderType & MESH_OPTION_RENDER_HARD) {
-		const int polysNum = ms->quadsNum + ms->trianglesNum;
 		CCB *cel = ms->cel;
 		int i;
-		for (i=0; i<polysNum; i++) {
+		for (i=0; i<ms->polysNum; i++) {
 			if (enable) {
 				cel->ccb_PIXC = TRANSLUCENT_CEL;
 			} else {
@@ -152,26 +148,24 @@ void setMeshDottedDisplay(Mesh *ms, bool enable)
 	}
 }
 
-Mesh* initMesh(int vrtxNum, int quadsNum, int trianglesNum, int renderType)
+Mesh* initMesh(int verticesNum, int polysNum, int indicesNum, int renderType)
 {
 	Mesh *ms = (Mesh*)AllocMem(sizeof(Mesh), MEMTYPE_ANY);
-	const int polysNum = quadsNum + trianglesNum;
 
-	ms->vrtxNum = vrtxNum;
-	ms->quadsNum = quadsNum;
-	ms->trianglesNum = trianglesNum;
+	ms->verticesNum = verticesNum;
+	ms->polysNum = polysNum;
+	ms->indicesNum = indicesNum;
 
-	ms->indexNum = 4*quadsNum + 3*trianglesNum;
-	ms->vrtx = (Vertex*)AllocMem(ms->vrtxNum * sizeof(Vertex), MEMTYPE_ANY);
-	ms->index = (int*)AllocMem(ms->indexNum * sizeof(int), MEMTYPE_ANY);
+	ms->vrtx = (Vertex*)AllocMem(ms->verticesNum * sizeof(Vertex), MEMTYPE_ANY);
+	ms->index = (int*)AllocMem(ms->indicesNum * sizeof(int), MEMTYPE_ANY);
 	ms->poly = (PolyData*)AllocMem(polysNum * sizeof(PolyData), MEMTYPE_ANY);
 
 	if (renderType & MESH_OPTION_RENDER_HARD) {
 		ms->cel = (CCB*)AllocMem(polysNum * sizeof(CCB), MEMTYPE_ANY);
 	}
 	if (renderType & MESH_OPTION_RENDER_SOFT) {
-		ms->indexCol = (uint32*)AllocMem(ms->indexNum * sizeof(uint32), MEMTYPE_ANY);
-		ms->indexTC = (TexCoords*)AllocMem(ms->indexNum * sizeof(TexCoords), MEMTYPE_ANY);
+		ms->indexCol = (uint32*)AllocMem(ms->indicesNum * sizeof(uint32), MEMTYPE_ANY);
+		ms->indexTC = (TexCoords*)AllocMem(ms->indicesNum * sizeof(TexCoords), MEMTYPE_ANY);
 	}
 	ms->renderType = renderType;
 

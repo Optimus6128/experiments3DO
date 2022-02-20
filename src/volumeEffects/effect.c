@@ -101,7 +101,7 @@ static void updateMaria()
 	}
 }
 
-static void updatePlasma()
+/*static void updatePlasma()
 {
 	//int x;
 	int y, z, i = 0;
@@ -150,9 +150,9 @@ static void updatePlasma()
 			//}
 		}
 	}
-}
+}*/
 
-static void drawMetaBall(int px, int py, int pz)
+/*static void drawMetaBall(int px, int py, int pz)
 {
 	int x,y,z;
 	ubyte *src = blob;
@@ -166,7 +166,7 @@ static void drawMetaBall(int px, int py, int pz)
 		dst = &dotTexBmp[(iz + z) * TEX_SIZE_2D + iy * TEX_WIDTH + ix];
 		for (y=0; y<BLOB_HEIGHT; ++y) {
 			for (x=0; x<BLOB_WIDTH; ++x) {
-				//*(dst + x) = (*(dst + x) + *(src + x)) >> 1;
+				// *(dst + x) = (*(dst + x) + *(src + x)) >> 1;
 				int c = *(src + x);
 				if (c > 0) {
 					c = *(dst + x) + c;
@@ -178,9 +178,9 @@ static void drawMetaBall(int px, int py, int pz)
 			dst += TEX_WIDTH;
 		}
 	}
-}
+}*/
 
-static void updateMetaballs()
+/*static void updateMetaballs()
 {
 	const int cx = TEX_WIDTH/2;
 	const int cy = TEX_HEIGHT/2;
@@ -197,7 +197,7 @@ static void updateMetaballs()
 		int sz = (SinF16(t * blobWaveZ[i]) * 9) >> 16;
 		drawMetaBall(cx+sx, cy+sy, cz+sz);
 	}
-}
+}*/
 
 static void updateFire()
 {
@@ -255,7 +255,7 @@ static Mesh *initTorchMesh()
 	const int y3 = -2*size;
 	const int y4 = y3-size/4;
 
-	Mesh* ms = initMesh(16,12,0, MESH_OPTION_RENDER_HARD);
+	Mesh* ms = initMesh(16,12,48, MESH_OPTION_RENDER_HARD);
 
 	ms->vrtx[0].x = -r1; ms->vrtx[0].y = y1; ms->vrtx[0].z = -r1;
 	ms->vrtx[1].x = r1; ms->vrtx[1].y = y1; ms->vrtx[1].z = -r1;
@@ -291,7 +291,8 @@ static Mesh *initTorchMesh()
 	setPal(0, 31, 48,40,32, 96,80,40, torchTex->pal, 3);
 	ms->tex = torchTex;
 
-	for (i=0; i<ms->quadsNum; i++) {
+	for (i=0; i<ms->polysNum; i++) {
+		ms->poly[i].numPoints = 4;
 		ms->poly[i].textureId = 0;
 		ms->poly[i].palId = 0;
 	}
@@ -390,7 +391,7 @@ void effectInit()
 }
 
 
-static void drawCelInfo(CCB *cel)
+/*static void drawCelInfo(CCB *cel)
 {
 	drawNumber(64,0, (int)cel->ccb_NextPtr);
 	drawNumber(8,8, (int)cel->ccb_SourcePtr);
@@ -411,7 +412,7 @@ static void drawCelInfo(CCB *cel)
 
 	drawNumber(8,136, cel->ccb_Width);
 	drawNumber(8,144, cel->ccb_Height);
-}
+}*/
 
 static void transformDotsHw(int rotX, int rotY, int rotZ)
 {

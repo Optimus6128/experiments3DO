@@ -45,14 +45,16 @@ static void addTriangleIndices(int i0, int i1, int i2)
 	*currentIndex++ = i2;
 }
 
-static void setAllPolyData(Mesh *ms, int textureId, int palId)
+static void setAllPolyData(Mesh *ms, int numPoints, int textureId, int palId)
 {
-	const int polysNum = ms->quadsNum + ms->trianglesNum;
-	int i;
+	PolyData *poly = ms->poly;
 
-	for (i=0; i<polysNum; i++) {
-		ms->poly[i].textureId = textureId;
-		ms->poly[i].palId = palId;
+	int i;
+	for (i=0; i<ms->polysNum; i++) {
+		poly->numPoints = numPoints;
+		poly->textureId = textureId;
+		poly->palId = palId;
+		++poly;
 	}
 }
 
@@ -99,7 +101,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 		default:
 		case MESH_PLANE:
 		{
-			ms = initMesh(4,1,0, optionsFlags);
+			ms = initMesh(4,1,4, optionsFlags);
 
 			setCurrentVertex(ms->vrtx);
 			setCurrentIndex(ms->index);
@@ -111,13 +113,13 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 
 			addQuadIndices(0,1,2,3);
 
-			setAllPolyData(ms,0,0);
+			setAllPolyData(ms,4,0,0);
 		}
 		break;
 
 		case MESH_CUBE:
 		{
-			ms = initMesh(8,6,0, optionsFlags);
+			ms = initMesh(8,6,24, optionsFlags);
 
 			setCurrentVertex(ms->vrtx);
 			setCurrentIndex(ms->index);
@@ -131,13 +133,13 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			addQuadIndices(3,2,7,6);
 			addQuadIndices(5,4,1,0);
 
-			setAllPolyData(ms,0,0);
+			setAllPolyData(ms,4,0,0);
 		}
 		break;
 
 		case MESH_CUBE_TRI:
 		{
-			ms = initMesh(8,0,12, optionsFlags);
+			ms = initMesh(8,36,12, optionsFlags);
 
 			setCurrentVertex(ms->vrtx);
 			setCurrentIndex(ms->index);
@@ -157,26 +159,26 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			addTriangleIndices(5,4,1);
 			addTriangleIndices(5,1,0);
 
-			setAllPolyData(ms,0,0);
+			setAllPolyData(ms,3,0,0);
 		}
 		break;
 
 		case MESH_PYRAMID1:
 		{
-			ms = initMesh(5,5,0, optionsFlags);
+			ms = initMesh(5,5,20, optionsFlags);
 
 			setCurrentVertex(ms->vrtx);
 			setCurrentIndex(ms->index);
 
 			initMeshPyramids_1or3(s);
 
-			setAllPolyData(ms,0,0);
+			setAllPolyData(ms,4,0,0);
 		}
 		break;
 
 		case MESH_PYRAMID2:
 		{
-			ms = initMesh(9,5,0, optionsFlags);
+			ms = initMesh(9,5,20, optionsFlags);
 
 			setCurrentVertex(ms->vrtx);
 			setCurrentIndex(ms->index);
@@ -200,7 +202,9 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			addQuadIndices(2,3,6,8);
 			addQuadIndices(3,0,7,8);
 
-			for (i=0; i<ms->quadsNum; i++) {
+			for (i=0; i<ms->polysNum; i++) {
+				ms->poly[i].numPoints = 4;
+
 				if (i==0) {
 					ms->poly[i].textureId = 0;
 					ms->poly[i].palId = 0;
@@ -214,20 +218,22 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 
 		case MESH_PYRAMID3:
 		{
-			ms = initMesh(5,5,0, optionsFlags);
+			ms = initMesh(5,5,20, optionsFlags);
 
 			setCurrentVertex(ms->vrtx);
 			setCurrentIndex(ms->index);
 
 			initMeshPyramids_1or3(s);
 
-			for (i=0; i<ms->quadsNum; i++) {
+			for (i=0; i<ms->polysNum; i++) {
+				ms->poly[i].numPoints = 4;
+				ms->poly[i].palId = 0;
+
 				if (i==0) {
 					ms->poly[i].textureId = 0;
 				} else {
 					ms->poly[i].textureId = 1;
 				}
-				ms->poly[i].palId = 0;
 			}
 		}
 		break;
@@ -236,9 +242,10 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 		{
 			const int divisions = params.divisions;
 			const int vrtxNum = (divisions + 1) * (divisions + 1);
-			const int quadsNum = divisions * divisions;
+			const int polysNum = divisions * divisions;
+			const int indicesNum = polysNum * 4;
 
-			ms = initMesh(vrtxNum, quadsNum, 0, optionsFlags);
+			ms = initMesh(vrtxNum, polysNum, indicesNum, optionsFlags);
 
 			setCurrentVertex(ms->vrtx);
 			setCurrentIndex(ms->index);
@@ -269,7 +276,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 				}
 			}
 
-			setAllPolyData(ms,0,0);
+			setAllPolyData(ms,4,0,0);
 		}
 		break;
 	}

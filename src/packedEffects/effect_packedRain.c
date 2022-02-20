@@ -26,13 +26,13 @@ static bool showPackInfo = false;
 
 static int totalPackedPercentage = 0;
 
-static void writePixel2bpp(int posX, int posY, ubyte *dst, int color)
+/*static void writePixel2bpp(int posX, int posY, ubyte *dst, int color)
 {
 }
 
 static void writeRainLine(int posX, int posY, ubyte *dst, int dirX)
 {
-}
+}*/
 
 static void generateUnpackedRain()
 {

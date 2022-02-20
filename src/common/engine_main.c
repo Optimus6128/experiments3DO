@@ -95,7 +95,7 @@ static void translateAndProjectVertices(Object3D *obj)
 	const int posY = obj->posY;
 	const int posZ = obj->posZ;
 
-	const int lvNum = obj->mesh->vrtxNum;
+	const int lvNum = obj->mesh->verticesNum;
 
 	const int offsetX = screenOffsetX + (screenWidth >> 1);
 	const int offsetY = screenOffsetY + (screenHeight >> 1);
@@ -117,7 +117,7 @@ static void rotateVerticesHw(Object3D *obj)
 
 	createRotationMatrixValues(obj->rotX, obj->rotY, obj->rotZ, (int*)rotMat);
 
-	MulManyVec3Mat33_F16((vec3f16*)vertices, (vec3f16*)obj->mesh->vrtx, rotMat, obj->mesh->vrtxNum);
+	MulManyVec3Mat33_F16((vec3f16*)vertices, (vec3f16*)obj->mesh->vrtx, rotMat, obj->mesh->verticesNum);
 }
 
 static void prepareTransformedMeshCELs(Mesh *ms)
@@ -126,18 +126,19 @@ static void prepareTransformedMeshCELs(Mesh *ms)
 	int *indices = ms->index;
 	Point qpt[4];
 	CCB *cel = ms->cel;
-	const int polysNum = ms->quadsNum + ms->trianglesNum;
 
 	int n = 1;
 	int index = 0;
-	for (i=0; i<polysNum; ++i) {
+	for (i=0; i<ms->polysNum; ++i) {
 		qpt[0].pt_X = vertices[indices[index]].x; qpt[0].pt_Y = vertices[indices[index]].y; ++index;
 		qpt[1].pt_X = vertices[indices[index]].x; qpt[1].pt_Y = vertices[indices[index]].y; ++index;
 		qpt[2].pt_X = vertices[indices[index]].x; qpt[2].pt_Y = vertices[indices[index]].y; ++index;
-		if (i < ms->quadsNum) {	// first come the quads
+
+		// Handling quads or triangles for now.
+		if (ms->poly[i].numPoints == 4) {
 			qpt[3].pt_X = vertices[indices[index]].x; qpt[3].pt_Y = vertices[indices[index]].y; ++index;
-		} else {	// then the triangles
-			qpt[3].pt_X = qpt[2].pt_X; qpt[3].pt_Y = qpt[2].pt_Y;
+		} else {
+			qpt[3].pt_X = qpt[2].pt_X; qpt[3].pt_Y = qpt[2].pt_Y;			
 		}
 
 		if (polygonOrderTestCPU) {

@@ -31,6 +31,7 @@ typedef struct Point2D
 extern int shr[257];
 
 int getRand(int from, int to);
+int getShr(int n);
 void initMathUtil(void);
 
 #endif
