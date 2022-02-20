@@ -26,7 +26,7 @@ static void renderMeshSoft(Mesh *ms, Vertex *vertices)
 	Vertex *pt0, *pt1, *pt2;
 	int i,n;
 
-	int *currIndex = &ms->index[ms->quadsNum];	// at the end of quad indices start the triangle indices
+	int *currIndex = &ms->index[ms->quadsNum * 4];	// at the end of quad indices start the triangle indices
 	for (i=0; i<ms->trianglesNum; ++i) {
 		pt0 = &vertices[*currIndex++];
 		pt1 = &vertices[*currIndex++];

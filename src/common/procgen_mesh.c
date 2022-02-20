@@ -7,13 +7,92 @@
 #include "mathutil.h"
 
 
-Mesh *initGenMesh(int size, Texture *tex, int optionsFlags, int meshgenId, void *params)
+static Vertex *currentVertex;
+static int *currentIndex;
+
+
+static void setCurrentVertex(Vertex *v)
+{
+	currentVertex = v;
+}
+
+static void setCurrentIndex(int *index)
+{
+	currentIndex = index;
+}
+
+static void addVertex(int x, int y, int z)
+{
+	Vertex *v = currentVertex++;
+
+	v->x = x;
+	v->y = y;
+	v->z = z;
+}
+
+static void addQuadIndices(int i0, int i1, int i2, int i3)
+{
+	*currentIndex++ = i0;
+	*currentIndex++ = i1;
+	*currentIndex++ = i2;
+	*currentIndex++ = i3;
+}
+
+static void addTriangleIndices(int i0, int i1, int i2)
+{
+	*currentIndex++ = i0;
+	*currentIndex++ = i1;
+	*currentIndex++ = i2;
+}
+
+static void setAllPolyData(Mesh *ms, int textureId, int palId)
+{
+	const int polysNum = ms->quadsNum + ms->trianglesNum;
+	int i;
+
+	for (i=0; i<polysNum; i++) {
+		ms->poly[i].textureId = textureId;
+		ms->poly[i].palId = palId;
+	}
+}
+
+static void initCubeVertices(int s)
+{
+	addVertex(-s, -s, -s);
+	addVertex( s, -s, -s);
+	addVertex( s,  s, -s);
+	addVertex(-s,  s, -s);
+	addVertex( s, -s,  s);
+	addVertex(-s, -s,  s);
+	addVertex(-s,  s,  s);
+	addVertex( s,  s,  s);
+}
+
+static void initMeshPyramids_1or3(int s)
+{
+	addVertex(-s, -s, -s);
+	addVertex( s, -s, -s);
+	addVertex( s, -s,  s);
+	addVertex(-s, -s,  s);
+	addVertex( 0,  s,  0);
+
+	addQuadIndices(3,2,1,0);
+	addQuadIndices(0,1,4,4);
+	addQuadIndices(1,2,4,4);
+	addQuadIndices(2,3,4,4);
+	addQuadIndices(3,0,4,4);
+}
+
+Mesh *initGenMesh(int meshgenId, int optionsFlags, const MeshgenParams params, Texture *tex)
 {
 	int i, x, y;
 	int xp, yp;
 	int dx, dy;
-	
+
 	Mesh *ms;
+
+	const int size = params.size;
+	const int s = size / 2;
 
 	switch(meshgenId)
 	{
@@ -22,16 +101,17 @@ Mesh *initGenMesh(int size, Texture *tex, int optionsFlags, int meshgenId, void 
 		{
 			ms = initMesh(4,1,0, optionsFlags);
 
-			ms->vrtx[0].x = -size/2; ms->vrtx[0].y = -size/2; ms->vrtx[0].z = 0;
-			ms->vrtx[1].x = size/2; ms->vrtx[1].y = -size/2; ms->vrtx[1].z = 0;
-			ms->vrtx[2].x = size/2; ms->vrtx[2].y = size/2; ms->vrtx[2].z = 0;
-			ms->vrtx[3].x = -size/2; ms->vrtx[3].y = size/2; ms->vrtx[3].z = 0;
+			setCurrentVertex(ms->vrtx);
+			setCurrentIndex(ms->index);
 
-			for (i=0; i<4; i++)
-				ms->index[i] = i;
+			addVertex(-s, -s, 0);
+			addVertex( s, -s, 0);
+			addVertex( s,  s, 0);
+			addVertex(-s,  s, 0);
 
-			ms->poly[0].textureId = 0;
-			ms->poly[0].palId = 0;
+			addQuadIndices(0,1,2,3);
+
+			setAllPolyData(ms,0,0);
 		}
 		break;
 
@@ -39,26 +119,45 @@ Mesh *initGenMesh(int size, Texture *tex, int optionsFlags, int meshgenId, void 
 		{
 			ms = initMesh(8,6,0, optionsFlags);
 
-			ms->vrtx[0].x = -size/2; ms->vrtx[0].y = -size/2; ms->vrtx[0].z = -size/2;
-			ms->vrtx[1].x = size/2; ms->vrtx[1].y = -size/2; ms->vrtx[1].z = -size/2;
-			ms->vrtx[2].x = size/2; ms->vrtx[2].y = size/2; ms->vrtx[2].z = -size/2;
-			ms->vrtx[3].x = -size/2; ms->vrtx[3].y = size/2; ms->vrtx[3].z = -size/2;
-			ms->vrtx[4].x = size/2; ms->vrtx[4].y = -size/2; ms->vrtx[4].z = size/2;
-			ms->vrtx[5].x = -size/2; ms->vrtx[5].y = -size/2; ms->vrtx[5].z = size/2;
-			ms->vrtx[6].x = -size/2; ms->vrtx[6].y = size/2; ms->vrtx[6].z = size/2;
-			ms->vrtx[7].x = size/2; ms->vrtx[7].y = size/2; ms->vrtx[7].z = size/2;
+			setCurrentVertex(ms->vrtx);
+			setCurrentIndex(ms->index);
 
-			ms->index[0] = 0; ms->index[1] = 1; ms->index[2] = 2; ms->index[3] = 3;
-			ms->index[4] = 1; ms->index[5] = 4; ms->index[6] = 7; ms->index[7] = 2;
-			ms->index[8] = 4; ms->index[9] = 5; ms->index[10] = 6; ms->index[11] = 7;
-			ms->index[12] = 5; ms->index[13] = 0; ms->index[14] = 3; ms->index[15] = 6;
-			ms->index[16] = 3; ms->index[17] = 2; ms->index[18] = 7; ms->index[19] = 6;
-			ms->index[20] = 5; ms->index[21] = 4; ms->index[22] = 1; ms->index[23] = 0;
+			initCubeVertices(s);
 
-			for (i=0; i<ms->quadsNum; i++) {
-				ms->poly[i].textureId = 0;
-				ms->poly[i].palId = 0;
-			}
+			addQuadIndices(0,1,2,3);
+			addQuadIndices(1,4,7,2);
+			addQuadIndices(4,5,6,7);
+			addQuadIndices(5,0,3,6);
+			addQuadIndices(3,2,7,6);
+			addQuadIndices(5,4,1,0);
+
+			setAllPolyData(ms,0,0);
+		}
+		break;
+
+		case MESH_CUBE_TRI:
+		{
+			ms = initMesh(8,0,12, optionsFlags);
+
+			setCurrentVertex(ms->vrtx);
+			setCurrentIndex(ms->index);
+
+			initCubeVertices(s);
+
+			addTriangleIndices(0,1,2);
+			addTriangleIndices(0,2,3);
+			addTriangleIndices(1,4,7);
+			addTriangleIndices(1,7,2);
+			addTriangleIndices(4,5,6);
+			addTriangleIndices(4,6,7);
+			addTriangleIndices(5,0,3);
+			addTriangleIndices(5,3,6);
+			addTriangleIndices(3,2,7);
+			addTriangleIndices(3,7,6);
+			addTriangleIndices(5,4,1);
+			addTriangleIndices(5,1,0);
+
+			setAllPolyData(ms,0,0);
 		}
 		break;
 
@@ -66,23 +165,12 @@ Mesh *initGenMesh(int size, Texture *tex, int optionsFlags, int meshgenId, void 
 		{
 			ms = initMesh(5,5,0, optionsFlags);
 
-			ms->vrtx[0].x = -size/2; ms->vrtx[0].y = -size/2; ms->vrtx[0].z = -size/2;
-			ms->vrtx[1].x = size/2; ms->vrtx[1].y = -size/2; ms->vrtx[1].z = -size/2;
-			ms->vrtx[2].x = size/2; ms->vrtx[2].y = -size/2; ms->vrtx[2].z = size/2;
-			ms->vrtx[3].x = -size/2; ms->vrtx[3].y = -size/2; ms->vrtx[3].z = size/2;
-			ms->vrtx[4].x = 0; ms->vrtx[4].y = size/2; ms->vrtx[4].z = 0;
+			setCurrentVertex(ms->vrtx);
+			setCurrentIndex(ms->index);
 
+			initMeshPyramids_1or3(s);
 
-			ms->index[0] = 3; ms->index[1] = 2; ms->index[2] = 1; ms->index[3] = 0;
-			ms->index[4] = 0; ms->index[5] = 1; ms->index[6] = 4; ms->index[7] = 4;
-			ms->index[8] = 1; ms->index[9] = 2; ms->index[10] = 4; ms->index[11] = 4;
-			ms->index[12] = 2; ms->index[13] = 3; ms->index[14] = 4; ms->index[15] = 4;
-			ms->index[16] = 3; ms->index[17] = 0; ms->index[18] = 4; ms->index[19] = 4;
-
-			for (i=0; i<ms->quadsNum; i++) {
-				ms->poly[i].textureId = 0;
-				ms->poly[i].palId = 0;
-			}
+			setAllPolyData(ms,0,0);
 		}
 		break;
 
@@ -90,23 +178,27 @@ Mesh *initGenMesh(int size, Texture *tex, int optionsFlags, int meshgenId, void 
 		{
 			ms = initMesh(9,5,0, optionsFlags);
 
-			ms->vrtx[0].x = -size/2; ms->vrtx[0].y = -size/2; ms->vrtx[0].z = -size/2;
-			ms->vrtx[1].x = size/2; ms->vrtx[1].y = -size/2; ms->vrtx[1].z = -size/2;
-			ms->vrtx[2].x = size/2; ms->vrtx[2].y = -size/2; ms->vrtx[2].z = size/2;
-			ms->vrtx[3].x = -size/2; ms->vrtx[3].y = -size/2; ms->vrtx[3].z = size/2;
-			
-			ms->vrtx[4].x = size; ms->vrtx[4].y = size/2; ms->vrtx[4].z = 0;
-			ms->vrtx[5].x = 0; ms->vrtx[5].y = size/2; ms->vrtx[5].z = size;
-			ms->vrtx[6].x = -size; ms->vrtx[6].y = size/2; ms->vrtx[6].z = 0;
-			ms->vrtx[7].x = 0; ms->vrtx[7].y = size/2; ms->vrtx[7].z = -size;
-			
-			ms->vrtx[8].x = 0; ms->vrtx[8].y = size/2; ms->vrtx[8].z = 0;
+			setCurrentVertex(ms->vrtx);
+			setCurrentIndex(ms->index);
 
-			ms->index[0] = 3; ms->index[1] = 2; ms->index[2] = 1; ms->index[3] = 0;
-			ms->index[4] = 0; ms->index[5] = 1; ms->index[6] = 4; ms->index[7] = 8;
-			ms->index[8] = 1; ms->index[9] = 2; ms->index[10] = 5; ms->index[11] = 8;
-			ms->index[12] = 2; ms->index[13] = 3; ms->index[14] = 6; ms->index[15] = 8;
-			ms->index[16] = 3; ms->index[17] = 0; ms->index[18] = 7; ms->index[19] = 8;
+			addVertex(-s, -s, -s);
+			addVertex( s, -s, -s);
+			addVertex( s, -s,  s);
+			addVertex(-s, -s,  s);
+
+			addVertex( 2*s, s, 0);
+			addVertex(   0, s, 2*s);
+			addVertex(-2*s, s, 0);
+			addVertex(   0, s, -2*s);
+
+			addVertex(0, s, 0);
+
+
+			addQuadIndices(3,2,1,0);
+			addQuadIndices(0,1,4,8);
+			addQuadIndices(1,2,5,8);
+			addQuadIndices(2,3,6,8);
+			addQuadIndices(3,0,7,8);
 
 			for (i=0; i<ms->quadsNum; i++) {
 				if (i==0) {
@@ -124,18 +216,10 @@ Mesh *initGenMesh(int size, Texture *tex, int optionsFlags, int meshgenId, void 
 		{
 			ms = initMesh(5,5,0, optionsFlags);
 
-			ms->vrtx[0].x = -size/2; ms->vrtx[0].y = -size/2; ms->vrtx[0].z = -size/2;
-			ms->vrtx[1].x = size/2; ms->vrtx[1].y = -size/2; ms->vrtx[1].z = -size/2;
-			ms->vrtx[2].x = size/2; ms->vrtx[2].y = -size/2; ms->vrtx[2].z = size/2;
-			ms->vrtx[3].x = -size/2; ms->vrtx[3].y = -size/2; ms->vrtx[3].z = size/2;
-			ms->vrtx[4].x = 0; ms->vrtx[4].y = size/2; ms->vrtx[4].z = 0;
+			setCurrentVertex(ms->vrtx);
+			setCurrentIndex(ms->index);
 
-
-			ms->index[0] = 3; ms->index[1] = 2; ms->index[2] = 1; ms->index[3] = 0;
-			ms->index[4] = 0; ms->index[5] = 1; ms->index[6] = 4; ms->index[7] = 4;
-			ms->index[8] = 1; ms->index[9] = 2; ms->index[10] = 4; ms->index[11] = 4;
-			ms->index[12] = 2; ms->index[13] = 3; ms->index[14] = 4; ms->index[15] = 4;
-			ms->index[16] = 3; ms->index[17] = 0; ms->index[18] = 4; ms->index[19] = 4;
+			initMeshPyramids_1or3(s);
 
 			for (i=0; i<ms->quadsNum; i++) {
 				if (i==0) {
@@ -150,11 +234,14 @@ Mesh *initGenMesh(int size, Texture *tex, int optionsFlags, int meshgenId, void 
 
 		case MESH_GRID:
 		{
-			const int divisions = *((int*)params);
+			const int divisions = params.divisions;
 			const int vrtxNum = (divisions + 1) * (divisions + 1);
 			const int quadsNum = divisions * divisions;
 
 			ms = initMesh(vrtxNum, quadsNum, 0, optionsFlags);
+
+			setCurrentVertex(ms->vrtx);
+			setCurrentIndex(ms->index);
 
 			dx = size / divisions;
 			dy = size / divisions;
@@ -166,30 +253,23 @@ Mesh *initGenMesh(int size, Texture *tex, int optionsFlags, int meshgenId, void 
 				xp = -size / 2;
 				for (x=0; x<=divisions; x++)
 				{
-					ms->vrtx[i].x = xp; ms->vrtx[i].z = -yp; ms->vrtx[i].y = getRand(0, 255);
+					addVertex(xp, getRand(0, 255), -yp);
 					xp += dx;
 					i++;
 				}
 				yp += dy;
 			}
 
-			i = 0;
-			for (y=0; y<divisions; y++)
-			{
-				for (x=0; x<divisions; x++)
-				{
-					ms->index[i+3] = x + y * (divisions + 1);
-					ms->index[i+2] = x + 1 + y * (divisions + 1);
-					ms->index[i+1] = x + 1 + (y + 1) * (divisions + 1);
-					ms->index[i] = x + (y + 1) * (divisions + 1);
-					i+=4;
+			for (y=0; y<divisions; y++) {
+				for (x=0; x<divisions; x++) {
+					addQuadIndices(	x + (y + 1) * (divisions + 1), 
+									x + 1 + (y + 1) * (divisions + 1), 
+									x + 1 + y * (divisions + 1), 
+									x + y * (divisions + 1));
 				}
 			}
 
-			for (i=0; i<ms->quadsNum; i++) {
-				ms->poly[i].textureId = 0;
-				ms->poly[i].palId = 0;
-			}
+			setAllPolyData(ms,0,0);
 		}
 		break;
 	}
@@ -199,4 +279,23 @@ Mesh *initGenMesh(int size, Texture *tex, int optionsFlags, int meshgenId, void 
 	prepareCelList(ms);
 
 	return ms;
+}
+
+MeshgenParams makeDefaultMeshgenParams(int size)
+{
+	MeshgenParams params;
+
+	params.size = size;
+
+	return params;
+}
+
+MeshgenParams makeMeshgenGridParams(int size, int divisions)
+{
+	MeshgenParams params;
+
+	params.size = size;
+	params.divisions = divisions;
+
+	return params;
 }

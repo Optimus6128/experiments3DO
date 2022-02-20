@@ -69,7 +69,7 @@ static void inputScript()
 void effectMeshSoftInit()
 {
 	xorTex = initGenTexture(32,32,8,texPal,1,TEXGEN_XOR, false, NULL);
-	testMesh = initGenMesh(1024, xorTex, MESH_OPTIONS_DEFAULT, MESH_CUBE, NULL);
+	testMesh = initGenMesh(MESH_OPTIONS_DEFAULT, MESH_CUBE, DEFAULT_MESHGEN_PARAMS(1024), xorTex);
 	testObj = initObject3D(testMesh);
 
 	setPal(0,31, 48,64,192, 160,64,32, texPal, 3);

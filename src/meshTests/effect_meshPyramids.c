@@ -131,6 +131,7 @@ void effectMeshPyramidsInit()
 
 	const int texWidth = 128;
 	const int texHeight = texWidth;
+	MeshgenParams params = DEFAULT_MESHGEN_PARAMS(1024);
 
 	static uint16 pyramidPal[64];
 	// COMMENT OUT PALETTE BUG
@@ -155,9 +156,9 @@ void effectMeshPyramidsInit()
 		setSpritePositionZoom(sprTexture[i], 280, 40, 127);
 	}
 
-	pyramidMesh[0] = initGenMesh(1024, xorTexs, MESH_OPTIONS_DEFAULT, MESH_PYRAMID1, NULL);
-	pyramidMesh[1] = initGenMesh(1024, xorTexs, MESH_OPTIONS_DEFAULT, MESH_PYRAMID2, NULL);
-	pyramidMesh[2] = initGenMesh(1024, xorTexs2, MESH_OPTIONS_DEFAULT, MESH_PYRAMID3, NULL);
+	pyramidMesh[0] = initGenMesh(MESH_PYRAMID1, MESH_OPTIONS_DEFAULT, params, xorTexs);
+	pyramidMesh[1] = initGenMesh(MESH_PYRAMID2, MESH_OPTIONS_DEFAULT, params, xorTexs);
+	pyramidMesh[2] = initGenMesh(MESH_PYRAMID3, MESH_OPTIONS_DEFAULT, params, xorTexs2);
 
 	for (i=0; i<3; ++i) {
 		pyramidObj[i] = initObject3D(pyramidMesh[i]);
