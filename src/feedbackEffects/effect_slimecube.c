@@ -78,7 +78,7 @@ void effectSlimecubeInit()
 	totalRegions = screenRegionsNum * getNumOffscreenBuffers();
 
 	draculTex = loadTexture("data/draculin64.cel");
-	draculMesh = initGenMesh(256, draculTex, MESH_OPTIONS_DEFAULT, MESH_CUBE, NULL);
+	draculMesh = initGenMesh(MESH_CUBE, DEFAULT_MESHGEN_PARAMS(256), MESH_OPTIONS_DEFAULT, draculTex);
 	draculObj = initObject3D(draculMesh);
 
 	eraseCel = CreateBackdropCel(SCREEN_WIDTH / FRAME_SUB_X, SCREEN_HEIGHT / FRAME_SUB_Y, 0, 100);

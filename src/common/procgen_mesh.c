@@ -83,7 +83,7 @@ static void initMeshPyramids_1or3(int s)
 	addQuadIndices(3,0,4,4);
 }
 
-Mesh *initGenMesh(int meshgenId, int optionsFlags, const MeshgenParams params, Texture *tex)
+Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, Texture *tex)
 {
 	int i, x, y;
 	int xp, yp;

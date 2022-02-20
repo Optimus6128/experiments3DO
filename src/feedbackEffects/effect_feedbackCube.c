@@ -143,18 +143,20 @@ static void inputScript()
 
 void effectFeedbackCubeInit()
 {
+	MeshgenParams params = DEFAULT_MESHGEN_PARAMS(256);
+
 	feedbackTex0 = initFeedbackTexture(0, 0, FB_WIDTH, FB_HEIGHT, 0);
 	softFeedbackTex = initTexture(FB_WIDTH, FB_HEIGHT, 16, TEXTURE_TYPE_STATIC, NULL, NULL, 0);
 	draculTex = loadTexture("data/draculin.cel");
 
-	cubeMesh = initGenMesh(256, feedbackTex0, MESH_OPTIONS_DEFAULT, MESH_CUBE, NULL);
-	cubeMeshBack = initGenMesh(256, draculTex, MESH_OPTIONS_DEFAULT, MESH_CUBE, NULL);
+	cubeMesh = initGenMesh(MESH_CUBE, params, MESH_OPTIONS_DEFAULT, feedbackTex0);
+	cubeMeshBack = initGenMesh(MESH_CUBE, params, MESH_OPTIONS_DEFAULT, draculTex);
 	cubeObj = initObject3D(cubeMesh);
 	cubeBackObj = initObject3D(cubeMeshBack);
 
 	bgndSpr = newSprite(FB_WIDTH, FB_HEIGHT, 8, CREATECEL_UNCODED, NULL, bgndBmp);
 	genBackgroundTex();
-	
+
 	switchFeedback(hwFeedback);
 }
 

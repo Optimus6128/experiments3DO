@@ -14,7 +14,7 @@ typedef struct MeshgenParams
 
 enum {MESH_PLANE, MESH_CUBE, MESH_CUBE_TRI, MESH_PYRAMID1, MESH_PYRAMID2, MESH_PYRAMID3, MESH_GRID};
 
-Mesh *initGenMesh(int meshgenId, int optionsFlags, const MeshgenParams params, Texture *tex);
+Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, Texture *tex);
 
 MeshgenParams makeDefaultMeshgenParams(int size);
 MeshgenParams makeMeshgenGridParams(int size, int divisions);

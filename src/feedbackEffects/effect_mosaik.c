@@ -35,7 +35,7 @@ void effectMosaikInit()
 	origBackSourcePtr = (uint32*)starryBack->ccb_SourcePtr;
 
 	draculTex = loadTexture("data/draculin64.cel");
-	draculMesh = initGenMesh(256, draculTex, MESH_OPTIONS_DEFAULT, MESH_CUBE, NULL);
+	draculMesh = initGenMesh(MESH_CUBE, DEFAULT_MESHGEN_PARAMS(256), MESH_OPTIONS_DEFAULT, draculTex);
 	draculObj = initObject3D(draculMesh);
 
 	feedbackSpr1 = newFeedbackSprite(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0);

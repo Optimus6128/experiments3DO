@@ -156,9 +156,9 @@ void effectMeshPyramidsInit()
 		setSpritePositionZoom(sprTexture[i], 280, 40, 127);
 	}
 
-	pyramidMesh[0] = initGenMesh(MESH_PYRAMID1, MESH_OPTIONS_DEFAULT, params, xorTexs);
-	pyramidMesh[1] = initGenMesh(MESH_PYRAMID2, MESH_OPTIONS_DEFAULT, params, xorTexs);
-	pyramidMesh[2] = initGenMesh(MESH_PYRAMID3, MESH_OPTIONS_DEFAULT, params, xorTexs2);
+	pyramidMesh[0] = initGenMesh(MESH_PYRAMID1, params, MESH_OPTIONS_DEFAULT, xorTexs);
+	pyramidMesh[1] = initGenMesh(MESH_PYRAMID2, params, MESH_OPTIONS_DEFAULT, xorTexs);
+	pyramidMesh[2] = initGenMesh(MESH_PYRAMID3, params, MESH_OPTIONS_DEFAULT, xorTexs2);
 
 	for (i=0; i<3; ++i) {
 		pyramidObj[i] = initObject3D(pyramidMesh[i]);
