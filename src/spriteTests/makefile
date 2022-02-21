@@ -8,12 +8,12 @@ NAME	= $(notdir $(CURDIR))
 STACKSIZE = 4096
 
 CC		= $(ARMDEV)bin/armcc
-AS 		= $(ARMDEV)bin/armas
+AS 		= $(ARMDEV)bin/armasm
 LD		= $(ARMDEV)bin/armlink
 RM		= $(3DODEV)bin/rm
 MODBIN	= $(3DODEV)bin/modbin
 CCFLAGS	= -O2 -Otime -bi -za1 -d DEBUG=0 -cpu ARM60
-ASFLAGS	=
+ASFLAGS	= -BI
 INCPATH	= -I$(3DODEV)includes -I$(COMMON_DIR)
 LDFLAGS	= -reloc -nodebug -remove -ro-base 0x80
 LIBPATH	= $(3DODEV)libs/

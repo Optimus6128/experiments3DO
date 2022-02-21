@@ -32,6 +32,9 @@ typedef struct Mesh
 	PolyData *poly;
 	int polysNum;
 
+	int *lineIndex;
+	int linesNum;
+
 	CCB *cel;
 	uint32 *indexCol;
 	TexCoords *indexTC;
@@ -43,7 +46,7 @@ typedef struct Mesh
 }Mesh;
 
 
-Mesh* initMesh(int verticesNum, int polysNum, int indicesNum, int renderType);
+Mesh* initMesh(int verticesNum, int polysNum, int indicesNum, int linesNum, int renderType);
 // TODO: Mesh *loadMesh(char *path);
 
 void prepareCelList(Mesh *ms);

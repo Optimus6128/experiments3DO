@@ -24,12 +24,10 @@ static int zoom=2048;
 static const int rotVel = 3;
 static const int zoomVel = 32;
 
-static Mesh *testMesh;
-static Texture *xorTex;
-static uint16 texPal[32];
+static Mesh *cubeMesh;
 
 
-static Object3D *testObj;
+static Object3D *cubeObj;
 
 static void inputScript()
 {
@@ -68,20 +66,16 @@ static void inputScript()
 
 void effectMeshSoftInit()
 {
-	xorTex = initGenTexture(32,32,8,texPal,1,TEXGEN_XOR, false, NULL);
-	testMesh = initGenMesh(MESH_CUBE, DEFAULT_MESHGEN_PARAMS(1024), MESH_OPTIONS_DEFAULT, xorTex);
-	testObj = initObject3D(testMesh);
-
-	setPal(0,31, 48,64,192, 160,64,32, texPal, 3);
+	cubeMesh = initGenMesh(MESH_CUBE_TRI, DEFAULT_MESHGEN_PARAMS(1024), MESH_OPTIONS_DEFAULT, NULL);
+	cubeObj = initObject3D(cubeMesh);
 }
 
 void effectMeshSoftRun()
 {
 	inputScript();
 
-	setObject3Dpos(testObj, 0, 0, zoom);
-	setObject3Drot(testObj, rotX, rotY, rotZ);
+	setObject3Dpos(cubeObj, 0, 0, zoom);
+	setObject3Drot(cubeObj, rotX, rotY, rotZ);
 
-	//renderObject3D(testObj);
-	renderObject3Dsoft(testObj);
+	renderObject3Dsoft(cubeObj);
 }

@@ -76,4 +76,7 @@ void setShowFps(bool on);
 void setShowMem(bool on);
 void setShowBuffers(bool on);
 
+void vramCpy(void* bufferSrc, void* bufferDst);
+void vramSet(uint32 c, void* bufferDst);
+
 #endif

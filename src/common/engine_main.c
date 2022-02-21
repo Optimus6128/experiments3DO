@@ -107,6 +107,7 @@ static void translateAndProjectVertices(Object3D *obj)
 			const int recDivZ = recZ[vz];
 			vertices[i].x = offsetX + ((((vertices[i].x + posX) << PROJ_SHR) * recDivZ) >> REC_FPSHR);
 			vertices[i].y = offsetY - ((((vertices[i].y + posY) << PROJ_SHR) * recDivZ) >> REC_FPSHR);
+			vertices[i].z = vz;
 		}
 	}
 }

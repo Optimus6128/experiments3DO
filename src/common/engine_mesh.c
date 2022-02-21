@@ -148,17 +148,19 @@ void setMeshDottedDisplay(Mesh *ms, bool enable)
 	}
 }
 
-Mesh* initMesh(int verticesNum, int polysNum, int indicesNum, int renderType)
+Mesh* initMesh(int verticesNum, int polysNum, int indicesNum, int linesNum, int renderType)
 {
 	Mesh *ms = (Mesh*)AllocMem(sizeof(Mesh), MEMTYPE_ANY);
 
 	ms->verticesNum = verticesNum;
 	ms->polysNum = polysNum;
 	ms->indicesNum = indicesNum;
+	ms->linesNum = linesNum;
 
 	ms->vrtx = (Vertex*)AllocMem(ms->verticesNum * sizeof(Vertex), MEMTYPE_ANY);
 	ms->index = (int*)AllocMem(ms->indicesNum * sizeof(int), MEMTYPE_ANY);
 	ms->poly = (PolyData*)AllocMem(polysNum * sizeof(PolyData), MEMTYPE_ANY);
+	ms->lineIndex = (int*)AllocMem(linesNum * 2 * sizeof(int), MEMTYPE_ANY);
 
 	if (renderType & MESH_OPTION_RENDER_HARD) {
 		ms->cel = (CCB*)AllocMem(polysNum * sizeof(CCB), MEMTYPE_ANY);
