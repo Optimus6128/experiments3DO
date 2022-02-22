@@ -51,7 +51,7 @@ static void generateUnpackedRain()
 	}
 
 	pal2[0] = 0;
-	setPal(1,3, 160,192,255, 255,255,255, pal2, 3);
+	setPalGradient(1,3, 20,24,31, 31,31,31, pal2);
 }
 
 void effectPackedRainInit()

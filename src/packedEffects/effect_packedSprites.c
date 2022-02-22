@@ -82,7 +82,7 @@ static void generateUnpackedBmp4()
 		}
 	}
 	pal4[0] = 0;
-	setPal(1,15, 255,224,160, 32,64,128, pal4, 3);
+	setPalGradient(1,15, 31,28,20, 4,8,16, pal4);
 }
 
 static void generateUnpackedBmp8()
@@ -105,7 +105,7 @@ static void generateUnpackedBmp8()
 		}
 	}
 	pal8[0] = 0;
-	setPal(1,31, 32,16,48, 255,224,192, pal8, 3);
+	setPalGradient(1,31, 4,2,6, 31,28,24, pal8);
 }
 
 static void generateUnpackedBmp16()

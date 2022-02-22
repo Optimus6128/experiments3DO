@@ -138,11 +138,11 @@ void effectMeshPyramidsInit()
 	//pyramidPal = (uint16*)AllocMem(2 * 32 * sizeof(uint16), MEMTYPE_ANY);
 
 	if (!testBlurIdea) {
-		setPal(0,31, 48,64,192, 160,64,32, pyramidPal, 3);
-		setPal(32,63, 48,64,192, 160,64,32, pyramidPal, 3);
+		setPalGradient(0,31, 6,8,24, 20,8,4, pyramidPal);
+		setPalGradient(32,63, 6,8,24, 20,8,4, pyramidPal);
 	} else {
-		setPal(0,31, 0,0,127, 0,0,255, pyramidPal, 3);
-		setPal(32,63, 0,0,127, 0,0,255, pyramidPal, 3);
+		setPalGradient(0,31, 0,0,15, 0,0,31, pyramidPal);
+		setPalGradient(32,63, 0,0,15, 0,0,31, pyramidPal);
 	}
 
 	xorTexs = initGenTexturesTriangleHack(texWidth,texHeight,8,pyramidPal,2,TEXGEN_XOR, false, NULL);

@@ -266,13 +266,18 @@ static Mesh *initTorchMesh()
 	addPoint2D(ptArray, r3,y4);
 
 	torchTex = initGenTexture(16, 16, 8, NULL, 1, TEXGEN_NOISE, false, NULL);
-	setPal(0, 31, 48,40,32, 96,80,40, torchTex->pal, 3);
+	setPalGradient(0,31, 6,5,4, 12,10,5, torchTex->pal);
 
 	ms = initGenMesh(MESH_SQUARE_COLUMNOID, makeMeshgenSquareColumnoidParams(size, ptArray->points, 4), MESH_OPTIONS_DEFAULT, torchTex);
 
 	destroyPoint2Darray(ptArray);
 
 	return ms;
+}
+
+static void setPalGradientShr(int c0, int c1, int r0, int g0, int b0, int r1, int g1, int b1, uint16* pal, int shr)
+{
+	setPalGradient(c0,c1, r0>>shr, g0>>shr, b0>>shr,  r1>>shr, g1>>shr, b1>>shr,  pal);
 }
 
 void effectInit()
@@ -300,18 +305,18 @@ void effectInit()
 	}
 	dotCel[DOTS_DEPTH-1]->ccb_Flags |= CCB_LAST;
 
-	setPal(0, 7, 0,0,0, 0,0,0, dotTexPal, palshr);
-	setPal(8, 14, 63,31,95, 128,96,48, dotTexPal, palshr);
-	setPal(15, 27, 128,96,48, 255,128,32, dotTexPal, palshr);
-	setPal(28, 31, 255,128,32, 255,255,128, dotTexPal, palshr);
+	setPalGradientShr(0,7, 0,0,0, 0,0,0, dotTexPal, palshr);
+	setPalGradientShr(8,14, 63,31,95, 128,96,48, dotTexPal, palshr);
+	setPalGradientShr(15,27, 128,96,48, 255,128,32, dotTexPal, palshr);
+	setPalGradientShr(28,31, 255,128,32, 255,255,128, dotTexPal, palshr);
 
-	//setPal(0, 15, 0,0,0, 0,0,0, dotTexPal, palshr-2);
-	//setPal(16, 31, 0,0,0, 255,255,255, dotTexPal, palshr-2);
+	//setPalGradientShr(0, 15, 0,0,0, 0,0,0, dotTexPal, palshr-2);
+	//setPalGradientShr(16, 31, 0,0,0, 255,255,255, dotTexPal, palshr-2);
 
 
-	//setPal(0, 31, 0,0,0, 48,64,96, dotTexPal, 3);
-	//setPal(0, 31, 0,0,0, 16,12,8, dotTexPal, 3);
-	//setPal(0, 7, 0,0,0, 0,0,0, dotTexPal, 3);
+	//setPalGradientShr(0, 31, 0,0,0, 48,64,96, dotTexPal, 3);
+	//setPalGradientShr(0, 31, 0,0,0, 16,12,8, dotTexPal, 3);
+	//setPalGradientShr(0, 7, 0,0,0, 0,0,0, dotTexPal, 3);
 
 	for (i=0; i<NUM_SINES; ++i) {
 		fsin1[i] = SinF16(i << 16) >> 9;

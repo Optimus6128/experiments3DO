@@ -72,9 +72,9 @@ static unsigned char bitfonts[] = {0,0,0,0,0,0,0,0,
 static CCB *textCel[MAX_STRING_LENGTH];
 
 static char sbuffer[MAX_STRING_LENGTH+1];
-static uchar fontsBmp[NUM_FONTS * FONT_SIZE];
-static uint16 fontsPal[FONTS_PAL_SIZE];
-static uchar fontsMap[FONTS_MAP_SIZE];
+static uchar fontsBmp[NUM_TINY_FONTS * TINY_FONT_SIZE];
+static uint16 fontsPal[TINY_FONTS_PAL_SIZE];
+static uchar fontsMap[TINY_FONTS_MAP_SIZE];
 
 static bool fontsAreReady = false;
 
@@ -82,35 +82,46 @@ static CCB *selectionBarCel = NULL;
 
 static Item timerIOreq = -1;
 
+int sinF16[256], cosF16[256];
 
-void initTimer()
+
+static void initTimer()
 {
 	if (timerIOreq < 0) {
 		timerIOreq = GetTimerIOReq();
 	}
 }
 
-void initFonts()
+static void initSinCosLuts()
+{
+	int i;
+	for (i=0; i<256; ++i) {
+		sinF16[i] = SinF16(i<<16);
+		cosF16[i] = CosF16(i<<16);
+	}
+}
+
+static void initTinyFonts()
 {
 	int i = 0;
 	int n, x, y;
 
 	if (fontsAreReady) return;
 
-	for (n=0; n<FONTS_PAL_SIZE; ++n) {
+	for (n=0; n<TINY_FONTS_PAL_SIZE; ++n) {
 		fontsPal[n] = MakeRGB15(n, n, n);
 	}
 
-	for (n=0; n<NUM_FONTS; n++) {
-		for (y=0; y<FONT_HEIGHT; y++) {
+	for (n=0; n<NUM_TINY_FONTS; n++) {
+		for (y=0; y<TINY_FONT_HEIGHT; y++) {
 			int c = bitfonts[i++];
-			for (x=0; x<FONT_WIDTH; x++) {
-				fontsBmp[n * FONT_SIZE + x + y * FONT_WIDTH] = ((c >>  (7 - x)) & 1) * (FONTS_PAL_SIZE - 1);
+			for (x=0; x<TINY_FONT_WIDTH; x++) {
+				fontsBmp[n * TINY_FONT_SIZE + x + y * TINY_FONT_WIDTH] = ((c >>  (7 - x)) & 1) * (TINY_FONTS_PAL_SIZE - 1);
 			}
 		}
 	}
 
-	for (i=0; i<FONTS_MAP_SIZE; ++i) {
+	for (i=0; i<TINY_FONTS_MAP_SIZE; ++i) {
 		uchar c = i;
 
 		if (c>31 && c<92)
@@ -124,7 +135,7 @@ void initFonts()
 	}
 
 	for (i=0; i<MAX_STRING_LENGTH; ++i) {
-		textCel[i] = CreateCel(FONT_WIDTH, FONT_HEIGHT, 8, CREATECEL_CODED, fontsBmp);
+		textCel[i] = CreateCel(TINY_FONT_WIDTH, TINY_FONT_HEIGHT, 8, CREATECEL_CODED, fontsBmp);
 		textCel[i]->ccb_PLUTPtr = (PLUTChunk*)fontsPal;
 
 		textCel[i]->ccb_HDX = 1 << 20;
@@ -148,7 +159,8 @@ void setTextColor(uint16 color)
 void initTools()
 {
 	initTimer();
-	initFonts();
+	initTinyFonts();
+	initSinCosLuts();
 }
 
 void drawZoomedText(int xtp, int ytp, char *text, int zoom)
@@ -167,9 +179,9 @@ void drawZoomedText(int xtp, int ytp, char *text, int zoom)
 		textCel[i]->ccb_HDX = (zoom << 20) >> TEXT_ZOOM_SHR;
 		textCel[i]->ccb_VDY = (zoom << 16) >> TEXT_ZOOM_SHR;
 
-		textCel[i]->ccb_SourcePtr = (CelData*)&fontsBmp[c * FONT_SIZE];
+		textCel[i]->ccb_SourcePtr = (CelData*)&fontsBmp[c * TINY_FONT_SIZE];
 
-		xtp+= ((zoom * FONT_WIDTH) >> TEXT_ZOOM_SHR);
+		xtp+= ((zoom * TINY_FONT_WIDTH) >> TEXT_ZOOM_SHR);
 	} while(c!=255 && ++i < MAX_STRING_LENGTH);
 
 	--i;
@@ -283,9 +295,9 @@ int runEffectSelector(char **str, int size)
 
 	// Display menu once
 	for (i=0; i<size; ++i) {
-		drawText(px, py+i*FONT_WIDTH, str[i]);
+		drawText(px, py+i*TINY_FONT_WIDTH, str[i]);
 	}
-	renderEffectSelectorBar(px, py, strlen(str[selection])*FONT_WIDTH);
+	renderEffectSelectorBar(px, py, strlen(str[selection])*TINY_FONT_WIDTH);
 
 	do {
 		int moveOffset = 0;
@@ -309,78 +321,56 @@ int runEffectSelector(char **str, int size)
 		}
 
 		if (moveOffset!=0) {
-			renderEffectSelectorBar(px, py + selection*FONT_WIDTH, strlen(str[selection])*FONT_WIDTH);
+			renderEffectSelectorBar(px, py + selection*TINY_FONT_WIDTH, strlen(str[selection])*TINY_FONT_WIDTH);
 			selection += moveOffset;
-			renderEffectSelectorBar(px, py + selection*FONT_WIDTH, strlen(str[selection])*FONT_WIDTH);
+			renderEffectSelectorBar(px, py + selection*TINY_FONT_WIDTH, strlen(str[selection])*TINY_FONT_WIDTH);
 		}
 
 		displayScreen();
 	} while(true);
 }
 
-void setPalWithFades(int c0, int c1, int r0, int g0, int b0, int r1, int g1, int b1, uint16* pal, int numFades, int r2, int g2, int b2)
+void setPal(int c, int r, int g, int b, uint16* pal)
 {
-	int i, j, rr, gg, bb;
-	float rr2, gg2, bb2;
-	float ddr, ddg, ddb;
-	float dc = (float)(c1 - c0);
-	float dr = (float)(r1 - r0) / dc;
-	float dg = (float)(g1 - g0) / dc;
-	float db = (float)(b1 - b0) / dc;
-	float r = (float)r0;
-	float g = (float)g0;
-	float b = (float)b0;
+	CLAMP(r, 0, 31)
+	CLAMP(g, 0, 31)
+	CLAMP(b, 0, 31)
 
-	pal+=c0;
-	for (i=c0; i<=c1; i++)
+	pal[c] = (r << 10) | (g << 5) | b;
+}
+
+void setPalGradient(int c0, int c1, int r0, int g0, int b0, int r1, int g1, int b1, uint16* pal)
+{
+	int i;
+	const int dc = (c1 - c0);
+	const int dr = ((r1 - r0) << 16) / dc;
+	const int dg = ((g1 - g0) << 16) / dc;
+	const int db = ((b1 - b0) << 16) / dc;
+
+	r0 <<= 16;
+	g0 <<= 16;
+	b0 <<= 16;
+
+	for (i = c0; i <= c1; i++)
 	{
-		rr = (int)r >> 3;
-		gg = (int)g >> 3;
-		bb = (int)b >> 3;
-		*pal = (rr << 10) | (gg << 5) | bb;
-		rr2 = r; gg2 = g; bb2 = b;
-		ddr = ((float)r2 - r) / (float)numFades;
-		ddg = ((float)g2 - g) / (float)numFades;
-		ddb = ((float)b2 - b) / (float)numFades;
-		for (j=1; j<numFades; j++)
-		{
-			rr = (int)rr2 >> 3;
-			gg = (int)gg2 >> 3;
-			bb = (int)bb2 >> 3;
-			*(pal + (j << 5)) = (rr << 10) | (gg << 5) | bb;
-			rr2 += ddr;
-			gg2 += ddg;
-			bb2 += ddb;
-		}
-		r += dr;
-		g += dg;
-		b += db;
-		pal++;
+		setPal(i, r0>>16, g0>>16, b0>>16, pal);
+
+		r0 += dr;
+		g0 += dg;
+		b0 += db;
 	}
 }
 
-void setPal(int c0, int c1, int r0, int g0, int b0, int r1, int g1, int b1, uint16* pal, int shr)
+void setPalGradientFromPrevIndex(int c0, int c1, int r1, int g1, int b1, uint16* pal)
 {
-	int i, rr, gg, bb;
-	float dc = (float)(c1 - c0);
-	float dr = (float)(r1 - r0) / dc;
-	float dg = (float)(g1 - g0) / dc;
-	float db = (float)(b1 - b0) / dc;
-	float r = (float)r0;
-	float g = (float)g0;
-	float b = (float)b0;
+	int r0, g0, b0;
 
-	pal+=c0;
-	for (i=c0; i<=c1; i++)
-	{
-		rr = (int)r >> shr;
-		gg = (int)g >> shr;
-		bb = (int)b >> shr;
-		*pal++ = (rr << 10) | (gg << 5) | bb;
-		r += dr;
-		g += dg;
-		b += db;
-	}
+	c0--;
+	r0 = (pal[c0] >> 10) & 31;
+	g0 = (pal[c0] >> 5) & 31;
+	b0 = pal[c0] & 31;
+
+	setPalGradient(c0, c1, r0, g0, b0, r1, g1, b1, pal);
 }
 
 static int getVramOffset16(int posX, int posY)

@@ -26,7 +26,7 @@ static uint16 *lineColorShades[4] = { NULL, NULL, NULL, NULL };
 uint16 *crateColorShades(int r, int g, int b, int numShades) {
 	uint16 *colorShades = (uint16*)AllocMem(sizeof(uint16) * numShades, MEMTYPE_ANY);
 
-	setPal(0, numShades-1, 0,0,0, r,g,b, colorShades, 0);
+	setPalGradient(0, numShades-1, 0,0,0, r,g,b, colorShades);
 
 	return colorShades;
 }
@@ -193,8 +193,8 @@ void renderTransformedMeshSoft(Mesh *ms, Vertex *vertices)
 {
 	clearSoftBuffer();
 
-	//renderMeshSoft(ms, vertices);
-	renderMeshSoftWireframe(ms, vertices);
+	renderMeshSoft(ms, vertices);
+	//renderMeshSoftWireframe(ms, vertices);
 
 	renderSoftQuadOnScreen();
 }
