@@ -20,12 +20,17 @@
 
 typedef struct Vertex
 {
-	int x, y, z;
+	int x,y,z;
 }Vertex;
+
+typedef struct Vector3D
+{
+	int x,y,z;
+}Vector3D;
 
 typedef struct Point2D
 {
-    int x, y;
+    int x,y;
 }Point2D;
 
 typedef struct Point2Darray

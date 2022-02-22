@@ -4,10 +4,13 @@
 #include "engine_mesh.h"
 
 #define MAX_VERTICES_NUM 1024
+#define MAX_NORMALS_NUM 1024
 
 #define PROJ_SHR 8
 #define REC_FPSHR 20
 #define NUM_REC_Z 32768
+
+#define NORMAL_SHIFT 8
 
 typedef struct Object3D
 {

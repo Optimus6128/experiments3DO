@@ -6,7 +6,8 @@
 
 #define MESH_OPTION_RENDER_SOFT		(1 << 0)
 #define MESH_OPTION_RENDER_HARD		(1 << 1)
-#define MESH_OPTIONS_DEFAULT MESH_OPTION_RENDER_HARD
+#define MESH_OPTION_ENABLE_LIGHTING	(1 << 2)
+#define MESH_OPTIONS_DEFAULT (MESH_OPTION_RENDER_HARD)
 
 typedef struct PolyData
 {
@@ -31,6 +32,9 @@ typedef struct Mesh
 
 	PolyData *poly;
 	int polysNum;
+
+	Vector3D *polyNormal;
+	Vector3D *vrtxNormal;
 
 	int *lineIndex;
 	int linesNum;

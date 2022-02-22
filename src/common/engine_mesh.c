@@ -161,11 +161,13 @@ Mesh* initMesh(int verticesNum, int polysNum, int indicesNum, int linesNum, int 
 	ms->index = (int*)AllocMem(ms->indicesNum * sizeof(int), MEMTYPE_ANY);
 	ms->poly = (PolyData*)AllocMem(polysNum * sizeof(PolyData), MEMTYPE_ANY);
 	ms->lineIndex = (int*)AllocMem(linesNum * 2 * sizeof(int), MEMTYPE_ANY);
+	ms->polyNormal = (Vector3D*)AllocMem(ms->polysNum * sizeof(Vector3D), MEMTYPE_ANY);
 
 	if (renderType & MESH_OPTION_RENDER_HARD) {
 		ms->cel = (CCB*)AllocMem(polysNum * sizeof(CCB), MEMTYPE_ANY);
 	}
 	if (renderType & MESH_OPTION_RENDER_SOFT) {
+		ms->vrtxNormal = (Vector3D*)AllocMem(ms->verticesNum * sizeof(Vector3D), MEMTYPE_ANY);
 		ms->indexCol = (uint32*)AllocMem(ms->indicesNum * sizeof(uint32), MEMTYPE_ANY);
 		ms->indexTC = (TexCoords*)AllocMem(ms->indicesNum * sizeof(TexCoords), MEMTYPE_ANY);
 	}

@@ -6,10 +6,14 @@
 #include "procgen_mesh.h"
 #include "mathutil.h"
 
+#include "engine_main.h"
+
 
 static Vertex *currentVertex;
 static int *currentIndex;
 static int *currentLineIndex;
+static Vector3D *currentPolyNormal;
+static Vector3D *currentVrtxNormal;
 
 
 static void setCurrentVertex(Vertex *v)
@@ -26,6 +30,51 @@ static void setCurrentLineIndex(int *lineIndex)
 {
 	currentLineIndex = lineIndex;
 }
+
+static void setCurrentPolyNormal(Vector3D *polyNormal)
+{
+	currentPolyNormal = polyNormal;
+}
+
+static void setCurrentVrtxNormal(Vector3D *vrtxNormal)
+{
+	currentVrtxNormal = vrtxNormal;
+}
+
+static void resetCurrentVertex(Mesh *ms)
+{
+	setCurrentVertex(ms->vrtx);
+}
+
+static void resetCurrentIndex(Mesh *ms)
+{
+	setCurrentIndex(ms->index);
+}
+
+static void resetCurrentLineIndex(Mesh *ms)
+{
+	setCurrentLineIndex(ms->lineIndex);
+}
+
+static void resetCurrentPolyNormal(Mesh *ms)
+{
+	setCurrentPolyNormal(ms->polyNormal);
+}
+
+static void resetCurrentVrtxNormal(Mesh *ms)
+{
+	setCurrentVrtxNormal(ms->vrtxNormal);
+}
+
+static void resetAllCurrentPointers(Mesh *ms)
+{
+	resetCurrentVertex(ms);
+	resetCurrentIndex(ms);
+	resetCurrentLineIndex(ms);
+	resetCurrentPolyNormal(ms);
+	resetCurrentVrtxNormal(ms);
+}
+
 
 static void addVertex(int x, int y, int z)
 {
@@ -57,6 +106,24 @@ static void addLineIndices(int i0, int i1)
 	*currentLineIndex++ = i1;
 }
 
+static void addPolyNormal(int x, int y, int z)
+{
+	Vector3D *normal = currentPolyNormal++;
+
+	normal->x = x;
+	normal->y = y;
+	normal->z = z;
+}
+
+static void addVrtxNormal(int x, int y, int z)
+{
+	Vector3D *normal = currentVrtxNormal++;
+
+	normal->x = x;
+	normal->y = y;
+	normal->z = z;
+}
+
 static void setAllPolyData(Mesh *ms, int numPoints, int textureId, int palId)
 {
 	PolyData *poly = ms->poly;
@@ -69,6 +136,7 @@ static void setAllPolyData(Mesh *ms, int numPoints, int textureId, int palId)
 		++poly;
 	}
 }
+
 
 static void initCubeVertices(int s)
 {
@@ -107,6 +175,8 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 
 	const int size = params.size;
 	const int s = size / 2;
+	const int n = 1 << NORMAL_SHIFT;
+	const int m = (int)(n * 0.57735026919f);	// sqrt(3)/3
 
 	switch(meshgenId)
 	{
@@ -115,8 +185,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 		{
 			ms = initMesh(4,1,4,0, optionsFlags);
 
-			setCurrentVertex(ms->vrtx);
-			setCurrentIndex(ms->index);
+			resetAllCurrentPointers(ms);
 
 			addVertex(-s, -s, 0);
 			addVertex( s, -s, 0);
@@ -133,8 +202,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 		{
 			ms = initMesh(8,6,24,0, optionsFlags);
 
-			setCurrentVertex(ms->vrtx);
-			setCurrentIndex(ms->index);
+			resetAllCurrentPointers(ms);
 
 			initCubeVertices(s);
 
@@ -145,6 +213,13 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			addQuadIndices(3,2,7,6);
 			addQuadIndices(5,4,1,0);
 
+			addPolyNormal( 0,  0, -n);
+			addPolyNormal( n,  0,  0);
+			addPolyNormal( 0,  0,  n);
+			addPolyNormal(-n,  0,  0);
+			addPolyNormal( 0,  n,  0);
+			addPolyNormal( 0, -n,  0);
+
 			setAllPolyData(ms,4,0,0);
 		}
 		break;
@@ -153,11 +228,18 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 		{
 			ms = initMesh(8,12,36,12, optionsFlags);
 
-			setCurrentVertex(ms->vrtx);
-			setCurrentIndex(ms->index);
-			setCurrentLineIndex(ms->lineIndex);
+			resetAllCurrentPointers(ms);
 
 			initCubeVertices(s);
+
+			addVrtxNormal(-m, -m, -m);
+			addVrtxNormal( m, -m, -m);
+			addVrtxNormal( m,  m, -m);
+			addVrtxNormal(-m,  m, -m);
+			addVrtxNormal( m, -m,  m);
+			addVrtxNormal(-m, -m,  m);
+			addVrtxNormal(-m,  m,  m);
+			addVrtxNormal( m,  m,  m);
 
 			addTriangleIndices(0,1,2);
 			addTriangleIndices(0,2,3);
@@ -193,8 +275,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 		{
 			ms = initMesh(5,5,20,0, optionsFlags);
 
-			setCurrentVertex(ms->vrtx);
-			setCurrentIndex(ms->index);
+			resetAllCurrentPointers(ms);
 
 			initMeshPyramids_1or3(s);
 
@@ -206,8 +287,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 		{
 			ms = initMesh(9,5,20,0, optionsFlags);
 
-			setCurrentVertex(ms->vrtx);
-			setCurrentIndex(ms->index);
+			resetAllCurrentPointers(ms);
 
 			addVertex(-s, -s, -s);
 			addVertex( s, -s, -s);
@@ -246,8 +326,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 		{
 			ms = initMesh(5,5,20,0, optionsFlags);
 
-			setCurrentVertex(ms->vrtx);
-			setCurrentIndex(ms->index);
+			resetAllCurrentPointers(ms);
 
 			initMeshPyramids_1or3(s);
 
@@ -273,8 +352,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 
 			ms = initMesh(vrtxNum, polysNum, indicesNum, 0, optionsFlags);
 
-			setCurrentVertex(ms->vrtx);
-			setCurrentIndex(ms->index);
+			resetAllCurrentPointers(ms);
 
 			dx = size / divisions;
 			dy = size / divisions;
@@ -317,8 +395,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 
 			ms = initMesh(vrtxNum, polysNum, indicesNum, 0, optionsFlags);
 
-			setCurrentVertex(ms->vrtx);
-			setCurrentIndex(ms->index);
+			resetAllCurrentPointers(ms);
 
 			for (i=0; i<procPointsNum; ++i) {
 				const int r = procPoints->x;

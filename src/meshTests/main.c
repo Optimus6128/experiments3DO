@@ -13,7 +13,7 @@ static char *effectName[EFFECTS_NUM] = { "mesh pyramids test", "software 3d" };
 
 int main()
 {
-	const int effectIndex = EFFECT_MESH_SOFT;//runEffectSelector(effectName, EFFECTS_NUM);
+	const int effectIndex = EFFECT_MESH_SOFT; //runEffectSelector(effectName, EFFECTS_NUM);
 
 	coreInit(effectInitFunc[effectIndex], CORE_DEFAULT);
 	coreRun(effectRunFunc[effectIndex]);
