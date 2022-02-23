@@ -86,6 +86,7 @@ static void prepareEdgeListFlat(Vertex *p0, Vertex *p1)
 
 		if (y0 < 0) {
 			xp += -y0 * dx;
+			dy += y0;
 			y0 = 0;
 		}
 		if (y1 > SOFT_BUFF_HEIGHT-1) {
