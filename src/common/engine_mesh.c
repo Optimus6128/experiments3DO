@@ -157,7 +157,7 @@ Mesh* initMesh(int verticesNum, int polysNum, int indicesNum, int linesNum, int 
 	ms->indicesNum = indicesNum;
 	ms->linesNum = linesNum;
 
-	ms->vrtx = (Vertex*)AllocMem(ms->verticesNum * sizeof(Vertex), MEMTYPE_ANY);
+	ms->vertex = (Vertex*)AllocMem(ms->verticesNum * sizeof(Vertex), MEMTYPE_ANY);
 	ms->index = (int*)AllocMem(ms->indicesNum * sizeof(int), MEMTYPE_ANY);
 	ms->poly = (PolyData*)AllocMem(polysNum * sizeof(PolyData), MEMTYPE_ANY);
 	ms->lineIndex = (int*)AllocMem(linesNum * 2 * sizeof(int), MEMTYPE_ANY);
@@ -167,9 +167,9 @@ Mesh* initMesh(int verticesNum, int polysNum, int indicesNum, int linesNum, int 
 		ms->cel = (CCB*)AllocMem(polysNum * sizeof(CCB), MEMTYPE_ANY);
 	}
 	if (renderType & MESH_OPTION_RENDER_SOFT) {
-		ms->vrtxNormal = (Vector3D*)AllocMem(ms->verticesNum * sizeof(Vector3D), MEMTYPE_ANY);
-		ms->indexCol = (uint32*)AllocMem(ms->indicesNum * sizeof(uint32), MEMTYPE_ANY);
-		ms->indexTC = (TexCoords*)AllocMem(ms->indicesNum * sizeof(TexCoords), MEMTYPE_ANY);
+		ms->vertexNormal = (Vector3D*)AllocMem(ms->verticesNum * sizeof(Vector3D), MEMTYPE_ANY);
+		ms->vertexCol = (int*)AllocMem(ms->verticesNum * sizeof(int), MEMTYPE_ANY);
+		ms->vertexTC = (TexCoords*)AllocMem(ms->verticesNum * sizeof(TexCoords), MEMTYPE_ANY);
 	}
 	ms->renderType = renderType;
 

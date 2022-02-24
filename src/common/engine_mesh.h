@@ -24,7 +24,7 @@ typedef struct TexCoords
 
 typedef struct Mesh
 {
-	Vertex *vrtx;
+	Vertex *vertex;
 	int verticesNum;
 
 	int *index;
@@ -34,14 +34,14 @@ typedef struct Mesh
 	int polysNum;
 
 	Vector3D *polyNormal;
-	Vector3D *vrtxNormal;
+	Vector3D *vertexNormal;
 
 	int *lineIndex;
 	int linesNum;
 
 	CCB *cel;
-	uint32 *indexCol;
-	TexCoords *indexTC;
+	int *vertexCol;
+	TexCoords *vertexTC;
 
 	Texture *tex;
 	int texturesNum;

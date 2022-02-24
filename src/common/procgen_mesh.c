@@ -13,7 +13,7 @@ static Vertex *currentVertex;
 static int *currentIndex;
 static int *currentLineIndex;
 static Vector3D *currentPolyNormal;
-static Vector3D *currentVrtxNormal;
+static Vector3D *currentVertexNormal;
 
 
 static void setCurrentVertex(Vertex *v)
@@ -36,14 +36,14 @@ static void setCurrentPolyNormal(Vector3D *polyNormal)
 	currentPolyNormal = polyNormal;
 }
 
-static void setCurrentVrtxNormal(Vector3D *vrtxNormal)
+static void setCurrentVertexNormal(Vector3D *vertexNormal)
 {
-	currentVrtxNormal = vrtxNormal;
+	currentVertexNormal = vertexNormal;
 }
 
 static void resetCurrentVertex(Mesh *ms)
 {
-	setCurrentVertex(ms->vrtx);
+	setCurrentVertex(ms->vertex);
 }
 
 static void resetCurrentIndex(Mesh *ms)
@@ -61,9 +61,9 @@ static void resetCurrentPolyNormal(Mesh *ms)
 	setCurrentPolyNormal(ms->polyNormal);
 }
 
-static void resetCurrentVrtxNormal(Mesh *ms)
+static void resetCurrentVertexNormal(Mesh *ms)
 {
-	setCurrentVrtxNormal(ms->vrtxNormal);
+	setCurrentVertexNormal(ms->vertexNormal);
 }
 
 static void resetAllCurrentPointers(Mesh *ms)
@@ -72,7 +72,7 @@ static void resetAllCurrentPointers(Mesh *ms)
 	resetCurrentIndex(ms);
 	resetCurrentLineIndex(ms);
 	resetCurrentPolyNormal(ms);
-	resetCurrentVrtxNormal(ms);
+	resetCurrentVertexNormal(ms);
 }
 
 
@@ -115,9 +115,9 @@ static void addPolyNormal(int x, int y, int z)
 	normal->z = z;
 }
 
-static void addVrtxNormal(int x, int y, int z)
+static void addVertexNormal(int x, int y, int z)
 {
-	Vector3D *normal = currentVrtxNormal++;
+	Vector3D *normal = currentVertexNormal++;
 
 	normal->x = x;
 	normal->y = y;
@@ -160,16 +160,16 @@ static void initCubePolyNormals(int n)
 	addPolyNormal( 0, -n,  0);
 }
 
-static void initCubeVrtxNormals(int n)
+static void initCubeVertexNormals(int n)
 {
-	addVrtxNormal(-n, -n, -n);
-	addVrtxNormal( n, -n, -n);
-	addVrtxNormal( n,  n, -n);
-	addVrtxNormal(-n,  n, -n);
-	addVrtxNormal( n, -n,  n);
-	addVrtxNormal(-n, -n,  n);
-	addVrtxNormal(-n,  n,  n);
-	addVrtxNormal( n,  n,  n);
+	addVertexNormal(-n, -n, -n);
+	addVertexNormal( n, -n, -n);
+	addVertexNormal( n,  n, -n);
+	addVertexNormal(-n,  n, -n);
+	addVertexNormal( n, -n,  n);
+	addVertexNormal(-n, -n,  n);
+	addVertexNormal(-n,  n,  n);
+	addVertexNormal( n,  n,  n);
 }
 
 static void initCubeLineIndices()
@@ -244,7 +244,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 
 			initCubeVertices(s);
 			initCubePolyNormals(n);
-			initCubeVrtxNormals(m);
+			initCubeVertexNormals(m);
 
 			addQuadIndices(0,1,2,3);
 			addQuadIndices(1,4,7,2);
@@ -267,7 +267,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 
 			initCubeVertices(s);
 			initCubePolyNormals(n);
-			initCubeVrtxNormals(m);
+			initCubeVertexNormals(m);
 
 			addTriangleIndices(0,1,2);
 			addTriangleIndices(0,2,3);
@@ -363,11 +363,11 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 		case MESH_GRID:
 		{
 			const int divisions = params.divisions;
-			const int vrtxNum = (divisions + 1) * (divisions + 1);
+			const int vertexNum = (divisions + 1) * (divisions + 1);
 			const int polysNum = divisions * divisions;
 			const int indicesNum = polysNum * 4;
 
-			ms = initMesh(vrtxNum, polysNum, indicesNum, 0, optionsFlags);
+			ms = initMesh(vertexNum, polysNum, indicesNum, 0, optionsFlags);
 
 			resetAllCurrentPointers(ms);
 
@@ -406,11 +406,11 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			const int procPointsNum = params.numProcPoints;
 			Point2D *procPoints = params.procPoints;
 
-			const int vrtxNum = procPointsNum * 4;
+			const int vertexNum = procPointsNum * 4;
 			const int polysNum = (procPointsNum-1) * 4;
 			const int indicesNum = polysNum * 4;
 
-			ms = initMesh(vrtxNum, polysNum, indicesNum, 0, optionsFlags);
+			ms = initMesh(vertexNum, polysNum, indicesNum, 0, optionsFlags);
 
 			resetAllCurrentPointers(ms);
 

@@ -20,7 +20,6 @@
 #define DIV_TAB_SIZE 4096
 #define DIV_TAB_SHIFT 16
 
-#define COLOR_SHADES_SIZE 32
 
 typedef struct Edge
 {
@@ -115,7 +114,7 @@ static void prepareEdgeListGouraud(VrtxElement *ve0, VrtxElement *ve1)
 			int x = FIXED_TO_INT(fx, FP_BASE);
 			//int c = FIXED_TO_INT(fc, FP_BASE);
 			CLAMP(x, 0, SOFT_BUFF_WIDTH-1)
-			//CLAMP(c, 0, COLOR_SHADES_SIZE-1)
+			//CLAMP(c, 0, COLOR_GRADIENTS_SIZE-1)
 			edgeListToWriteFlat->x = x;
 			edgeListToWriteFlat->c = fc;
             ++edgeListToWriteFlat;
@@ -144,7 +143,7 @@ static void fillGouraudEdges(int yMin, int yMax, uint16 *colorShades)
 
 		while(length-- >= 0) {
 			int c = FIXED_TO_INT(fc, FP_BASE);
-			CLAMP(c, 0, COLOR_SHADES_SIZE-1)
+			CLAMP(c, 0, COLOR_GRADIENTS_SIZE-1)
 			*dst16++ = colorShades[c];
 			fc += dc;
 		};
@@ -305,23 +304,22 @@ static void renderMeshSoft(Mesh *ms, Vertex *vertices)
 {
 	static VrtxElement vrtxElements[3];
 	Vertex *pt0, *pt1, *pt2;
+	int c0, c1, c2;
 	int i,n;
 
 	int *index = ms->index;
+	int *vertexCol = ms->vertexCol;
 
 	for (i=0; i<ms->polysNum; ++i) {
-		const int numPoints = ms->poly[i].numPoints;
-
-		pt0 = &vertices[*index++];
-		pt1 = &vertices[*index++];
-		pt2 = &vertices[*index++];
+		pt0 = &vertices[*index]; c0 = vertexCol[*index++];
+		pt1 = &vertices[*index]; c1 = vertexCol[*index++];
+		pt2 = &vertices[*index]; c2 = vertexCol[*index++];
 
 		n = (pt0->x - pt1->x) * (pt2->y - pt1->y) - (pt2->x - pt1->x) * (pt0->y - pt1->y);
 		if (n > 0) {
-			int ii = (i + 1) * (i + 2);
-			vrtxElements[0].x = pt0->x; vrtxElements[0].y = pt0->y; vrtxElements[0].c = ii & (COLOR_SHADES_SIZE-1);
-			vrtxElements[1].x = pt1->x; vrtxElements[1].y = pt1->y; vrtxElements[1].c = (ii*ii) & (COLOR_SHADES_SIZE-1);
-			vrtxElements[2].x = pt2->x; vrtxElements[2].y = pt2->y; vrtxElements[2].c = (ii*ii*ii) & (COLOR_SHADES_SIZE-1);
+			vrtxElements[0].x = pt0->x; vrtxElements[0].y = pt0->y; vrtxElements[0].c = c0;
+			vrtxElements[1].x = pt1->x; vrtxElements[1].y = pt1->y; vrtxElements[1].c = c1;
+			vrtxElements[2].x = pt2->x; vrtxElements[2].y = pt2->y; vrtxElements[2].c = c2;
 
 			drawGouraudTriangle(vrtxElements, lineColorShades[i & 3]);
 		}
@@ -357,8 +355,8 @@ void initEngineSoft()
 
 	initDivs();
 
-	if (!lineColorShades[0]) lineColorShades[0] = crateColorShades(31,23,15, COLOR_SHADES_SIZE);
-	if (!lineColorShades[1]) lineColorShades[1] = crateColorShades(15,23,31, COLOR_SHADES_SIZE);
-	if (!lineColorShades[2]) lineColorShades[2] = crateColorShades(15,31,23, COLOR_SHADES_SIZE);
-	if (!lineColorShades[3]) lineColorShades[3] = crateColorShades(31,15,23, COLOR_SHADES_SIZE);
+	if (!lineColorShades[0]) lineColorShades[0] = crateColorShades(31,23,15, COLOR_GRADIENTS_SIZE);
+	if (!lineColorShades[1]) lineColorShades[1] = crateColorShades(15,23,31, COLOR_GRADIENTS_SIZE);
+	if (!lineColorShades[2]) lineColorShades[2] = crateColorShades(15,31,23, COLOR_GRADIENTS_SIZE);
+	if (!lineColorShades[3]) lineColorShades[3] = crateColorShades(31,15,23, COLOR_GRADIENTS_SIZE);
 }

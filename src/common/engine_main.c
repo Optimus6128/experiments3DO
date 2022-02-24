@@ -30,7 +30,10 @@ static bool polygonOrderTestCPU = true;
 static void(*mapcelFunc)(CCB*, Point*);
 
 
-static int shadeTable[16] = {
+#define SHADE_TABLE_SHR 4
+#define SHADE_TABLE_SIZE (1 << SHADE_TABLE_SHR)
+
+static int shadeTable[SHADE_TABLE_SIZE] = {
  0x03010301,0x07010701,0x0B010B01,0x0F010F01,0x13011301,0x17011701,0x1B011B01,0x1F011F01,
  0x03C103C1,0x07C107C1,0x0BC10BC1,0x0FC10FC1,0x13C113C1,0x17C117C1,0x1BC11B01,0x1FC11FC1
 };
@@ -118,13 +121,13 @@ static void translateAndProjectVertices(Object3D *obj)
 	}
 }
 
-static void rotateVerticesHw(Object3D *obj, bool rotatePolyNormals, bool rotateVrtxNormals)
+static void rotateVerticesHw(Object3D *obj, bool rotatePolyNormals, bool rotateVertexNormals)
 {
 	mat33f16 rotMat;
 
 	createRotationMatrixValues(obj->rotX, obj->rotY, obj->rotZ, (int*)rotMat);
 
-	MulManyVec3Mat33_F16((vec3f16*)vertices, (vec3f16*)obj->mesh->vrtx, rotMat, obj->mesh->verticesNum);
+	MulManyVec3Mat33_F16((vec3f16*)vertices, (vec3f16*)obj->mesh->vertex, rotMat, obj->mesh->verticesNum);
 
 	if (obj->mesh->renderType & MESH_OPTION_ENABLE_LIGHTING) {
 		// in the future, we might not need to rotate the normals but rather the light against the normals
@@ -132,15 +135,15 @@ static void rotateVerticesHw(Object3D *obj, bool rotatePolyNormals, bool rotateV
 		if (rotatePolyNormals) {
 			MulManyVec3Mat33_F16((vec3f16*)normals, (vec3f16*)obj->mesh->polyNormal, rotMat, obj->mesh->polysNum); 
 		}
-		if (rotateVrtxNormals) {
-			MulManyVec3Mat33_F16((vec3f16*)normals, (vec3f16*)obj->mesh->vrtxNormal, rotMat, obj->mesh->verticesNum);
+		if (rotateVertexNormals) {
+			MulManyVec3Mat33_F16((vec3f16*)normals, (vec3f16*)obj->mesh->vertexNormal, rotMat, obj->mesh->verticesNum);
 		}
 	}
 }
 
 static void prepareTransformedMeshCELs(Mesh *ms)
 {
-	int i, j=0;
+	int i;
 	int *indices = ms->index;
 	Point qpt[4];
 	CCB *cel = ms->cel;
@@ -167,9 +170,9 @@ static void prepareTransformedMeshCELs(Mesh *ms)
 			cel->ccb_Flags &= ~CCB_SKIP;
 
 			if (ms->renderType & MESH_OPTION_ENABLE_LIGHTING) {
-				int normZ = -normals[j].z;
+				int normZ = -normals[i].z;
 				CLAMP(normZ,0,((1<<NORMAL_SHIFT)-1))
-				cel->ccb_PIXC = shadeTable[normZ >> (NORMAL_SHIFT-4)];
+				cel->ccb_PIXC = shadeTable[normZ >> (NORMAL_SHIFT-SHADE_TABLE_SHR)];
 			}
 
 			mapcelFunc(cel, qpt);
@@ -177,7 +180,19 @@ static void prepareTransformedMeshCELs(Mesh *ms)
 			cel->ccb_Flags |= CCB_SKIP;
 		}
 		++cel;
-		++j;
+	}
+}
+
+static void calculateVertexLighting(Object3D *obj)
+{
+	int i;
+	const int verticesNum = obj->mesh->verticesNum;
+	int *vertexCols = obj->mesh->vertexCol;
+
+	for (i=0; i<verticesNum; ++i) {
+		int normZ = -normals[i].z;
+		CLAMP(normZ,0,((1<<NORMAL_SHIFT)-1))
+		*vertexCols++ = normZ >> (NORMAL_SHIFT-COLOR_GRADIENTS_SHR);
 	}
 }
 
@@ -214,6 +229,10 @@ void renderObject3D(Object3D *obj)
 void renderObject3Dsoft(Object3D *obj)
 {
 	transformMesh(obj, true);
+
+	if (obj->mesh->renderType & MESH_OPTION_ENABLE_LIGHTING) {
+		calculateVertexLighting(obj);
+	}
 	renderTransformedMeshSoft(obj->mesh, vertices);
 }
 
