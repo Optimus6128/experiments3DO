@@ -20,6 +20,8 @@
 #define DIV_TAB_SIZE 4096
 #define DIV_TAB_SHIFT 16
 
+#define COLOR_SHADES_SIZE 32
+
 typedef struct Edge
 {
 	int x;
@@ -36,8 +38,8 @@ static Sprite *sprSoftBuffer = NULL;
 
 static uint16 softBuffer[SOFT_BUFF_WIDTH * SOFT_BUFF_HEIGHT];
 
-static Edge leftEdgeFlat[SOFT_BUFF_HEIGHT];
-static Edge rightEdgeFlat[SOFT_BUFF_HEIGHT];
+static Edge leftEdge[SOFT_BUFF_HEIGHT];
+static Edge rightEdge[SOFT_BUFF_HEIGHT];
 
 static int32 divTab[DIV_TAB_SIZE];
 
@@ -76,10 +78,10 @@ static void prepareEdgeListGouraud(VrtxElement *ve0, VrtxElement *ve1)
 
 	// Assumes CCW
 	if (ve0->y < ve1->y) {
-		edgeListToWriteFlat = leftEdgeFlat;
+		edgeListToWriteFlat = leftEdge;
 	}
 	else {
-		edgeListToWriteFlat = rightEdgeFlat;
+		edgeListToWriteFlat = rightEdge;
 
 		veTemp = ve0;
 		ve0 = ve1;
@@ -113,7 +115,7 @@ static void prepareEdgeListGouraud(VrtxElement *ve0, VrtxElement *ve1)
 			int x = FIXED_TO_INT(fx, FP_BASE);
 			//int c = FIXED_TO_INT(fc, FP_BASE);
 			CLAMP(x, 0, SOFT_BUFF_WIDTH-1)
-			//CLAMP(c, 0, 15)
+			//CLAMP(c, 0, COLOR_SHADES_SIZE-1)
 			edgeListToWriteFlat->x = x;
 			edgeListToWriteFlat->c = fc;
             ++edgeListToWriteFlat;
@@ -123,56 +125,58 @@ static void prepareEdgeListGouraud(VrtxElement *ve0, VrtxElement *ve1)
     }
 }
 
-
-static void drawGouraudTriangle(VrtxElement *ves, uint16 *colorShades16)
+static void fillGouraudEdges(int yMin, int yMax, uint16 *colorShades)
 {
-	prepareEdgeListGouraud(&ves[0], &ves[1]);
-	prepareEdgeListGouraud(&ves[1], &ves[2]);
-	prepareEdgeListGouraud(&ves[2], &ves[0]);
+	uint16 *dst = softBuffer + yMin * SOFT_BUFF_WIDTH;
+	int count = yMax - yMin;
+	Edge *le = &leftEdge[yMin];
+	Edge *re = &rightEdge[yMin];
+	do {
+		const int xl = le->x;
+		const int cl = le->c;
+		const int cr = re->c;
+		int length = re->x - xl;
+		uint16 *dst16 = dst + xl;
 
-	{
-		int y, count;
-		uint16 *dst;
+		const int repDiv = divTab[length + DIV_TAB_SIZE / 2];
+		const int dc = (((cr - cl) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE)) >> FP_BASE;
+		int fc = cl;
 
-		const int y0 = ves[0].y;
-		const int y1 = ves[1].y;
-		const int y2 = ves[2].y;
+		while(length-- >= 0) {
+			int c = FIXED_TO_INT(fc, FP_BASE);
+			CLAMP(c, 0, COLOR_SHADES_SIZE-1)
+			*dst16++ = colorShades[c];
+			fc += dc;
+		};
 
-		int yMin = y0;
-		int yMax = yMin;
+		++le;
+		++re;
+		dst += SOFT_BUFF_WIDTH;
+	} while(--count > 0);
+}
 
-		if (y1 < yMin) yMin = y1;
-		if (y1 > yMax) yMax = y1;
-		if (y2 < yMin) yMin = y2;
-		if (y2 > yMax) yMax = y2;
+static void drawGouraudPoly(VrtxElement *ves, int numPoints, uint16 *colorShades)
+{
+	int yMin = ves[0].y;
+	int yMax = yMin;
 
-		if (yMin < 0) yMin = 0;
-		if (yMax > SOFT_BUFF_HEIGHT-1) yMax = SOFT_BUFF_HEIGHT-1;
-
-		y = yMin;
-		dst = softBuffer + y * SOFT_BUFF_WIDTH;
-		count = yMax - yMin;
-		do {
-			const int xl = leftEdgeFlat[y].x;
-			const int cl = leftEdgeFlat[y].c;
-			const int cr = rightEdgeFlat[y].c;
-			int length = rightEdgeFlat[y++].x - xl;
-			uint16 *dst16 = dst + xl;
-
-			const int repDiv = divTab[length + DIV_TAB_SIZE / 2];
-			const int dc = (((cr - cl) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE)) >> FP_BASE;
-			int fc = cl;
-
-			while(length-- >= 0) {
-				int c = FIXED_TO_INT(fc, FP_BASE);
-				CLAMP(c, 0, 15)
-				*dst16++ = colorShades16[c];
-				fc += dc;
-			};
-
-			dst += SOFT_BUFF_WIDTH;
-		} while(--count > 0);
+	int i;
+	for (i=0; i<numPoints; ++i) {
+		int ii = i+1;
+		if (ii >= numPoints) ii = 0;
+		prepareEdgeListGouraud(&ves[i], &ves[ii]);
 	}
+
+	for (i=1; i<numPoints; ++i) {
+		const int y = ves[i].y;
+		if (y < yMin) yMin = y;
+		if (y > yMax) yMax = y;
+	}
+
+	if (yMin < 0) yMin = 0;
+	if (yMax > SOFT_BUFF_HEIGHT-1) yMax = SOFT_BUFF_HEIGHT-1;
+
+	fillGouraudEdges(yMin, yMax, colorShades);
 }
 
 /*static void drawAntialiasedLine(Vertex *p1, Vertex *p2, uint16 *colorShades16)
@@ -301,25 +305,33 @@ static void renderMeshSoftWireframe(Mesh *ms, Vertex *vertices)
 
 static void renderMeshSoft(Mesh *ms, Vertex *vertices)
 {
-	static VrtxElement vrtxElements[3];
+	static VrtxElement vrtxElements[4];
 
-	Vertex *pt0, *pt1, *pt2;
+	Vertex *pt0, *pt1, *pt2, *pt3;
 	int i,n;
 
-	int *index = ms->index;	// will assume all triangles for the soft renderer for now
+	int *index = ms->index;
 
 	for (i=0; i<ms->polysNum; ++i) {
+		const int numPoints = ms->poly[i].numPoints;
+
 		pt0 = &vertices[*index++];
 		pt1 = &vertices[*index++];
 		pt2 = &vertices[*index++];
+		if (numPoints > 3) {
+			pt3 = &vertices[*index++];
+		}
 
 		n = (pt0->x - pt1->x) * (pt2->y - pt1->y) - (pt2->x - pt1->x) * (pt0->y - pt1->y);
 		if (n > 0) {
 			int ii = (i + 1) * (i + 2);
-			vrtxElements[0].x = pt0->x; vrtxElements[0].y = pt0->y; vrtxElements[0].c = ii & 15;
-			vrtxElements[1].x = pt1->x; vrtxElements[1].y = pt1->y; vrtxElements[1].c = (ii*ii) & 15;
-			vrtxElements[2].x = pt2->x; vrtxElements[2].y = pt2->y; vrtxElements[2].c = (ii*ii*ii) & 15;
-			drawGouraudTriangle(vrtxElements, lineColorShades[i & 3]);
+			vrtxElements[0].x = pt0->x; vrtxElements[0].y = pt0->y; vrtxElements[0].c = ii & (COLOR_SHADES_SIZE-1);
+			vrtxElements[1].x = pt1->x; vrtxElements[1].y = pt1->y; vrtxElements[1].c = (ii*ii) & (COLOR_SHADES_SIZE-1);
+			vrtxElements[2].x = pt2->x; vrtxElements[2].y = pt2->y; vrtxElements[2].c = (ii*ii*ii) & (COLOR_SHADES_SIZE-1);
+			if (numPoints > 3) {
+				vrtxElements[3].x = pt3->x; vrtxElements[3].y = pt3->y; vrtxElements[3].c = (ii*ii*ii*ii) & (COLOR_SHADES_SIZE-1);
+			}
+			drawGouraudPoly(vrtxElements, numPoints, lineColorShades[i & 3]);
 		}
 	}
 }
@@ -353,8 +365,8 @@ void initEngineSoft()
 
 	initDivs();
 
-	if (!lineColorShades[0]) lineColorShades[0] = crateColorShades(31,23,15, 16);
-	if (!lineColorShades[1]) lineColorShades[1] = crateColorShades(15,23,31, 16);
-	if (!lineColorShades[2]) lineColorShades[2] = crateColorShades(15,31,23, 16);
-	if (!lineColorShades[3]) lineColorShades[3] = crateColorShades(31,15,23, 16);
+	if (!lineColorShades[0]) lineColorShades[0] = crateColorShades(31,23,15, COLOR_SHADES_SIZE);
+	if (!lineColorShades[1]) lineColorShades[1] = crateColorShades(15,23,31, COLOR_SHADES_SIZE);
+	if (!lineColorShades[2]) lineColorShades[2] = crateColorShades(15,31,23, COLOR_SHADES_SIZE);
+	if (!lineColorShades[3]) lineColorShades[3] = crateColorShades(31,15,23, COLOR_SHADES_SIZE);
 }
