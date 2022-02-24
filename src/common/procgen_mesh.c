@@ -150,6 +150,44 @@ static void initCubeVertices(int s)
 	addVertex( s,  s,  s);
 }
 
+static void initCubePolyNormals(int n)
+{
+	addPolyNormal( 0,  0, -n);
+	addPolyNormal( n,  0,  0);
+	addPolyNormal( 0,  0,  n);
+	addPolyNormal(-n,  0,  0);
+	addPolyNormal( 0,  n,  0);
+	addPolyNormal( 0, -n,  0);
+}
+
+static void initCubeVrtxNormals(int n)
+{
+	addVrtxNormal(-n, -n, -n);
+	addVrtxNormal( n, -n, -n);
+	addVrtxNormal( n,  n, -n);
+	addVrtxNormal(-n,  n, -n);
+	addVrtxNormal( n, -n,  n);
+	addVrtxNormal(-n, -n,  n);
+	addVrtxNormal(-n,  n,  n);
+	addVrtxNormal( n,  n,  n);
+}
+
+static void initCubeLineIndices()
+{
+	addLineIndices(0,1);
+	addLineIndices(1,2);
+	addLineIndices(2,3);
+	addLineIndices(3,0);
+	addLineIndices(4,5);
+	addLineIndices(5,6);
+	addLineIndices(6,7);
+	addLineIndices(7,4);
+	addLineIndices(1,4);
+	addLineIndices(0,5);
+	addLineIndices(3,6);
+	addLineIndices(2,7);
+}
+
 static void initMeshPyramids_1or3(int s)
 {
 	addVertex(-s, -s, -s);
@@ -200,11 +238,13 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 
 		case MESH_CUBE:
 		{
-			ms = initMesh(8,6,24,0, optionsFlags);
+			ms = initMesh(8,6,24,12, optionsFlags);
 
 			resetAllCurrentPointers(ms);
 
 			initCubeVertices(s);
+			initCubePolyNormals(n);
+			initCubeVrtxNormals(m);
 
 			addQuadIndices(0,1,2,3);
 			addQuadIndices(1,4,7,2);
@@ -213,12 +253,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			addQuadIndices(3,2,7,6);
 			addQuadIndices(5,4,1,0);
 
-			addPolyNormal( 0,  0, -n);
-			addPolyNormal( n,  0,  0);
-			addPolyNormal( 0,  0,  n);
-			addPolyNormal(-n,  0,  0);
-			addPolyNormal( 0,  n,  0);
-			addPolyNormal( 0, -n,  0);
+			initCubeLineIndices();
 
 			setAllPolyData(ms,4,0,0);
 		}
@@ -231,15 +266,8 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			resetAllCurrentPointers(ms);
 
 			initCubeVertices(s);
-
-			addVrtxNormal(-m, -m, -m);
-			addVrtxNormal( m, -m, -m);
-			addVrtxNormal( m,  m, -m);
-			addVrtxNormal(-m,  m, -m);
-			addVrtxNormal( m, -m,  m);
-			addVrtxNormal(-m, -m,  m);
-			addVrtxNormal(-m,  m,  m);
-			addVrtxNormal( m,  m,  m);
+			initCubePolyNormals(n);
+			initCubeVrtxNormals(m);
 
 			addTriangleIndices(0,1,2);
 			addTriangleIndices(0,2,3);
@@ -254,18 +282,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			addTriangleIndices(5,4,1);
 			addTriangleIndices(5,1,0);
 
-			addLineIndices(0,1);
-			addLineIndices(1,2);
-			addLineIndices(2,3);
-			addLineIndices(3,0);
-			addLineIndices(4,5);
-			addLineIndices(5,6);
-			addLineIndices(6,7);
-			addLineIndices(7,4);
-			addLineIndices(1,4);
-			addLineIndices(0,5);
-			addLineIndices(3,6);
-			addLineIndices(2,7);
+			initCubeLineIndices();
 
 			setAllPolyData(ms,3,0,0);
 		}

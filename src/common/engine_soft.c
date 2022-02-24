@@ -20,13 +20,24 @@
 #define DIV_TAB_SIZE 4096
 #define DIV_TAB_SHIFT 16
 
+typedef struct Edge
+{
+	int x;
+	int c;
+}Edge;
+
+typedef struct VrtxElement
+{
+	int x,y;
+	int c;
+}VrtxElement;
 
 static Sprite *sprSoftBuffer = NULL;
 
 static uint16 softBuffer[SOFT_BUFF_WIDTH * SOFT_BUFF_HEIGHT];
 
-static int leftEdgeFlat[SOFT_BUFF_HEIGHT];
-static int rightEdgeFlat[SOFT_BUFF_HEIGHT];
+static Edge leftEdgeFlat[SOFT_BUFF_HEIGHT];
+static Edge rightEdgeFlat[SOFT_BUFF_HEIGHT];
 
 static int32 divTab[DIV_TAB_SIZE];
 
@@ -56,36 +67,40 @@ static void initDivs()
 }
 
 
-static void prepareEdgeListFlat(Vertex *p0, Vertex *p1)
+static void prepareEdgeListGouraud(VrtxElement *ve0, VrtxElement *ve1)
 {
-	int *edgeListToWriteFlat;
-	Vertex *pTemp;
+	Edge *edgeListToWriteFlat;
+	VrtxElement *veTemp;
 
-	if (p0->y == p1->y) return;
+	if (ve0->y == ve1->y) return;
 
 	// Assumes CCW
-	if (p0->y < p1->y) {
+	if (ve0->y < ve1->y) {
 		edgeListToWriteFlat = leftEdgeFlat;
 	}
 	else {
 		edgeListToWriteFlat = rightEdgeFlat;
 
-		pTemp = p0;
-		p0 = p1;
-		p1 = pTemp;
+		veTemp = ve0;
+		ve0 = ve1;
+		ve1 = veTemp;
 	}
 
     {
-        int x0 = p0->x; int y0 = p0->y;
-        int x1 = p1->x; int y1 = p1->y;
+        const int x0 = ve0->x; int y0 = ve0->y; int c0 = ve0->c;
+        const int x1 = ve1->x; int y1 = ve1->y; int c1 = ve1->c;
 
         int dy = y1 - y0;
-        const int dx = ((x1 - x0) * divTab[dy + DIV_TAB_SIZE / 2]) >>  (DIV_TAB_SHIFT - FP_BASE);
+		const int repDiv = divTab[dy + DIV_TAB_SIZE / 2];
+        const int dx = ((x1 - x0) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE);
+		const int dc = ((c1 - c0) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE);
 
-        int xp = INT_TO_FIXED(x0, FP_BASE);
+        int fx = INT_TO_FIXED(x0, FP_BASE);
+		int fc = INT_TO_FIXED(c0, FP_BASE);
 
 		if (y0 < 0) {
-			xp += -y0 * dx;
+			fx += -y0 * dx;
+			fc += -y0 * dc;
 			dy += y0;
 			y0 = 0;
 		}
@@ -95,28 +110,33 @@ static void prepareEdgeListFlat(Vertex *p0, Vertex *p1)
 
         edgeListToWriteFlat = &edgeListToWriteFlat[y0];
         do {
-			int x = FIXED_TO_INT(xp, FP_BASE);
+			int x = FIXED_TO_INT(fx, FP_BASE);
+			//int c = FIXED_TO_INT(fc, FP_BASE);
 			CLAMP(x, 0, SOFT_BUFF_WIDTH-1)
-            *edgeListToWriteFlat++ = x;
-            xp += dx;
+			//CLAMP(c, 0, 15)
+			edgeListToWriteFlat->x = x;
+			edgeListToWriteFlat->c = fc;
+            ++edgeListToWriteFlat;
+            fx += dx;
+			fc += dc;
 		} while(--dy > 0);
     }
 }
 
 
-static void drawFlatTriangle(Vertex *p0, Vertex *p1, Vertex *p2, uint16 color)
+static void drawGouraudTriangle(VrtxElement *ves, uint16 *colorShades16)
 {
-	prepareEdgeListFlat(p0, p1);
-	prepareEdgeListFlat(p1, p2);
-	prepareEdgeListFlat(p2, p0);
+	prepareEdgeListGouraud(&ves[0], &ves[1]);
+	prepareEdgeListGouraud(&ves[1], &ves[2]);
+	prepareEdgeListGouraud(&ves[2], &ves[0]);
 
 	{
 		int y, count;
 		uint16 *dst;
 
-		const int y0 = p0->y;
-		const int y1 = p1->y;
-		const int y2 = p2->y;
+		const int y0 = ves[0].y;
+		const int y1 = ves[1].y;
+		const int y2 = ves[2].y;
 
 		int yMin = y0;
 		int yMax = yMin;
@@ -133,12 +153,21 @@ static void drawFlatTriangle(Vertex *p0, Vertex *p1, Vertex *p2, uint16 color)
 		dst = softBuffer + y * SOFT_BUFF_WIDTH;
 		count = yMax - yMin;
 		do {
-			const int xl = leftEdgeFlat[y];
-			int length = rightEdgeFlat[y++]-xl+1;
+			const int xl = leftEdgeFlat[y].x;
+			const int cl = leftEdgeFlat[y].c;
+			const int cr = rightEdgeFlat[y].c;
+			int length = rightEdgeFlat[y++].x - xl;
 			uint16 *dst16 = dst + xl;
-			
-			while(length-- > 0) {
-				*dst16++ = color;
+
+			const int repDiv = divTab[length + DIV_TAB_SIZE / 2];
+			const int dc = (((cr - cl) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE)) >> FP_BASE;
+			int fc = cl;
+
+			while(length-- >= 0) {
+				int c = FIXED_TO_INT(fc, FP_BASE);
+				CLAMP(c, 0, 15)
+				*dst16++ = colorShades16[c];
+				fc += dc;
 			};
 
 			dst += SOFT_BUFF_WIDTH;
@@ -146,7 +175,7 @@ static void drawFlatTriangle(Vertex *p0, Vertex *p1, Vertex *p2, uint16 color)
 	}
 }
 
-static void drawAntialiasedLine(Vertex *p1, Vertex *p2, uint16 *colorShades16)
+/*static void drawAntialiasedLine(Vertex *p1, Vertex *p2, uint16 *colorShades16)
 {
 	int x1 = p1->x;
 	int y1 = p1->y;
@@ -268,10 +297,12 @@ static void renderMeshSoftWireframe(Mesh *ms, Vertex *vertices)
 
 		drawAntialiasedLine(pt0, pt1, lineColorShades[i & 3]);
 	}
-}
+}*/
 
 static void renderMeshSoft(Mesh *ms, Vertex *vertices)
 {
+	static VrtxElement vrtxElements[3];
+
 	Vertex *pt0, *pt1, *pt2;
 	int i,n;
 
@@ -284,7 +315,11 @@ static void renderMeshSoft(Mesh *ms, Vertex *vertices)
 
 		n = (pt0->x - pt1->x) * (pt2->y - pt1->y) - (pt2->x - pt1->x) * (pt0->y - pt1->y);
 		if (n > 0) {
-			drawFlatTriangle(pt0, pt1, pt2, lineColorShades[i & 3][15]);
+			int ii = (i + 1) * (i + 2);
+			vrtxElements[0].x = pt0->x; vrtxElements[0].y = pt0->y; vrtxElements[0].c = ii & 15;
+			vrtxElements[1].x = pt1->x; vrtxElements[1].y = pt1->y; vrtxElements[1].c = (ii*ii) & 15;
+			vrtxElements[2].x = pt2->x; vrtxElements[2].y = pt2->y; vrtxElements[2].c = (ii*ii*ii) & 15;
+			drawGouraudTriangle(vrtxElements, lineColorShades[i & 3]);
 		}
 	}
 }
