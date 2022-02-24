@@ -155,22 +155,20 @@ static void fillGouraudEdges(int yMin, int yMax, uint16 *colorShades)
 	} while(--count > 0);
 }
 
-static void drawGouraudPoly(VrtxElement *ves, int numPoints, uint16 *colorShades)
+static void drawGouraudTriangle(VrtxElement *ves, uint16 *colorShades)
 {
 	int yMin = ves[0].y;
 	int yMax = yMin;
 
-	int i;
-	for (i=0; i<numPoints; ++i) {
-		int ii = i+1;
-		if (ii >= numPoints) ii = 0;
-		prepareEdgeListGouraud(&ves[i], &ves[ii]);
-	}
+	prepareEdgeListGouraud(&ves[0], &ves[1]);
+	prepareEdgeListGouraud(&ves[1], &ves[2]);
+	prepareEdgeListGouraud(&ves[2], &ves[0]);
 
-	for (i=1; i<numPoints; ++i) {
-		const int y = ves[i].y;
-		if (y < yMin) yMin = y;
-		if (y > yMax) yMax = y;
+	{
+		const int y1 = ves[1].y;
+		const int y2 = ves[2].y;
+		if (y1 < yMin) yMin = y1; if (y1 > yMax) yMax = y1;
+		if (y2 < yMin) yMin = y2; if (y2 > yMax) yMax = y2;
 	}
 
 	if (yMin < 0) yMin = 0;
@@ -305,9 +303,8 @@ static void renderMeshSoftWireframe(Mesh *ms, Vertex *vertices)
 
 static void renderMeshSoft(Mesh *ms, Vertex *vertices)
 {
-	static VrtxElement vrtxElements[4];
-
-	Vertex *pt0, *pt1, *pt2, *pt3;
+	static VrtxElement vrtxElements[3];
+	Vertex *pt0, *pt1, *pt2;
 	int i,n;
 
 	int *index = ms->index;
@@ -318,9 +315,6 @@ static void renderMeshSoft(Mesh *ms, Vertex *vertices)
 		pt0 = &vertices[*index++];
 		pt1 = &vertices[*index++];
 		pt2 = &vertices[*index++];
-		if (numPoints > 3) {
-			pt3 = &vertices[*index++];
-		}
 
 		n = (pt0->x - pt1->x) * (pt2->y - pt1->y) - (pt2->x - pt1->x) * (pt0->y - pt1->y);
 		if (n > 0) {
@@ -328,10 +322,8 @@ static void renderMeshSoft(Mesh *ms, Vertex *vertices)
 			vrtxElements[0].x = pt0->x; vrtxElements[0].y = pt0->y; vrtxElements[0].c = ii & (COLOR_SHADES_SIZE-1);
 			vrtxElements[1].x = pt1->x; vrtxElements[1].y = pt1->y; vrtxElements[1].c = (ii*ii) & (COLOR_SHADES_SIZE-1);
 			vrtxElements[2].x = pt2->x; vrtxElements[2].y = pt2->y; vrtxElements[2].c = (ii*ii*ii) & (COLOR_SHADES_SIZE-1);
-			if (numPoints > 3) {
-				vrtxElements[3].x = pt3->x; vrtxElements[3].y = pt3->y; vrtxElements[3].c = (ii*ii*ii*ii) & (COLOR_SHADES_SIZE-1);
-			}
-			drawGouraudPoly(vrtxElements, numPoints, lineColorShades[i & 3]);
+
+			drawGouraudTriangle(vrtxElements, lineColorShades[i & 3]);
 		}
 	}
 }

@@ -66,7 +66,7 @@ static void inputScript()
 
 void effectMeshSoftInit()
 {
-	cubeMesh = initGenMesh(MESH_CUBE, DEFAULT_MESHGEN_PARAMS(1024), MESH_OPTION_RENDER_SOFT, NULL);
+	cubeMesh = initGenMesh(MESH_CUBE_TRI, DEFAULT_MESHGEN_PARAMS(1024), MESH_OPTION_RENDER_SOFT, NULL);
 	cubeObj = initObject3D(cubeMesh);
 }
 
