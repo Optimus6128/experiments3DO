@@ -141,6 +141,69 @@ static void fillGouraudEdges8(int yMin, int yMax, uint16 *colorShades)
 		const int cr = re->c;
 		int length = re->x - xl;
 		uint8 *dst = vram8 + xl;
+		uint32 *dst32;
+
+		const int repDiv = divTab[length + DIV_TAB_SIZE / 2];
+		const int dc = (((cr - cl) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE)) >> FP_BASE;
+		int fc = cl;
+
+		int xlp = xl & 3;
+		if (xlp) {
+			xlp = 4 - xlp;
+			while (xlp-- > 0 && length-- > 0) {
+				int c = FIXED_TO_INT(fc, FP_BASE);
+				CLAMP(c, 0, COLOR_GRADIENTS_SIZE-1)
+				fc += dc;
+				*dst++ = c;
+			}
+		}
+
+		dst32 = (uint32*)dst;
+		while(length >= 4) {
+			int c0,c1,c2,c3;
+
+			c0 = FIXED_TO_INT(fc, FP_BASE);
+			//CLAMP(c0, 0, COLOR_GRADIENTS_SIZE-1)
+			fc += dc;
+			c1 = FIXED_TO_INT(fc, FP_BASE);
+			//CLAMP(c1, 0, COLOR_GRADIENTS_SIZE-1)
+			fc += dc;
+			c2 = FIXED_TO_INT(fc, FP_BASE);
+			//CLAMP(c2, 0, COLOR_GRADIENTS_SIZE-1)
+			fc += dc;
+			c3 = FIXED_TO_INT(fc, FP_BASE);
+			//CLAMP(c3, 0, COLOR_GRADIENTS_SIZE-1)
+			fc += dc;
+			*dst32++ = (c0 << 24) | (c1 << 16) | (c2 << 8) | c3;
+			length-=4;
+		};
+
+		dst = (uint8*)dst32;
+		while (length-- > 0) {
+			int c = FIXED_TO_INT(fc, FP_BASE);
+			CLAMP(c, 0, COLOR_GRADIENTS_SIZE-1)
+			fc += dc;
+			*dst++ = c;
+		}
+
+		++le;
+		++re;
+		vram8 += SOFT_BUFF_WIDTH;
+	} while(--count > 0);
+}
+
+/*static void fillGouraudEdges8(int yMin, int yMax, uint16 *colorShades)
+{
+	uint8 *vram8 = softBuffer8 + yMin * SOFT_BUFF_WIDTH;
+	int count = yMax - yMin;
+	Edge *le = &leftEdge[yMin];
+	Edge *re = &rightEdge[yMin];
+	do {
+		const int xl = le->x;
+		const int cl = le->c;
+		const int cr = re->c;
+		int length = re->x - xl;
+		uint8 *dst = vram8 + xl;
 
 		const int repDiv = divTab[length + DIV_TAB_SIZE / 2];
 		const int dc = (((cr - cl) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE)) >> FP_BASE;
@@ -157,7 +220,7 @@ static void fillGouraudEdges8(int yMin, int yMax, uint16 *colorShades)
 		++re;
 		vram8 += SOFT_BUFF_WIDTH;
 	} while(--count > 0);
-}
+}*/
 
 static void fillGouraudEdges16(int yMin, int yMax, uint16 *colorShades)
 {

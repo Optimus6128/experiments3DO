@@ -21,7 +21,7 @@
 static int rotX=0, rotY=0, rotZ=0;
 static int zoom=2048;
 
-static const int rotVel = 3;
+static const int rotVel = 2;
 static const int zoomVel = 32;
 
 static Mesh *cubeMesh;
@@ -76,6 +76,10 @@ void effectMeshSoftRun()
 
 	setObject3Dpos(cubeObj, 0, 0, zoom);
 	setObject3Drot(cubeObj, rotX, rotY, rotZ);
-
+	
 	renderObject3Dsoft(cubeObj);
+
+	//drawNumber(8, 32, rotX);
+	//drawNumber(8, 40, rotY);
+	//drawNumber(8, 48, rotZ);
 }
