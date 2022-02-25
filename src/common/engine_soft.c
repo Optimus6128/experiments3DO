@@ -10,6 +10,7 @@
 
 #include "system_graphics.h"
 
+#include "cel_helpers.h"
 #include "mathutil.h"
 #include "tools.h"
 
@@ -34,8 +35,11 @@ typedef struct VrtxElement
 }VrtxElement;
 
 static Sprite *sprSoftBuffer = NULL;
+static Sprite *sprSoftBuffer8 = NULL;
+static Sprite *sprSoftBuffer16 = NULL;
 
-static uint16 softBuffer[SOFT_BUFF_WIDTH * SOFT_BUFF_HEIGHT];
+static uint8 softBuffer8[SOFT_BUFF_WIDTH * SOFT_BUFF_HEIGHT];
+static uint16 softBuffer16[SOFT_BUFF_WIDTH * SOFT_BUFF_HEIGHT];
 
 static Edge leftEdge[SOFT_BUFF_HEIGHT];
 static Edge rightEdge[SOFT_BUFF_HEIGHT];
@@ -44,6 +48,7 @@ static int32 divTab[DIV_TAB_SIZE];
 
 static uint16 *lineColorShades[4] = { NULL, NULL, NULL, NULL };
 
+static void(*fillGouraudEdges)(int yMin, int yMax, uint16 *colorShades);
 
 #define LN_BASE 8
 #define LN_AND ((1 << LN_BASE) - 1)
@@ -124,9 +129,9 @@ static void prepareEdgeListGouraud(VrtxElement *ve0, VrtxElement *ve1)
     }
 }
 
-static void fillGouraudEdges(int yMin, int yMax, uint16 *colorShades)
+static void fillGouraudEdges8(int yMin, int yMax, uint16 *colorShades)
 {
-	uint16 *dst = softBuffer + yMin * SOFT_BUFF_WIDTH;
+	uint8 *vram8 = softBuffer8 + yMin * SOFT_BUFF_WIDTH;
 	int count = yMax - yMin;
 	Edge *le = &leftEdge[yMin];
 	Edge *re = &rightEdge[yMin];
@@ -135,7 +140,7 @@ static void fillGouraudEdges(int yMin, int yMax, uint16 *colorShades)
 		const int cl = le->c;
 		const int cr = re->c;
 		int length = re->x - xl;
-		uint16 *dst16 = dst + xl;
+		uint8 *dst = vram8 + xl;
 
 		const int repDiv = divTab[length + DIV_TAB_SIZE / 2];
 		const int dc = (((cr - cl) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE)) >> FP_BASE;
@@ -144,13 +149,43 @@ static void fillGouraudEdges(int yMin, int yMax, uint16 *colorShades)
 		while(length-- >= 0) {
 			int c = FIXED_TO_INT(fc, FP_BASE);
 			CLAMP(c, 0, COLOR_GRADIENTS_SIZE-1)
-			*dst16++ = colorShades[c];
+			*dst++ = c;
 			fc += dc;
 		};
 
 		++le;
 		++re;
-		dst += SOFT_BUFF_WIDTH;
+		vram8 += SOFT_BUFF_WIDTH;
+	} while(--count > 0);
+}
+
+static void fillGouraudEdges16(int yMin, int yMax, uint16 *colorShades)
+{
+	uint16 *vram16 = softBuffer16 + yMin * SOFT_BUFF_WIDTH;
+	int count = yMax - yMin;
+	Edge *le = &leftEdge[yMin];
+	Edge *re = &rightEdge[yMin];
+	do {
+		const int xl = le->x;
+		const int cl = le->c;
+		const int cr = re->c;
+		int length = re->x - xl;
+		uint16 *dst = vram16 + xl;
+
+		const int repDiv = divTab[length + DIV_TAB_SIZE / 2];
+		const int dc = (((cr - cl) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE)) >> FP_BASE;
+		int fc = cl;
+
+		while(length-- >= 0) {
+			int c = FIXED_TO_INT(fc, FP_BASE);
+			CLAMP(c, 0, COLOR_GRADIENTS_SIZE-1)
+			*dst++ = colorShades[c];
+			fc += dc;
+		};
+
+		++le;
+		++re;
+		vram16 += SOFT_BUFF_WIDTH;
 	} while(--count > 0);
 }
 
@@ -309,6 +344,11 @@ static void renderMeshSoft(Mesh *ms, Vertex *vertices)
 
 	int *index = ms->index;
 	int *vertexCol = ms->vertexCol;
+	
+	fillGouraudEdges = fillGouraudEdges16;
+	if (ms->renderType & MESH_OPTION_RENDER_SOFT8) {
+		fillGouraudEdges = fillGouraudEdges8;
+	}
 
 	for (i=0; i<ms->polysNum; ++i) {
 		pt0 = &vertices[*index]; c0 = vertexCol[*index++];
@@ -328,8 +368,7 @@ static void renderMeshSoft(Mesh *ms, Vertex *vertices)
 
 static void clearSoftBuffer()
 {
-	//memset(getSpriteBitmapData(sprSoftBuffer), 0, sprSoftBuffer->width * sprSoftBuffer->height * 2);
-	vramSet(0, (void*)getSpriteBitmapData(sprSoftBuffer));
+	vramSet(0, (void*)getSpriteBitmapData(sprSoftBuffer), getCelDataSizeInBytes(sprSoftBuffer->cel));
 }
 
 static void renderSoftQuadOnScreen()
@@ -339,6 +378,11 @@ static void renderSoftQuadOnScreen()
 
 void renderTransformedMeshSoft(Mesh *ms, Vertex *vertices)
 {
+	sprSoftBuffer = sprSoftBuffer16;
+	if (ms->renderType & MESH_OPTION_RENDER_SOFT8) {
+		sprSoftBuffer = sprSoftBuffer8;
+	}
+
 	clearSoftBuffer();
 
 	renderMeshSoft(ms, vertices);
@@ -348,10 +392,10 @@ void renderTransformedMeshSoft(Mesh *ms, Vertex *vertices)
 }
 
 
-
 void initEngineSoft()
 {
-	if (!sprSoftBuffer) sprSoftBuffer = newSprite(SOFT_BUFF_WIDTH, SOFT_BUFF_HEIGHT, 16, CREATECEL_UNCODED, NULL, (void*)softBuffer);
+	if (!sprSoftBuffer8) sprSoftBuffer8 = newSprite(SOFT_BUFF_WIDTH, SOFT_BUFF_HEIGHT, 8, CREATECEL_CODED, NULL, (void*)softBuffer8);
+	if (!sprSoftBuffer16) sprSoftBuffer16 = newSprite(SOFT_BUFF_WIDTH, SOFT_BUFF_HEIGHT, 16, CREATECEL_UNCODED, NULL, (void*)softBuffer16);
 
 	initDivs();
 
@@ -359,4 +403,6 @@ void initEngineSoft()
 	if (!lineColorShades[1]) lineColorShades[1] = crateColorShades(15,23,31, COLOR_GRADIENTS_SIZE);
 	if (!lineColorShades[2]) lineColorShades[2] = crateColorShades(15,31,23, COLOR_GRADIENTS_SIZE);
 	if (!lineColorShades[3]) lineColorShades[3] = crateColorShades(31,15,23, COLOR_GRADIENTS_SIZE);
+
+	sprSoftBuffer8->cel->ccb_PLUTPtr = (PLUTChunk*)lineColorShades[1];
 }

@@ -1,4 +1,4 @@
-; void vramCpy(void* bufferSrc, void* bufferDst)
+; void vramCpy(void* bufferSrc, void* bufferDst, int length)
 
     AREA |C$$code|, CODE, READONLY
 |x$codeseg|
@@ -8,29 +8,25 @@
 vramCpy
 	stmfd sp!, {r4-r11, lr}
 
-	mov r2,r0
-	mov r3,r1
-
-	mov r1,#600
 loopVramCpy
-		ldmia r2!,{r4-r11}
-		stmia r3!,{r4-r11}
-		ldmia r2!,{r4-r11}
-		stmia r3!,{r4-r11}
-		ldmia r2!,{r4-r11}
-		stmia r3!,{r4-r11}
-		ldmia r2!,{r4-r11}
-		stmia r3!,{r4-r11}
-		ldmia r2!,{r4-r11}
-		stmia r3!,{r4-r11}
-		ldmia r2!,{r4-r11}
-		stmia r3!,{r4-r11}
-		ldmia r2!,{r4-r11}
-		stmia r3!,{r4-r11}
-		ldmia r2!,{r4-r11}
-		stmia r3!,{r4-r11}
-	subs r1,r1,#1
-	bne loopVramCpy
+		ldmia r0!,{r4-r11}
+		stmia r1!,{r4-r11}
+		ldmia r0!,{r4-r11}
+		stmia r1!,{r4-r11}
+		ldmia r0!,{r4-r11}
+		stmia r1!,{r4-r11}
+		ldmia r0!,{r4-r11}
+		stmia r1!,{r4-r11}
+		ldmia r0!,{r4-r11}
+		stmia r1!,{r4-r11}
+		ldmia r0!,{r4-r11}
+		stmia r1!,{r4-r11}
+		ldmia r0!,{r4-r11}
+		stmia r1!,{r4-r11}
+		ldmia r0!,{r4-r11}
+		stmia r1!,{r4-r11}
+	subs r2,r2,#256
+	bge loopVramCpy
 
 	ldmfd sp!, {r4-r11, pc}
 

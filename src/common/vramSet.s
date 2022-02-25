@@ -1,4 +1,4 @@
-; void vramSet(uint32 c, void* bufferDst)
+; void vramSet(uint32 c, void* bufferDst, int length)
 
     AREA |C$$code|, CODE, READONLY
 |x$codeseg|
@@ -17,20 +17,17 @@ vramSet
 	mov r10,r0
 	mov r11,r0
 
-	mov r3,r1
-
-	mov r1,#600
 loopVramSet
-		stmia r3!,{r4-r11}
-		stmia r3!,{r4-r11}
-		stmia r3!,{r4-r11}
-		stmia r3!,{r4-r11}
-		stmia r3!,{r4-r11}
-		stmia r3!,{r4-r11}
-		stmia r3!,{r4-r11}
-		stmia r3!,{r4-r11}
-	subs r1,r1,#1
-	bne loopVramSet
+		stmia r1!,{r4-r11}
+		stmia r1!,{r4-r11}
+		stmia r1!,{r4-r11}
+		stmia r1!,{r4-r11}
+		stmia r1!,{r4-r11}
+		stmia r1!,{r4-r11}
+		stmia r1!,{r4-r11}
+		stmia r1!,{r4-r11}
+	subs r2,r2,#256
+	bge loopVramSet
 
 	ldmfd sp!, {r4-r11, pc}
 

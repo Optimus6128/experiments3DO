@@ -4,9 +4,11 @@
 #include "engine_texture.h"
 #include "mathutil.h"
 
-#define MESH_OPTION_RENDER_SOFT		(1 << 0)
-#define MESH_OPTION_RENDER_HARD		(1 << 1)
-#define MESH_OPTION_ENABLE_LIGHTING	(1 << 2)
+#define MESH_OPTION_RENDER_SOFT8	(1 << 0)
+#define MESH_OPTION_RENDER_SOFT16	(1 << 1)
+#define MESH_OPTION_RENDER_SOFT		(MESH_OPTION_RENDER_SOFT8 | MESH_OPTION_RENDER_SOFT16)
+#define MESH_OPTION_RENDER_HARD		(1 << 2)
+#define MESH_OPTION_ENABLE_LIGHTING	(1 << 3)
 #define MESH_OPTIONS_DEFAULT (MESH_OPTION_RENDER_HARD)
 
 typedef struct PolyData
