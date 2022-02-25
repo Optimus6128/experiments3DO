@@ -56,7 +56,7 @@ static void(*fillGouraudEdges)(int yMin, int yMax, uint16 *colorShades);
 static uint16 *crateColorShades(int r, int g, int b, int numShades) {
 	uint16 *colorShades = (uint16*)AllocMem(sizeof(uint16) * numShades, MEMTYPE_ANY);
 
-	setPalGradient(0, numShades-1, 0,0,0, r,g,b, colorShades);
+	setPalGradient(0, numShades-1, 0,1,2, r,g,b, colorShades);
 
 	return colorShades;
 }
@@ -368,7 +368,7 @@ static void renderMeshSoft(Mesh *ms, Vertex *vertices)
 
 static void clearSoftBuffer()
 {
-	vramSet(0, (void*)getSpriteBitmapData(sprSoftBuffer), getCelDataSizeInBytes(sprSoftBuffer->cel));
+	vramSet(0x01010101, (void*)getSpriteBitmapData(sprSoftBuffer), getCelDataSizeInBytes(sprSoftBuffer->cel));
 }
 
 static void renderSoftQuadOnScreen()

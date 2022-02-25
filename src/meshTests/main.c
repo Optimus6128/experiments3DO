@@ -15,6 +15,6 @@ int main()
 {
 	const int effectIndex = EFFECT_MESH_SOFT; //runEffectSelector(effectName, EFFECTS_NUM);
 
-	coreInit(effectInitFunc[effectIndex], CORE_DEFAULT);
+	coreInit(effectInitFunc[effectIndex], CORE_SHOW_FPS | CORE_DEFAULT_INPUT | CORE_NO_CLEAR_FRAME);
 	coreRun(effectRunFunc[effectIndex]);
 }
