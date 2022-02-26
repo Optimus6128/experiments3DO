@@ -154,6 +154,7 @@ static void fillGouraudEdges8(int yMin, int yMax, uint16 *colorShades)
 				int c = FIXED_TO_INT(fc, FP_BASE);
 				CLAMP(c, 0, COLOR_GRADIENTS_SIZE-1)
 				fc += dc;
+
 				*dst++ = c;
 			}
 		}
@@ -174,6 +175,7 @@ static void fillGouraudEdges8(int yMin, int yMax, uint16 *colorShades)
 			c3 = FIXED_TO_INT(fc, FP_BASE);
 			//CLAMP(c3, 0, COLOR_GRADIENTS_SIZE-1)
 			fc += dc;
+
 			*dst32++ = (c0 << 24) | (c1 << 16) | (c2 << 8) | c3;
 			length-=4;
 		};
@@ -183,6 +185,7 @@ static void fillGouraudEdges8(int yMin, int yMax, uint16 *colorShades)
 			int c = FIXED_TO_INT(fc, FP_BASE);
 			CLAMP(c, 0, COLOR_GRADIENTS_SIZE-1)
 			fc += dc;
+
 			*dst++ = c;
 		}
 
@@ -191,36 +194,6 @@ static void fillGouraudEdges8(int yMin, int yMax, uint16 *colorShades)
 		vram8 += SOFT_BUFF_WIDTH;
 	} while(--count > 0);
 }
-
-/*static void fillGouraudEdges8(int yMin, int yMax, uint16 *colorShades)
-{
-	uint8 *vram8 = softBuffer8 + yMin * SOFT_BUFF_WIDTH;
-	int count = yMax - yMin;
-	Edge *le = &leftEdge[yMin];
-	Edge *re = &rightEdge[yMin];
-	do {
-		const int xl = le->x;
-		const int cl = le->c;
-		const int cr = re->c;
-		int length = re->x - xl;
-		uint8 *dst = vram8 + xl;
-
-		const int repDiv = divTab[length + DIV_TAB_SIZE / 2];
-		const int dc = (((cr - cl) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE)) >> FP_BASE;
-		int fc = cl;
-
-		while(length-- >= 0) {
-			int c = FIXED_TO_INT(fc, FP_BASE);
-			CLAMP(c, 0, COLOR_GRADIENTS_SIZE-1)
-			*dst++ = c;
-			fc += dc;
-		};
-
-		++le;
-		++re;
-		vram8 += SOFT_BUFF_WIDTH;
-	} while(--count > 0);
-}*/
 
 static void fillGouraudEdges16(int yMin, int yMax, uint16 *colorShades)
 {
@@ -234,17 +207,44 @@ static void fillGouraudEdges16(int yMin, int yMax, uint16 *colorShades)
 		const int cr = re->c;
 		int length = re->x - xl;
 		uint16 *dst = vram16 + xl;
+		uint32 *dst32;
 
 		const int repDiv = divTab[length + DIV_TAB_SIZE / 2];
 		const int dc = (((cr - cl) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE)) >> FP_BASE;
 		int fc = cl;
 
-		while(length-- >= 0) {
+		if (xl & 1) {
 			int c = FIXED_TO_INT(fc, FP_BASE);
 			CLAMP(c, 0, COLOR_GRADIENTS_SIZE-1)
-			*dst++ = colorShades[c];
 			fc += dc;
+
+			*dst++ = colorShades[c];
+			--length;
+		}
+
+		dst32 = (uint32*)dst;
+		while(length >= 2) {
+			int c0, c1;
+
+			c0 = FIXED_TO_INT(fc, FP_BASE);
+			//CLAMP(c0, 0, COLOR_GRADIENTS_SIZE-1)
+			fc += dc;
+			c1 = FIXED_TO_INT(fc, FP_BASE);
+			//CLAMP(c1, 0, COLOR_GRADIENTS_SIZE-1)
+			fc += dc;
+
+			*dst32++ = (colorShades[c0] << 16) | colorShades[c1];
+			length -= 2;
 		};
+
+		dst = (uint16*)dst32;
+		if (length & 1) {
+			int c = FIXED_TO_INT(fc, FP_BASE);
+			CLAMP(c, 0, COLOR_GRADIENTS_SIZE-1)
+			fc += dc;
+
+			*dst++ = colorShades[c];
+		}
 
 		++le;
 		++re;
