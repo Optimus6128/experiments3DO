@@ -24,7 +24,11 @@ static int zoom=2048;
 static const int rotVel = 2;
 static const int zoomVel = 32;
 
-static Mesh *cubeMesh;
+static Mesh *cubeMesh8;
+static Mesh *cubeMesh16;
+static Mesh *cubeMeshSemiSoft;
+
+static int selectedCubeMesh = 0;
 
 
 static Object3D *cubeObj;
@@ -62,12 +66,28 @@ static void inputScript()
 	if (isJoyButtonPressed(JOY_BUTTON_RPAD)) {
 		zoom -= zoomVel;
 	}
+
+	if (isJoyButtonPressedOnce(JOY_BUTTON_START)) {
+		++selectedCubeMesh;
+		if (selectedCubeMesh==3) selectedCubeMesh = 0;
+
+		if (selectedCubeMesh==0) {
+			setObject3Dmesh(cubeObj, cubeMesh8);
+		} else if (selectedCubeMesh==1) {
+			setObject3Dmesh(cubeObj, cubeMesh16);
+		} else {
+			setObject3Dmesh(cubeObj, cubeMeshSemiSoft);
+		}
+	}
 }
 
 void effectMeshSoftInit()
 {
-	cubeMesh = initGenMesh(MESH_CUBE_TRI, DEFAULT_MESHGEN_PARAMS(1024), MESH_OPTION_RENDER_SOFT16 | MESH_OPTION_ENABLE_LIGHTING, NULL);
-	cubeObj = initObject3D(cubeMesh);
+	cubeMesh8 = initGenMesh(MESH_CUBE_TRI, DEFAULT_MESHGEN_PARAMS(1024), MESH_OPTION_RENDER_SOFT8 | MESH_OPTION_ENABLE_LIGHTING, NULL);
+	cubeMesh16 = initGenMesh(MESH_CUBE_TRI, DEFAULT_MESHGEN_PARAMS(1024), MESH_OPTION_RENDER_SOFT16 | MESH_OPTION_ENABLE_LIGHTING, NULL);
+	cubeMeshSemiSoft = initGenMesh(MESH_CUBE_TRI, DEFAULT_MESHGEN_PARAMS(1024), MESH_OPTION_RENDER_SEMISOFT | MESH_OPTION_ENABLE_LIGHTING, NULL);
+
+	cubeObj = initObject3D(cubeMesh8);
 }
 
 void effectMeshSoftRun()
@@ -78,8 +98,4 @@ void effectMeshSoftRun()
 	setObject3Drot(cubeObj, rotX, rotY, rotZ);
 	
 	renderObject3Dsoft(cubeObj);
-
-	//drawNumber(8, 32, rotX);
-	//drawNumber(8, 40, rotY);
-	//drawNumber(8, 48, rotZ);
 }

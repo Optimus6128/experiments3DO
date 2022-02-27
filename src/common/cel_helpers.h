@@ -13,6 +13,7 @@ enum {
 #define CEL_BLEND_OPAQUE 0x1F001F00
 
 void initCel(int width, int height, int bpp, int type, CCB *cel);
+CCB *createCel(int width, int height, int bpp, int type);
 void setupCelData(uint16 *pal, void *bitmap, CCB *cel);
 
 int getCelWidth(CCB *cel);

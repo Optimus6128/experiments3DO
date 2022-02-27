@@ -140,6 +140,15 @@ void initCel(int width, int height, int bpp, int type, CCB *cel)
 	setCelWidth(width, cel);
 }
 
+CCB *createCel(int width, int height, int bpp, int type)
+{
+	CCB *cel = (CCB*)AllocMem(sizeof(CCB), MEMTYPE_ANY);
+
+	initCel(width, height, bpp, type, cel);
+
+	return cel;
+}
+
 void setupCelData(uint16 *pal, void *bitmap, CCB *cel)
 {
 	setCelPalette(pal, cel);

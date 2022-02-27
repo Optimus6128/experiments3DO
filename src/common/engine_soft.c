@@ -21,6 +21,15 @@
 #define DIV_TAB_SIZE 4096
 #define DIV_TAB_SHIFT 16
 
+// Semisoft gouraud method
+#define MAX_SCANLINES 2048
+static CCB *scanlineCel8[MAX_SCANLINES];
+static CCB **currentScanlineCel8 = scanlineCel8;
+
+#define GRADIENT_SHADES 32
+#define GRADIENT_LENGTH GRADIENT_SHADES
+#define GRADIENT_GROUP_SIZE (GRADIENT_SHADES * GRADIENT_LENGTH)
+uint8 gourGrads[GRADIENT_SHADES * GRADIENT_GROUP_SIZE];
 
 typedef struct Edge
 {
@@ -72,6 +81,35 @@ static void initDivs()
     }
 }
 
+static void initSemiSoftGouraud()
+{
+	int i;
+	uint8 *dst = gourGrads;
+	int c0,c1,x;
+	for (i=0; i<MAX_SCANLINES; ++i) {
+		scanlineCel8[i] = createCel(GRADIENT_LENGTH, 1, 8, CEL_TYPE_CODED);
+		if (i>0) {
+			LinkCel(scanlineCel8[i-1], scanlineCel8[i]);
+			scanlineCel8[i]->ccb_Flags &= ~(CCB_LDPLUT | CCB_LDPRS | CCB_LDPPMP);
+			memcpy(&scanlineCel8[i]->ccb_HDDX, &scanlineCel8[i]->ccb_PRE0, 8);
+		}
+	}
+
+	for (c0=0; c0<GRADIENT_SHADES; ++c0) {
+		for (c1=0; c1<GRADIENT_SHADES; ++c1) {
+			const int repDiv = divTab[GRADIENT_LENGTH + DIV_TAB_SIZE / 2];
+			const int dc = ((c1 - c0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
+			int fc = INT_TO_FIXED(c0, FP_BASE);
+			for (x=0; x<GRADIENT_LENGTH; ++x) {
+				int c = FIXED_TO_INT(fc, FP_BASE);
+				CLAMP(c, 0, 31)
+				*dst++ = c;
+				fc += dc;
+			}
+		}
+	}
+}
+
 
 static void prepareEdgeListGouraud(VrtxElement *ve0, VrtxElement *ve1)
 {
@@ -96,7 +134,7 @@ static void prepareEdgeListGouraud(VrtxElement *ve0, VrtxElement *ve1)
         const int x0 = ve0->x; int y0 = ve0->y; int c0 = ve0->c;
         const int x1 = ve1->x; int y1 = ve1->y; int c1 = ve1->c;
 
-        int dy = y1 - y0;
+        int dy = y1 - y0 + 1;
 		const int repDiv = divTab[dy + DIV_TAB_SIZE / 2];
         const int dx = ((x1 - x0) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE);
 		const int dc = ((c1 - c0) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE);
@@ -127,6 +165,43 @@ static void prepareEdgeListGouraud(VrtxElement *ve0, VrtxElement *ve1)
 			fc += dc;
 		} while(--dy > 0);
     }
+}
+
+static void fillGouraudEdges8_SemiSoft(int yMin, int yMax, uint16 *colorShades)
+{
+	Edge *le = &leftEdge[yMin];
+	Edge *re = &rightEdge[yMin];
+
+	int y;
+	CCB *firstCel = *currentScanlineCel8;
+
+	for (y=yMin; y<=yMax; ++y) {
+		const int xl = le->x;
+		int cl = le->c;
+		int cr = re->c;
+		int length = re->x - xl;
+
+		CCB *cel = *currentScanlineCel8++;
+
+		cl = FIXED_TO_INT(cl, FP_BASE);
+		cr = FIXED_TO_INT(cr, FP_BASE);
+		CLAMP(cl,0,GRADIENT_LENGTH)
+		CLAMP(cr,0,GRADIENT_LENGTH)
+
+		cel->ccb_Flags &= ~CCB_LDPLUT;
+
+		cel->ccb_XPos = xl<<16;
+		cel->ccb_YPos = y<<16;
+
+		cel->ccb_HDX = (length<<20) / GRADIENT_LENGTH;
+		
+		cel->ccb_SourcePtr = (CelData*)&gourGrads[cl*GRADIENT_GROUP_SIZE + cr*GRADIENT_LENGTH];
+
+		++le;
+		++re;
+	}
+	firstCel->ccb_PLUTPtr = (void*)colorShades;
+	firstCel->ccb_Flags |= CCB_LDPLUT;
 }
 
 static void fillGouraudEdges8(int yMin, int yMax, uint16 *colorShades)
@@ -408,9 +483,16 @@ static void renderMeshSoft(Mesh *ms, Vertex *vertices)
 	int *index = ms->index;
 	int *vertexCol = ms->vertexCol;
 	
+	CCB *lastScanlineCel;
+	if (ms->renderType & MESH_OPTION_RENDER_SEMISOFT) {
+		currentScanlineCel8 = scanlineCel8;
+	}
+
 	fillGouraudEdges = fillGouraudEdges16;
 	if (ms->renderType & MESH_OPTION_RENDER_SOFT8) {
 		fillGouraudEdges = fillGouraudEdges8;
+	} else if (ms->renderType & MESH_OPTION_RENDER_SEMISOFT) {
+		fillGouraudEdges = fillGouraudEdges8_SemiSoft;
 	}
 
 	for (i=0; i<ms->polysNum; ++i) {
@@ -427,16 +509,19 @@ static void renderMeshSoft(Mesh *ms, Vertex *vertices)
 			drawGouraudTriangle(vrtxElements, lineColorShades[i & 3]);
 		}
 	}
+
+	if (ms->renderType & MESH_OPTION_RENDER_SEMISOFT) {
+		--currentScanlineCel8;
+		lastScanlineCel = *currentScanlineCel8;
+		lastScanlineCel->ccb_Flags |= CCB_LAST;
+		drawCels(*scanlineCel8);
+		lastScanlineCel->ccb_Flags &= ~CCB_LAST;
+	}
 }
 
 static void clearSoftBuffer()
 {
-	vramSet(0x01010101, (void*)getSpriteBitmapData(sprSoftBuffer), getCelDataSizeInBytes(sprSoftBuffer->cel));
-}
-
-static void renderSoftQuadOnScreen()
-{
-	drawSprite(sprSoftBuffer);
+	vramSet(0, (void*)getSpriteBitmapData(sprSoftBuffer), getCelDataSizeInBytes(sprSoftBuffer->cel));
 }
 
 void renderTransformedMeshSoft(Mesh *ms, Vertex *vertices)
@@ -446,12 +531,16 @@ void renderTransformedMeshSoft(Mesh *ms, Vertex *vertices)
 		sprSoftBuffer = sprSoftBuffer8;
 	}
 
-	clearSoftBuffer();
+	if (!(ms->renderType & MESH_OPTION_RENDER_SEMISOFT)) {
+		clearSoftBuffer();
+	}
 
 	renderMeshSoft(ms, vertices);
 	//renderMeshSoftWireframe(ms, vertices);
 
-	renderSoftQuadOnScreen();
+	if (!(ms->renderType & MESH_OPTION_RENDER_SEMISOFT)) {
+		drawSprite(sprSoftBuffer);
+	}
 }
 
 
@@ -461,6 +550,7 @@ void initEngineSoft()
 	if (!sprSoftBuffer16) sprSoftBuffer16 = newSprite(SOFT_BUFF_WIDTH, SOFT_BUFF_HEIGHT, 16, CREATECEL_UNCODED, NULL, (void*)softBuffer16);
 
 	initDivs();
+	initSemiSoftGouraud();
 
 	if (!lineColorShades[0]) lineColorShades[0] = crateColorShades(31,23,15, COLOR_GRADIENTS_SIZE);
 	if (!lineColorShades[1]) lineColorShades[1] = crateColorShades(15,23,31, COLOR_GRADIENTS_SIZE);

@@ -275,6 +275,11 @@ void setObject3Drot(Object3D *obj, int rx, int ry, int rz)
 	obj->rotZ = rz;
 }
 
+void setObject3Dmesh(Object3D *obj, Mesh *ms)
+{
+	obj->mesh = ms;
+}
+
 void useCPUtestPolygonOrder(bool enable)
 {
 	polygonOrderTestCPU = enable;
