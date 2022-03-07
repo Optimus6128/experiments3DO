@@ -56,16 +56,19 @@ static Edge rightEdge[SOFT_BUFF_HEIGHT];
 static int32 divTab[DIV_TAB_SIZE];
 
 static uint16 *lineColorShades[4] = { NULL, NULL, NULL, NULL };
+static uint16 *gouraudColorShades;
 
 static void(*fillGouraudEdges)(int yMin, int yMax, uint16 *colorShades);
 
 #define LN_BASE 8
 #define LN_AND ((1 << LN_BASE) - 1)
 
-static uint16 *crateColorShades(int r, int g, int b, int numShades) {
+static uint16 *crateColorShades(int r, int g, int b, int numShades, bool absoluteZero) {
 	uint16 *colorShades = (uint16*)AllocMem(sizeof(uint16) * numShades, MEMTYPE_ANY);
+	int lb = 0;
+	if (!absoluteZero) lb = 1;
 
-	setPalGradient(0, numShades-1, 0,1,2, r,g,b, colorShades);
+	setPalGradient(0, numShades-1, 0,0,lb, r,g,b, colorShades);
 
 	return colorShades;
 }
@@ -90,6 +93,7 @@ static void initSemiSoftGouraud()
 		scanlineCel8[i] = createCel(GRADIENT_LENGTH, 1, 8, CEL_TYPE_CODED);
 		if (i>0) {
 			LinkCel(scanlineCel8[i-1], scanlineCel8[i]);
+			scanlineCel8[i]->ccb_Flags |= CCB_BGND;
 			scanlineCel8[i]->ccb_Flags &= ~(CCB_LDPLUT | CCB_LDPRS | CCB_LDPPMP);
 			memcpy(&scanlineCel8[i]->ccb_HDDX, &scanlineCel8[i]->ccb_PRE0, 8);
 		}
@@ -116,6 +120,17 @@ static void prepareEdgeListGouraud(VrtxElement *ve0, VrtxElement *ve1)
 	Edge *edgeListToWriteFlat;
 	VrtxElement *veTemp;
 
+	/*if (ve0->y == ve1->y) {
+		VrtxElement *vl = ve0; 
+		VrtxElement *vr = ve1;
+		if (vl->x > vr->x) {
+			vl = ve1;
+			vr = ve0;
+		}
+		edgeListToWriteFlat[vl->y].x = vl->x; edgeListToWriteFlat[vl->y].c = vl->c;
+		edgeListToWriteFlat[vr->y].x = vr->x; edgeListToWriteFlat[vr->y].c = vr->c;
+		return;
+	}*/
 	if (ve0->y == ve1->y) return;
 
 	// Assumes CCW
@@ -157,7 +172,7 @@ static void prepareEdgeListGouraud(VrtxElement *ve0, VrtxElement *ve1)
 			int x = FIXED_TO_INT(fx, FP_BASE);
 			//int c = FIXED_TO_INT(fc, FP_BASE);
 			CLAMP(x, 0, SOFT_BUFF_WIDTH-1)
-			//CLAMP(c, 0, COLOR_GRADIENTS_SIZE-1)
+			//CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
 			edgeListToWriteFlat->x = x;
 			edgeListToWriteFlat->c = fc;
             ++edgeListToWriteFlat;
@@ -207,7 +222,7 @@ static void fillGouraudEdges8_SemiSoft(int yMin, int yMax, uint16 *colorShades)
 static void fillGouraudEdges8(int yMin, int yMax, uint16 *colorShades)
 {
 	uint8 *vram8 = softBuffer8 + yMin * SOFT_BUFF_WIDTH;
-	int count = yMax - yMin;
+	int count = yMax - yMin + 1;
 	Edge *le = &leftEdge[yMin];
 	Edge *re = &rightEdge[yMin];
 	do {
@@ -227,7 +242,7 @@ static void fillGouraudEdges8(int yMin, int yMax, uint16 *colorShades)
 			xlp = 4 - xlp;
 			while (xlp-- > 0 && length-- > 0) {
 				int c = FIXED_TO_INT(fc, FP_BASE);
-				CLAMP(c, 0, COLOR_GRADIENTS_SIZE-1)
+				CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
 				fc += dc;
 
 				*dst++ = c;
@@ -239,16 +254,16 @@ static void fillGouraudEdges8(int yMin, int yMax, uint16 *colorShades)
 			int c0,c1,c2,c3;
 
 			c0 = FIXED_TO_INT(fc, FP_BASE);
-			//CLAMP(c0, 0, COLOR_GRADIENTS_SIZE-1)
+			CLAMP_LEFT(c0, 1)
 			fc += dc;
 			c1 = FIXED_TO_INT(fc, FP_BASE);
-			//CLAMP(c1, 0, COLOR_GRADIENTS_SIZE-1)
+			CLAMP_LEFT(c1, 1)
 			fc += dc;
 			c2 = FIXED_TO_INT(fc, FP_BASE);
-			//CLAMP(c2, 0, COLOR_GRADIENTS_SIZE-1)
+			CLAMP_LEFT(c2, 1)
 			fc += dc;
 			c3 = FIXED_TO_INT(fc, FP_BASE);
-			//CLAMP(c3, 0, COLOR_GRADIENTS_SIZE-1)
+			CLAMP_LEFT(c3, 1)
 			fc += dc;
 
 			*dst32++ = (c0 << 24) | (c1 << 16) | (c2 << 8) | c3;
@@ -258,7 +273,7 @@ static void fillGouraudEdges8(int yMin, int yMax, uint16 *colorShades)
 		dst = (uint8*)dst32;
 		while (length-- > 0) {
 			int c = FIXED_TO_INT(fc, FP_BASE);
-			CLAMP(c, 0, COLOR_GRADIENTS_SIZE-1)
+			CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
 			fc += dc;
 
 			*dst++ = c;
@@ -273,7 +288,7 @@ static void fillGouraudEdges8(int yMin, int yMax, uint16 *colorShades)
 static void fillGouraudEdges16(int yMin, int yMax, uint16 *colorShades)
 {
 	uint16 *vram16 = softBuffer16 + yMin * SOFT_BUFF_WIDTH;
-	int count = yMax - yMin;
+	int count = yMax - yMin + 1;
 	Edge *le = &leftEdge[yMin];
 	Edge *re = &rightEdge[yMin];
 	do {
@@ -288,37 +303,39 @@ static void fillGouraudEdges16(int yMin, int yMax, uint16 *colorShades)
 		const int dc = (((cr - cl) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE)) >> FP_BASE;
 		int fc = cl;
 
-		if (xl & 1) {
-			int c = FIXED_TO_INT(fc, FP_BASE);
-			CLAMP(c, 0, COLOR_GRADIENTS_SIZE-1)
-			fc += dc;
+		if (length>0){
+			if (xl & 1) {
+				int c = FIXED_TO_INT(fc, FP_BASE);
+				CLAMP(c, 0, COLOR_GRADIENTS_SIZE-1)
+				fc += dc;
 
-			*dst++ = colorShades[c];
-			--length;
-		}
+				*dst++ = colorShades[c];
+				length--;
+			}
 
-		dst32 = (uint32*)dst;
-		while(length >= 2) {
-			int c0, c1;
+			dst32 = (uint32*)dst;
+			while(length >= 2) {
+				int c0, c1;
 
-			c0 = FIXED_TO_INT(fc, FP_BASE);
-			//CLAMP(c0, 0, COLOR_GRADIENTS_SIZE-1)
-			fc += dc;
-			c1 = FIXED_TO_INT(fc, FP_BASE);
-			//CLAMP(c1, 0, COLOR_GRADIENTS_SIZE-1)
-			fc += dc;
+				c0 = FIXED_TO_INT(fc, FP_BASE);
+				//CLAMP(c0, 0, COLOR_GRADIENTS_SIZE-1)
+				fc += dc;
+				c1 = FIXED_TO_INT(fc, FP_BASE);
+				//CLAMP(c1, 0, COLOR_GRADIENTS_SIZE-1)
+				fc += dc;
 
-			*dst32++ = (colorShades[c0] << 16) | colorShades[c1];
-			length -= 2;
-		};
+				*dst32++ = (colorShades[c0] << 16) | colorShades[c1];
+				length -= 2;
+			};
 
-		dst = (uint16*)dst32;
-		if (length & 1) {
-			int c = FIXED_TO_INT(fc, FP_BASE);
-			CLAMP(c, 0, COLOR_GRADIENTS_SIZE-1)
-			fc += dc;
+			dst = (uint16*)dst32;
+			if (length & 1) {
+				int c = FIXED_TO_INT(fc, FP_BASE);
+				CLAMP(c, 0, COLOR_GRADIENTS_SIZE-1)
+				fc += dc;
 
-			*dst++ = colorShades[c];
+				*dst++ = colorShades[c];
+			}
 		}
 
 		++le;
@@ -552,10 +569,11 @@ void initEngineSoft()
 	initDivs();
 	initSemiSoftGouraud();
 
-	if (!lineColorShades[0]) lineColorShades[0] = crateColorShades(31,23,15, COLOR_GRADIENTS_SIZE);
-	if (!lineColorShades[1]) lineColorShades[1] = crateColorShades(15,23,31, COLOR_GRADIENTS_SIZE);
-	if (!lineColorShades[2]) lineColorShades[2] = crateColorShades(15,31,23, COLOR_GRADIENTS_SIZE);
-	if (!lineColorShades[3]) lineColorShades[3] = crateColorShades(31,15,23, COLOR_GRADIENTS_SIZE);
+	if (!lineColorShades[0]) lineColorShades[0] = crateColorShades(31,23,15, COLOR_GRADIENTS_SIZE, false);
+	if (!lineColorShades[1]) lineColorShades[1] = crateColorShades(15,23,31, COLOR_GRADIENTS_SIZE, false);
+	if (!lineColorShades[2]) lineColorShades[2] = crateColorShades(15,31,23, COLOR_GRADIENTS_SIZE, false);
+	if (!lineColorShades[3]) lineColorShades[3] = crateColorShades(31,15,23, COLOR_GRADIENTS_SIZE, false);
 
-	sprSoftBuffer8->cel->ccb_PLUTPtr = (PLUTChunk*)lineColorShades[1];
+	if (!gouraudColorShades) gouraudColorShades = crateColorShades(31,31,31, COLOR_GRADIENTS_SIZE, true);
+	sprSoftBuffer8->cel->ccb_PLUTPtr = (PLUTChunk*)gouraudColorShades;
 }
