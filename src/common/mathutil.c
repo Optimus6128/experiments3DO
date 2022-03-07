@@ -34,6 +34,36 @@ void initMathUtil()
 	}
 }
 
+void setVector3D(Vector3D *v, int x, int y, int z)
+{
+	v->x = x;
+	v->y = y;
+	v->z = z;
+}
+
+void setVector3DfromVertices(Vector3D *v, Vertex *v0, Vertex *v1)
+{
+	v->x = v1->x - v0->x;
+	v->y = v1->y - v0->y;
+	v->z = v1->z - v0->z;
+}
+
+void calcVector3Dcross(Vector3D *vRes, Vector3D *v0, Vector3D *v1)
+{
+	vRes->x = v0->y * v1->z - v0->z * v1->y;
+	vRes->y = v0->z * v1->x - v0->x * v1->z;
+	vRes->z = v0->x * v1->y - v0->y * v1->x;
+}
+
+void normalizeVector3D(Vector3D *v)
+{
+	int length = sqrt(v->x * v->x + v->y * v->y * v->z * v->z);
+
+	v->x /= length;
+	v->y /= length;
+	v->z /= length;
+}
+
 Point2Darray *initPoint2Darray(int numPoints)
 {
 	Point2Darray *ptArray = (Point2Darray*)AllocMem(sizeof(Point2Darray), MEMTYPE_ANY);

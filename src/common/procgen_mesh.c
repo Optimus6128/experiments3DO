@@ -15,6 +15,12 @@ static int *currentLineIndex;
 static Vector3D *currentPolyNormal;
 static Vector3D *currentVertexNormal;
 
+typedef struct VecSumStore
+{
+	Vector3D vecSum;
+	int visits;
+}VecSumStore;
+
 
 static void setCurrentVertex(Vertex *v)
 {
@@ -135,6 +141,78 @@ static void setAllPolyData(Mesh *ms, int numPoints, int textureId, int palId)
 		poly->palId = palId;
 		++poly;
 	}
+}
+
+
+static void calculatePolyNormals(Mesh *ms)
+{
+	int i;
+	int *index = ms->index;
+	Vertex *pt0, *pt1, *pt2;
+	Vector3D v0, v1, vCross;
+
+	for (i=0; i<ms->polysNum; ++i) {
+		pt0 = &ms->vertex[*index++];
+		pt1 = &ms->vertex[*index++];
+		pt2 = &ms->vertex[*index++];
+		if (ms->poly[i].numPoints == 4) ++index;
+
+		setVector3DfromVertices(&v0, pt0, pt1);
+		setVector3DfromVertices(&v1, pt1, pt2);
+
+		calcVector3Dcross(&vCross, &v0, &v1);
+		normalizeVector3D(&vCross);
+
+		VEC3D_TO_FIXED(vCross, NORMAL_SHIFT)
+
+		addPolyNormal(vCross.x, vCross.y, vCross.z);
+	}
+}
+
+static void calculateVertexNormals(Mesh *ms)
+{
+	int i,j;
+	int *index = ms->index;
+
+	VecSumStore *vecAvgSums = (VecSumStore*)AllocMem(ms->verticesNum * sizeof(VecSumStore), MEMTYPE_TRACKSIZE);
+	for (i=0; i<ms->verticesNum; ++i) {
+		setVector3D(&vecAvgSums[i].vecSum, 0, 0, 0);
+		vecAvgSums[i].visits = 0;
+	}
+
+	for (i=0; i<ms->polysNum; ++i) {
+		Vector3D *polyNormal = &ms->polyNormal[i];
+
+		for (j=0; j<ms->poly[i].numPoints; ++j) {
+			VecSumStore *vecAvgSum = &vecAvgSums[*index++];
+			vecAvgSum->vecSum.x += polyNormal->x;
+			vecAvgSum->vecSum.y += polyNormal->y;
+			vecAvgSum->vecSum.z += polyNormal->z;
+			vecAvgSum->visits++;
+		}
+	}
+
+	for (i=0; i<ms->verticesNum; ++i) {
+		Vector3D *vecSum = &vecAvgSums[i].vecSum;
+		int visits = vecAvgSums[i].visits;
+		if (visits > 0) {
+			vecSum->x /= visits;
+			vecSum->y /= visits;
+			vecSum->z /= visits;
+		}
+		vecSum->x = -vecSum->x;
+		vecSum->y = -vecSum->y;
+		vecSum->z = -vecSum->z;
+		addVertexNormal(vecSum->x, vecSum->y, vecSum->z);
+	}
+
+	FreeMem(vecAvgSums, -1);
+}
+
+static void calculateNormals(Mesh *ms)
+{
+	calculatePolyNormals(ms);
+	calculateVertexNormals(ms);
 }
 
 
@@ -434,6 +512,8 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 				addQuadIndices(viOff + 2, viOff + 6, viOff + 7, viOff + 3);
 				addQuadIndices(viOff + 3, viOff + 7, viOff + 4, viOff + 0);
 			}
+			
+			calculateNormals(ms);
 
 			setAllPolyData(ms,4,0,0);
 		}

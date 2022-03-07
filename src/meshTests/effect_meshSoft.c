@@ -83,11 +83,33 @@ static void inputScript()
 
 void effectMeshSoftInit()
 {
-	cubeMesh8 = initGenMesh(MESH_CUBE_TRI, DEFAULT_MESHGEN_PARAMS(1024), MESH_OPTION_RENDER_SOFT8 | MESH_OPTION_ENABLE_LIGHTING, NULL);
-	cubeMesh16 = initGenMesh(MESH_CUBE_TRI, DEFAULT_MESHGEN_PARAMS(1024), MESH_OPTION_RENDER_SOFT16 | MESH_OPTION_ENABLE_LIGHTING, NULL);
-	cubeMeshSemiSoft = initGenMesh(MESH_CUBE_TRI, DEFAULT_MESHGEN_PARAMS(1024), MESH_OPTION_RENDER_SEMISOFT | MESH_OPTION_ENABLE_LIGHTING, NULL);
+	const int size = 512;
+	MeshgenParams params;
+
+	const int r1 = size/4;
+	const int r2 = size/2;
+	const int r3 = size/4;
+	const int y1 = size/2;
+	const int y2 = size/4;
+	const int y3 = -size/4;
+	const int y4 = -size/2;
+
+	Point2Darray *ptArray = initPoint2Darray(4);
+
+	addPoint2D(ptArray, r1,y1);
+	addPoint2D(ptArray, r2,y2);
+	addPoint2D(ptArray, r2,y3);
+	addPoint2D(ptArray, r3,y4);
+
+	params = makeMeshgenSquareColumnoidParams(size, ptArray->points, 4);
+
+	cubeMesh8 = initGenMesh(MESH_SQUARE_COLUMNOID, params, MESH_OPTION_RENDER_SOFT8 | MESH_OPTION_ENABLE_LIGHTING, NULL);
+	cubeMesh16 = initGenMesh(MESH_SQUARE_COLUMNOID, params, MESH_OPTION_RENDER_SOFT16 | MESH_OPTION_ENABLE_LIGHTING, NULL);
+	cubeMeshSemiSoft = initGenMesh(MESH_SQUARE_COLUMNOID, params, MESH_OPTION_RENDER_SEMISOFT | MESH_OPTION_ENABLE_LIGHTING, NULL);
 
 	cubeObj = initObject3D(cubeMesh8);
+
+	destroyPoint2Darray(ptArray);
 }
 
 void effectMeshSoftRun()

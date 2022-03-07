@@ -14,6 +14,8 @@
 #define FIXED_DIV(x,y,b) (((x) << b) / (y))
 #define FIXED_SQRT(x,b) (sqrt((x) << b))
 
+#define VEC3D_TO_FIXED(v,b) v.x *= (1 << b); v.y *= (1 << b); v.z *= (1 << b);
+
 #define PI 3.14159265359f
 #define DEG256RAD ((2 * PI) / 256.0f)
 
@@ -45,6 +47,11 @@ extern int shr[257];
 int getRand(int from, int to);
 int getShr(int n);
 void initMathUtil(void);
+
+void setVector3D(Vector3D *v, int x, int y, int z);
+void setVector3DfromVertices(Vector3D *v, Vertex *v0, Vertex *v1);
+void calcVector3Dcross(Vector3D *vRes, Vector3D *v0, Vector3D *v1);
+void normalizeVector3D(Vector3D *v);
 
 Point2Darray *initPoint2Darray(int numPoints);
 void addPoint2D(Point2Darray *ptArray, int x, int y);

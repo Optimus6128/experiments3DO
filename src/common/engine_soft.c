@@ -22,7 +22,7 @@
 #define DIV_TAB_SHIFT 16
 
 // Semisoft gouraud method
-#define MAX_SCANLINES 2048
+#define MAX_SCANLINES 8192
 static CCB *scanlineCel8[MAX_SCANLINES];
 static CCB **currentScanlineCel8 = scanlineCel8;
 
@@ -383,7 +383,7 @@ static void drawGouraudTriangle(VrtxElement *ves, uint16 *colorShades)
 	int temp;
     int chdx, chdy;
 
-	uint16 *vram = (uint16*)softBuffer;
+	uint16 *vram = (uint16*)softBuffer16;
 
     // ==== Clipping ====
 
@@ -473,7 +473,7 @@ static void renderPlots(Vertex *pt)
 {
 	if (pt->x < 0 || pt->x > SOFT_BUFF_WIDTH-1 || pt->y < 0 || pt->y > SOFT_BUFF_HEIGHT-1 || pt->z <= 0) return;
 
-	softBuffer[pt->y * SOFT_BUFF_WIDTH + pt->x] = 0xFFFF;
+	softBuffer16[pt->y * SOFT_BUFF_WIDTH + pt->x] = 0xFFFF;
 }
 
 static void renderMeshSoftWireframe(Mesh *ms, Vertex *vertices)
@@ -513,9 +513,9 @@ static void renderMeshSoft(Mesh *ms, Vertex *vertices)
 	}
 
 	for (i=0; i<ms->polysNum; ++i) {
-		pt0 = &vertices[*index]; c0 = vertexCol[*index++];
-		pt1 = &vertices[*index]; c1 = vertexCol[*index++];
-		pt2 = &vertices[*index]; c2 = vertexCol[*index++];
+		pt0 = &vertices[*index]; c0 = vertexCol[*index]; ++index;
+		pt1 = &vertices[*index]; c1 = vertexCol[*index]; ++index;
+		pt2 = &vertices[*index]; c2 = vertexCol[*index]; ++index;
 
 		n = (pt0->x - pt1->x) * (pt2->y - pt1->y) - (pt2->x - pt1->x) * (pt0->y - pt1->y);
 		if (n > 0) {
@@ -524,6 +524,20 @@ static void renderMeshSoft(Mesh *ms, Vertex *vertices)
 			vrtxElements[2].x = pt2->x; vrtxElements[2].y = pt2->y; vrtxElements[2].c = c2;
 
 			drawGouraudTriangle(vrtxElements, lineColorShades[i & 3]);
+		}
+
+		if (ms->poly[i].numPoints == 4) {	// if quad then render another triangle
+			pt1 = pt2; c1 = c2;
+			pt2 = &vertices[*index]; c2 = vertexCol[*index]; ++index;
+
+			n = (pt0->x - pt1->x) * (pt2->y - pt1->y) - (pt2->x - pt1->x) * (pt0->y - pt1->y);
+			if (n > 0) {
+				vrtxElements[0].x = pt0->x; vrtxElements[0].y = pt0->y; vrtxElements[0].c = c0;
+				vrtxElements[1].x = pt1->x; vrtxElements[1].y = pt1->y; vrtxElements[1].c = c1;
+				vrtxElements[2].x = pt2->x; vrtxElements[2].y = pt2->y; vrtxElements[2].c = c2;
+
+				drawGouraudTriangle(vrtxElements, lineColorShades[i & 3]);
+			}
 		}
 	}
 
