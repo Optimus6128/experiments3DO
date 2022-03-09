@@ -10,8 +10,6 @@
 #define REC_FPSHR 20
 #define NUM_REC_Z 32768
 
-#define NORMAL_SHIFT 8
-
 typedef struct Object3D
 {
 	Mesh *mesh;

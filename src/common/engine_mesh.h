@@ -3,6 +3,7 @@
 
 #include "engine_texture.h"
 #include "mathutil.h"
+#include "core.h"
 
 #define MESH_OPTION_RENDER_HARD		(1 << 0)
 #define MESH_OPTION_RENDER_SOFT8	(1 << 1)

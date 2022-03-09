@@ -19,10 +19,10 @@
 
 
 static int rotX=0, rotY=0, rotZ=0;
-static int zoom=2048;
+static int zoom=128;
 
 static const int rotVel = 2;
-static const int zoomVel = 32;
+static const int zoomVel = 2;
 
 static Mesh *cubeMesh8;
 static Mesh *cubeMesh16;
@@ -83,7 +83,7 @@ static void inputScript()
 
 void effectMeshSoftInit()
 {
-	const int size = 512;
+	const int size = 64;
 	MeshgenParams params;
 
 	const int r1 = size/4;
@@ -95,6 +95,8 @@ void effectMeshSoftInit()
 	const int y4 = -size/2;
 
 	Point2Darray *ptArray = initPoint2Darray(4);
+	
+	int meshType = MESH_SQUARE_COLUMNOID; //MESH_ROMBUS; //MESH_CUBE_TRI;
 
 	addPoint2D(ptArray, r1,y1);
 	addPoint2D(ptArray, r2,y2);
@@ -103,9 +105,9 @@ void effectMeshSoftInit()
 
 	params = makeMeshgenSquareColumnoidParams(size, ptArray->points, 4);
 
-	cubeMesh8 = initGenMesh(MESH_SQUARE_COLUMNOID, params, MESH_OPTION_RENDER_SOFT8 | MESH_OPTION_ENABLE_LIGHTING, NULL);
-	cubeMesh16 = initGenMesh(MESH_SQUARE_COLUMNOID, params, MESH_OPTION_RENDER_SOFT16 | MESH_OPTION_ENABLE_LIGHTING, NULL);
-	cubeMeshSemiSoft = initGenMesh(MESH_SQUARE_COLUMNOID, params, MESH_OPTION_RENDER_SEMISOFT | MESH_OPTION_ENABLE_LIGHTING, NULL);
+	cubeMesh8 = initGenMesh(meshType, params, MESH_OPTION_RENDER_SOFT8 | MESH_OPTION_ENABLE_LIGHTING, NULL);
+	cubeMesh16 = initGenMesh(meshType, params, MESH_OPTION_RENDER_SOFT16 | MESH_OPTION_ENABLE_LIGHTING, NULL);
+	cubeMeshSemiSoft = initGenMesh(meshType, params, MESH_OPTION_RENDER_SEMISOFT | MESH_OPTION_ENABLE_LIGHTING, NULL);
 
 	cubeObj = initObject3D(cubeMesh8);
 
@@ -114,10 +116,16 @@ void effectMeshSoftInit()
 
 void effectMeshSoftRun()
 {
+	//int i;
+
 	inputScript();
 
 	setObject3Dpos(cubeObj, 0, 0, zoom);
 	setObject3Drot(cubeObj, rotX, rotY, rotZ);
 	
 	renderObject3Dsoft(cubeObj);
+
+	/*for (i=0; i<24; ++i) {
+		drawNumber(0, i * 8, fuck[i]);
+	}*/
 }

@@ -57,11 +57,11 @@ void calcVector3Dcross(Vector3D *vRes, Vector3D *v0, Vector3D *v1)
 
 void normalizeVector3D(Vector3D *v)
 {
-	int length = sqrt(v->x * v->x + v->y * v->y * v->z * v->z);
+	int length = sqrt(v->x * v->x + v->y * v->y + v->z * v->z);
 
-	v->x /= length;
-	v->y /= length;
-	v->z /= length;
+	v->x = (v->x << NORMAL_SHIFT) / length;
+	v->y = (v->y << NORMAL_SHIFT) / length;
+	v->z = (v->z << NORMAL_SHIFT) / length;
 }
 
 Point2Darray *initPoint2Darray(int numPoints)

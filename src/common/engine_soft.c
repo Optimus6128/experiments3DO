@@ -22,7 +22,7 @@
 #define DIV_TAB_SHIFT 16
 
 // Semisoft gouraud method
-#define MAX_SCANLINES 8192
+#define MAX_SCANLINES 4096
 static CCB *scanlineCel8[MAX_SCANLINES];
 static CCB **currentScanlineCel8 = scanlineCel8;
 

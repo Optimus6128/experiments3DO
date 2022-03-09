@@ -15,11 +15,13 @@ static int *currentLineIndex;
 static Vector3D *currentPolyNormal;
 static Vector3D *currentVertexNormal;
 
-typedef struct VecSumStore
+typedef struct ConvergingNormals
 {
-	Vector3D vecSum;
-	int visits;
-}VecSumStore;
+	Vector3D normals[8];
+	int num;
+}ConvergingNormals;
+
+int fuck[256];
 
 
 static void setCurrentVertex(Vertex *v)
@@ -158,15 +160,26 @@ static void calculatePolyNormals(Mesh *ms)
 		if (ms->poly[i].numPoints == 4) ++index;
 
 		setVector3DfromVertices(&v0, pt0, pt1);
-		setVector3DfromVertices(&v1, pt1, pt2);
+		setVector3DfromVertices(&v1, pt2, pt1);
 
 		calcVector3Dcross(&vCross, &v0, &v1);
 		normalizeVector3D(&vCross);
 
-		VEC3D_TO_FIXED(vCross, NORMAL_SHIFT)
+		//fuck[3*i] = vCross.x;
+		//fuck[3*i+1] = vCross.y;
+		//fuck[3*i+2] = vCross.z;
 
 		addPolyNormal(vCross.x, vCross.y, vCross.z);
 	}
+}
+
+static bool doesVectorAlreadyExistInArrayOfVectors(Vector3D *myVector, Vector3D *vectors, int numVectors)
+{
+	int i;
+	for (i=0; i<numVectors; ++i) {
+		if (myVector->x == vectors[i].x && myVector->y == vectors[i].y && myVector->z == vectors[i].z) return true;
+	}
+	return false;
 }
 
 static void calculateVertexNormals(Mesh *ms)
@@ -174,39 +187,46 @@ static void calculateVertexNormals(Mesh *ms)
 	int i,j;
 	int *index = ms->index;
 
-	VecSumStore *vecAvgSums = (VecSumStore*)AllocMem(ms->verticesNum * sizeof(VecSumStore), MEMTYPE_TRACKSIZE);
+	//ConvergingNormals *convNormalsSet = (ConvergingNormals*)AllocMem(ms->verticesNum * sizeof(ConvergingNormals), MEMTYPE_TRACKSIZE);
+	static ConvergingNormals convNormalsSet[64];
+
 	for (i=0; i<ms->verticesNum; ++i) {
-		setVector3D(&vecAvgSums[i].vecSum, 0, 0, 0);
-		vecAvgSums[i].visits = 0;
+		convNormalsSet[i].num = 0;
 	}
 
 	for (i=0; i<ms->polysNum; ++i) {
 		Vector3D *polyNormal = &ms->polyNormal[i];
-
+		
 		for (j=0; j<ms->poly[i].numPoints; ++j) {
-			VecSumStore *vecAvgSum = &vecAvgSums[*index++];
-			vecAvgSum->vecSum.x += polyNormal->x;
-			vecAvgSum->vecSum.y += polyNormal->y;
-			vecAvgSum->vecSum.z += polyNormal->z;
-			vecAvgSum->visits++;
+			ConvergingNormals *convNormals = &convNormalsSet[*index++];
+			if (!doesVectorAlreadyExistInArrayOfVectors(polyNormal, convNormals->normals, convNormals->num)) {
+				convNormals->normals[convNormals->num].x = polyNormal->x;
+				convNormals->normals[convNormals->num].y = polyNormal->y;
+				convNormals->normals[convNormals->num].z = polyNormal->z;
+				convNormals->num++;
+			}
 		}
 	}
 
 	for (i=0; i<ms->verticesNum; ++i) {
-		Vector3D *vecSum = &vecAvgSums[i].vecSum;
-		int visits = vecAvgSums[i].visits;
-		if (visits > 0) {
-			vecSum->x /= visits;
-			vecSum->y /= visits;
-			vecSum->z /= visits;
+		Vector3D *normals = convNormalsSet[i].normals;
+		int num = convNormalsSet[i].num;
+
+		Vector3D normalSum;
+
+		setVector3D(&normalSum, 0,0,0);
+		for (j=0; j<num; ++j) {
+			normalSum.x += normals[j].x;
+			normalSum.y += normals[j].y;
+			normalSum.z += normals[j].z;
 		}
-		vecSum->x = -vecSum->x;
-		vecSum->y = -vecSum->y;
-		vecSum->z = -vecSum->z;
-		addVertexNormal(vecSum->x, vecSum->y, vecSum->z);
+		normalSum.x /= num;
+		normalSum.y /= num;
+		normalSum.z /= num;
+		addVertexNormal(normalSum.x, normalSum.y, normalSum.z);
 	}
 
-	FreeMem(vecAvgSums, -1);
+	//FreeMem(convNormalsSet, -1);
 }
 
 static void calculateNormals(Mesh *ms)
@@ -235,6 +255,22 @@ static void initCubePolyNormals(int n)
 	addPolyNormal( 0,  0,  n);
 	addPolyNormal(-n,  0,  0);
 	addPolyNormal( 0,  n,  0);
+	addPolyNormal( 0, -n,  0);
+}
+
+static void initCubePolyNormalsTri(int n)
+{
+	addPolyNormal( 0,  0, -n);
+	addPolyNormal( 0,  0, -n);
+	addPolyNormal( n,  0,  0);
+	addPolyNormal( n,  0,  0);
+	addPolyNormal( 0,  0,  n);
+	addPolyNormal( 0,  0,  n);
+	addPolyNormal(-n,  0,  0);
+	addPolyNormal(-n,  0,  0);
+	addPolyNormal( 0,  n,  0);
+	addPolyNormal( 0,  n,  0);
+	addPolyNormal( 0, -n,  0);
 	addPolyNormal( 0, -n,  0);
 }
 
@@ -344,8 +380,8 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			resetAllCurrentPointers(ms);
 
 			initCubeVertices(s);
-			initCubePolyNormals(n);
-			initCubeVertexNormals(m);
+			//initCubePolyNormalsTri(n);
+			//initCubeVertexNormals(m);
 
 			addTriangleIndices(0,1,2);
 			addTriangleIndices(0,2,3);
@@ -363,6 +399,36 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			initCubeLineIndices();
 
 			setAllPolyData(ms,3,0,0);
+
+			calculateNormals(ms);
+		}
+		break;
+		
+		case MESH_ROMBUS:
+		{
+			ms = initMesh(6,8,24,0, optionsFlags);
+
+			resetAllCurrentPointers(ms);
+
+			addVertex(-s,  0, -s);
+			addVertex( s,  0, -s);
+			addVertex( s,  0,  s);
+			addVertex(-s,  0,  s);
+			addVertex( 0, -s,  0);
+			addVertex( 0,  s,  0);
+
+			addTriangleIndices(0,1,4);
+			addTriangleIndices(1,2,4);
+			addTriangleIndices(2,3,4);
+			addTriangleIndices(3,0,4);
+			addTriangleIndices(5,1,0);
+			addTriangleIndices(5,2,1);
+			addTriangleIndices(5,3,2);
+			addTriangleIndices(5,0,3);
+
+			setAllPolyData(ms,3,0,0);
+
+			calculateNormals(ms);
 		}
 		break;
 
@@ -513,9 +579,9 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 				addQuadIndices(viOff + 3, viOff + 7, viOff + 4, viOff + 0);
 			}
 			
-			calculateNormals(ms);
-
 			setAllPolyData(ms,4,0,0);
+
+			calculateNormals(ms);
 		}
 		break;
 		

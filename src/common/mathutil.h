@@ -5,6 +5,8 @@
 #define FP_BASE 12
 #define FP_BASE_TO_CORE (FP_CORE - FP_BASE)
 
+#define NORMAL_SHIFT 8
+
 #define FLOAT_TO_FIXED(f,b) ((int)((f) * (1 << b)))
 #define INT_TO_FIXED(i,b) ((i) * (1 << b))
 #define UINT_TO_FIXED(i,b) ((i) << b)
