@@ -380,8 +380,8 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			resetAllCurrentPointers(ms);
 
 			initCubeVertices(s);
-			//initCubePolyNormalsTri(n);
-			//initCubeVertexNormals(m);
+			initCubePolyNormalsTri(n);
+			initCubeVertexNormals(m);
 
 			addTriangleIndices(0,1,2);
 			addTriangleIndices(0,2,3);
@@ -399,8 +399,6 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			initCubeLineIndices();
 
 			setAllPolyData(ms,3,0,0);
-
-			calculateNormals(ms);
 		}
 		break;
 		
@@ -551,7 +549,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			Point2D *procPoints = params.procPoints;
 
 			const int vertexNum = procPointsNum * 4;
-			const int polysNum = (procPointsNum-1) * 4;
+			const int polysNum = (procPointsNum-1) * 4 + (int)params.capTop + (int)params.capBottom;
 			const int indicesNum = polysNum * 4;
 
 			ms = initMesh(vertexNum, polysNum, indicesNum, 0, optionsFlags);
@@ -578,7 +576,12 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 				addQuadIndices(viOff + 2, viOff + 6, viOff + 7, viOff + 3);
 				addQuadIndices(viOff + 3, viOff + 7, viOff + 4, viOff + 0);
 			}
-			
+			if (params.capTop) addQuadIndices(0,1,2,3);
+			if (params.capBottom) {
+				i = 4 *i;
+				addQuadIndices(i+3, i+2, i+1, i);
+			}
+
 			setAllPolyData(ms,4,0,0);
 
 			calculateNormals(ms);
@@ -617,13 +620,15 @@ MeshgenParams makeMeshgenGridParams(int size, int divisions)
 	return params;
 }
 
-MeshgenParams makeMeshgenSquareColumnoidParams(int size, Point2D *points, int numPoints)
+MeshgenParams makeMeshgenSquareColumnoidParams(int size, Point2D *points, int numPoints, bool capTop, bool capBottom)
 {
 	MeshgenParams params;
 
 	params.size = size;
 	params.procPoints = points;
 	params.numProcPoints = numPoints;
+	params.capTop = capTop;
+	params.capBottom = capBottom;
 
 	return params;
 }

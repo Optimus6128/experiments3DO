@@ -103,7 +103,7 @@ void effectMeshSoftInit()
 	addPoint2D(ptArray, r2,y3);
 	addPoint2D(ptArray, r3,y4);
 
-	params = makeMeshgenSquareColumnoidParams(size, ptArray->points, 4);
+	params = makeMeshgenSquareColumnoidParams(size, ptArray->points, 4, true, true);
 
 	cubeMesh8 = initGenMesh(meshType, params, MESH_OPTION_RENDER_SOFT8 | MESH_OPTION_ENABLE_LIGHTING, NULL);
 	cubeMesh16 = initGenMesh(meshType, params, MESH_OPTION_RENDER_SOFT16 | MESH_OPTION_ENABLE_LIGHTING, NULL);

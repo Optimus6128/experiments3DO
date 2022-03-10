@@ -268,7 +268,7 @@ static Mesh *initTorchMesh()
 	torchTex = initGenTexture(16, 16, 8, NULL, 1, TEXGEN_NOISE, false, NULL);
 	setPalGradient(0,31, 6,5,4, 12,10,5, torchTex->pal);
 
-	ms = initGenMesh(MESH_SQUARE_COLUMNOID, makeMeshgenSquareColumnoidParams(size, ptArray->points, 4), MESH_OPTIONS_DEFAULT, torchTex);
+	ms = initGenMesh(MESH_SQUARE_COLUMNOID, makeMeshgenSquareColumnoidParams(size, ptArray->points, 4), MESH_OPTIONS_DEFAULT, torchTex, false, false);
 
 	destroyPoint2Darray(ptArray);
 

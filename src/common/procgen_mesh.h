@@ -11,6 +11,8 @@ typedef struct MeshgenParams
 
 	Point2D *procPoints;
 	int numProcPoints;
+
+	bool capTop, capBottom;
 } MeshgenParams;
 
 #define DEFAULT_MESHGEN_PARAMS(size) makeDefaultMeshgenParams(size)
@@ -21,7 +23,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 
 MeshgenParams makeDefaultMeshgenParams(int size);
 MeshgenParams makeMeshgenGridParams(int size, int divisions);
-MeshgenParams makeMeshgenSquareColumnoidParams(int size, Point2D *points, int numPoints);
+MeshgenParams makeMeshgenSquareColumnoidParams(int size, Point2D *points, int numPoints, bool capTop, bool capBottom);
 
 extern int fuck[256];
 
