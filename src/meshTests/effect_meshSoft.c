@@ -24,14 +24,18 @@ static int zoom=256;
 static const int rotVel = 2;
 static const int zoomVel = 2;
 
-static Mesh *cubeMesh8;
-static Mesh *cubeMesh16;
-static Mesh *cubeMeshSemiSoft;
+static Mesh *cubeMesh;
+static Mesh *softMesh8;
+static Mesh *softMesh16;
+static Mesh *softMeshSemi;
 
-static int selectedCubeMesh = 0;
+static Texture *cloudTex;
+
+static int selectedSoftMesh = 0;
 
 
-static Object3D *cubeObj;
+static Object3D *softObj;
+static Object3D *hardObj;
 
 static void inputScript()
 {
@@ -68,15 +72,15 @@ static void inputScript()
 	}
 
 	if (isJoyButtonPressedOnce(JOY_BUTTON_START)) {
-		++selectedCubeMesh;
-		if (selectedCubeMesh==3) selectedCubeMesh = 0;
+		++selectedSoftMesh;
+		if (selectedSoftMesh==3) selectedSoftMesh = 0;
 
-		if (selectedCubeMesh==0) {
-			setObject3Dmesh(cubeObj, cubeMesh8);
-		} else if (selectedCubeMesh==1) {
-			setObject3Dmesh(cubeObj, cubeMesh16);
+		if (selectedSoftMesh==0) {
+			setObject3Dmesh(softObj, softMesh8);
+		} else if (selectedSoftMesh==1) {
+			setObject3Dmesh(softObj, softMesh16);
 		} else {
-			setObject3Dmesh(cubeObj, cubeMeshSemiSoft);
+			setObject3Dmesh(softObj, softMeshSemi);
 		}
 	}
 }
@@ -98,13 +102,16 @@ void effectMeshSoftInit()
 		addPoint2D(ptArray, r,y);
 	}
 
+	cloudTex = initGenTexture(128, 128, 16, NULL, 1, TEXGEN_CLOUDS, false, NULL);
 	params = makeMeshgenSquareColumnoidParams(size, ptArray->points, numPoints, true, true);
 
-	cubeMesh8 = initGenMesh(meshType, params, MESH_OPTION_RENDER_SOFT8 | MESH_OPTION_ENABLE_LIGHTING, NULL);
-	cubeMesh16 = initGenMesh(meshType, params, MESH_OPTION_RENDER_SOFT16 | MESH_OPTION_ENABLE_LIGHTING, NULL);
-	cubeMeshSemiSoft = initGenMesh(meshType, params, MESH_OPTION_RENDER_SEMISOFT | MESH_OPTION_ENABLE_LIGHTING, NULL);
+	cubeMesh = initGenMesh(MESH_CUBE, params, MESH_OPTION_RENDER_HARD | MESH_OPTION_ENABLE_LIGHTING, cloudTex);
+	softMesh8 = initGenMesh(meshType, params, MESH_OPTION_RENDER_SOFT8 | MESH_OPTION_ENABLE_LIGHTING, NULL);
+	softMesh16 = initGenMesh(meshType, params, MESH_OPTION_RENDER_SOFT16 | MESH_OPTION_ENABLE_LIGHTING, NULL);
+	softMeshSemi = initGenMesh(meshType, params, MESH_OPTION_RENDER_SEMISOFT | MESH_OPTION_ENABLE_LIGHTING, NULL);
 
-	cubeObj = initObject3D(cubeMesh8);
+	softObj = initObject3D(softMesh8);
+	hardObj = initObject3D(cubeMesh);
 
 	destroyPoint2Darray(ptArray);
 }
@@ -115,10 +122,13 @@ void effectMeshSoftRun()
 
 	inputScript();
 
-	setObject3Dpos(cubeObj, 0, 0, zoom);
-	setObject3Drot(cubeObj, rotX, rotY, rotZ);
-	
-	renderObject3Dsoft(cubeObj);
+	setObject3Dpos(softObj, 0, 0, zoom);
+	setObject3Drot(softObj, rotX, rotY, rotZ);
+	//renderObject3Dsoft(softObj);
+
+	setObject3Dpos(hardObj, 0, 0, zoom);
+	setObject3Drot(hardObj, rotX, rotY, rotZ);
+	renderObject3D(hardObj);
 
 	/*for (i=0; i<24; ++i) {
 		drawNumber(0, i * 8, fuck[i]);

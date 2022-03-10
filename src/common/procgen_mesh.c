@@ -188,7 +188,7 @@ static void calculateVertexNormals(Mesh *ms)
 	int *index = ms->index;
 
 	//ConvergingNormals *convNormalsSet = (ConvergingNormals*)AllocMem(ms->verticesNum * sizeof(ConvergingNormals), MEMTYPE_TRACKSIZE);
-	static ConvergingNormals convNormalsSet[64];
+	static ConvergingNormals convNormalsSet[256];
 
 	for (i=0; i<ms->verticesNum; ++i) {
 		convNormalsSet[i].num = 0;
@@ -232,7 +232,7 @@ static void calculateVertexNormals(Mesh *ms)
 static void calculateNormals(Mesh *ms)
 {
 	calculatePolyNormals(ms);
-	calculateVertexNormals(ms);
+	if (ms->renderType & MESH_OPTION_RENDER_SOFT) calculateVertexNormals(ms);
 }
 
 
@@ -358,7 +358,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 
 			initCubeVertices(s);
 			initCubePolyNormals(n);
-			initCubeVertexNormals(m);
+			if (ms->renderType & MESH_OPTION_RENDER_SOFT) initCubeVertexNormals(m);
 
 			addQuadIndices(0,1,2,3);
 			addQuadIndices(1,4,7,2);
@@ -381,7 +381,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 
 			initCubeVertices(s);
 			initCubePolyNormalsTri(n);
-			initCubeVertexNormals(m);
+			if (ms->renderType & MESH_OPTION_RENDER_SOFT) initCubeVertexNormals(m);
 
 			addTriangleIndices(0,1,2);
 			addTriangleIndices(0,2,3);
