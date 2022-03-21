@@ -146,6 +146,35 @@ static void setAllPolyData(Mesh *ms, int numPoints, int textureId, int palId)
 }
 
 
+static void generateWireframe(Mesh *ms)
+{
+	int i,j,n;
+	int *index = ms->index;
+	int *lineIndex = ms->lineIndex;
+	int lineIndexLast = 0;
+
+	for (i = 0; i < ms->polysNum; ++i) {
+		const int numPoints = ms->poly[i].numPoints;
+		for (n=0; n<numPoints; ++n) {
+			const int i0 = index[n];
+			const int i1 = index[(n+1) % numPoints];
+
+			bool found = false;
+			for (j = 0; j < lineIndexLast; ++j) {
+				if ( (i0==lineIndex[j] && i1==lineIndex[j+1]) || (i1==lineIndex[j] && i0==lineIndex[j+1]) ) {
+					found = true;
+					break;
+				}
+			}
+			if (!found) {
+				addLineIndices(i0, i1);
+				lineIndexLast += 2;
+			}
+		}
+		index += numPoints;
+	}
+}
+
 static void calculatePolyNormals(Mesh *ms)
 {
 	int i;
@@ -551,8 +580,9 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			const int vertexNum = procPointsNum * 4;
 			const int polysNum = (procPointsNum-1) * 4 + (int)params.capTop + (int)params.capBottom;
 			const int indicesNum = polysNum * 4;
+			const int linesNum = (procPointsNum - 1) * 4 + procPointsNum * 4;
 
-			ms = initMesh(vertexNum, polysNum, indicesNum, 0, optionsFlags);
+			ms = initMesh(vertexNum, polysNum, indicesNum, linesNum, optionsFlags);
 
 			resetAllCurrentPointers(ms);
 
@@ -585,6 +615,8 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			setAllPolyData(ms,4,0,0);
 
 			calculateNormals(ms);
+
+			generateWireframe(ms);
 		}
 		break;
 		

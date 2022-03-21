@@ -97,7 +97,7 @@ void setCelHeight(int height, CCB *cel)
 void setCelBpp(int bpp, CCB *cel)
 {
 	cel->ccb_PRE0 = (cel->ccb_PRE0 & ~PRE0_BPP_MASK) | bpp;
-	if (bpp>0 & bpp<=16) {
+	if (bpp>0 && bpp<=16) {
 		int i;
 		for (i=1; i<7; ++i) {
 			if (bpp == bppTable[i]) {

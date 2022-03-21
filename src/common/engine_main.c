@@ -196,6 +196,26 @@ static void calculateVertexLighting(Object3D *obj)
 	}
 }
 
+static void calculateVertexEnvmapTC(Object3D *obj)
+{
+	int i;
+	const int verticesNum = obj->mesh->verticesNum;
+	TexCoords *vertexTC = obj->mesh->vertexTC;
+
+	for (i=0; i<verticesNum; ++i) {
+		int normZ = normals[i].z;
+		if (normZ != 0) {
+			int normX = (normals[i].x << 8) / normZ;
+			int normY = (normals[i].y << 8) / normZ;
+			CLAMP(normX, 0, 255)
+				CLAMP(normY, 0, 255)
+			vertexTC->u = normX;
+			vertexTC->v = normY;
+			vertexTC++;
+		}
+	}
+}
+
 static void useMapCelFunctionFast(bool enable)
 {
 	if (enable) {
@@ -232,6 +252,9 @@ void renderObject3Dsoft(Object3D *obj)
 
 	if (obj->mesh->renderType & MESH_OPTION_ENABLE_LIGHTING) {
 		calculateVertexLighting(obj);
+	}
+	if (obj->mesh->renderType & MESH_OPTION_ENABLE_ENVMAP) {
+		calculateVertexEnvmapTC(obj);
 	}
 	renderTransformedMeshSoft(obj->mesh, vertices);
 }

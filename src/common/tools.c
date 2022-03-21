@@ -136,7 +136,7 @@ static void initTinyFonts()
 
 	for (i=0; i<MAX_STRING_LENGTH; ++i) {
 		textCel[i] = CreateCel(TINY_FONT_WIDTH, TINY_FONT_HEIGHT, 8, CREATECEL_CODED, fontsBmp);
-		textCel[i]->ccb_PLUTPtr = (PLUTChunk*)fontsPal;
+		textCel[i]->ccb_PLUTPtr = fontsPal;
 
 		textCel[i]->ccb_HDX = 1 << 20;
 		textCel[i]->ccb_HDY = 0 << 20;

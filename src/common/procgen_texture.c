@@ -157,7 +157,7 @@ static int perlinOctave(int x, int y)
 
 static void genCloudTexture(int hashX, int hashY, int hashZ, int shrStart, int iterations, Texture *tex)
 {
-	int x, y, i;
+	int x, y;
 	ushort *dst = (ushort*)tex->bitmap;
 	const int width = tex->width;
 	const int height = tex->height;

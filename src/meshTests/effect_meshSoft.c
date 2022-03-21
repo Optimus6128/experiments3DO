@@ -9,6 +9,7 @@
 #include "mathutil.h"
 
 #include "engine_main.h"
+#include "engine_soft.h"
 #include "engine_mesh.h"
 #include "engine_texture.h"
 
@@ -32,6 +33,7 @@ static Mesh *softMeshSemi;
 static Texture *cloudTex;
 
 static int selectedSoftMesh = 0;
+static int renderSoftMethodIndex = RENDER_SOFT_METHOD_GOURAUD;
 
 
 static Object3D *softObj;
@@ -63,15 +65,7 @@ static void inputScript()
 		rotZ -= rotVel;
 	}
 
-	if (isJoyButtonPressed(JOY_BUTTON_LPAD)) {
-		zoom += zoomVel;
-	}
-
-	if (isJoyButtonPressed(JOY_BUTTON_RPAD)) {
-		zoom -= zoomVel;
-	}
-
-	if (isJoyButtonPressedOnce(JOY_BUTTON_START)) {
+	if (isJoyButtonPressedOnce(JOY_BUTTON_C)) {
 		++selectedSoftMesh;
 		if (selectedSoftMesh==3) selectedSoftMesh = 0;
 
@@ -82,6 +76,21 @@ static void inputScript()
 		} else {
 			setObject3Dmesh(softObj, softMeshSemi);
 		}
+	}
+
+	if (isJoyButtonPressed(JOY_BUTTON_LPAD)) {
+		zoom += zoomVel;
+	}
+
+	if (isJoyButtonPressed(JOY_BUTTON_RPAD)) {
+		zoom -= zoomVel;
+	}
+
+	if (isJoyButtonPressedOnce(JOY_BUTTON_START)) {
+		++renderSoftMethodIndex;
+		if (renderSoftMethodIndex == RENDER_SOFT_METHOD_NUM) renderSoftMethodIndex = 0;
+
+		setRenderSoftMethod(renderSoftMethodIndex);
 	}
 }
 
@@ -98,7 +107,7 @@ void effectMeshSoftInit()
 
 	for (i=0; i<numPoints; ++i) {
 		const int y = (size/4) * (numPoints/2 - i);
-		const int r = sin((float)i / 2.0f) * (size / 2) + size / 2;
+		const int r = (int)(sin((float)i / 2.0f) * (size / 2) + size / 2);
 		addPoint2D(ptArray, r,y);
 	}
 
@@ -106,8 +115,8 @@ void effectMeshSoftInit()
 	params = makeMeshgenSquareColumnoidParams(size, ptArray->points, numPoints, true, true);
 
 	cubeMesh = initGenMesh(MESH_CUBE, params, MESH_OPTION_RENDER_HARD | MESH_OPTION_ENABLE_LIGHTING, cloudTex);
-	softMesh8 = initGenMesh(meshType, params, MESH_OPTION_RENDER_SOFT8 | MESH_OPTION_ENABLE_LIGHTING, NULL);
-	softMesh16 = initGenMesh(meshType, params, MESH_OPTION_RENDER_SOFT16 | MESH_OPTION_ENABLE_LIGHTING, NULL);
+	softMesh8 = initGenMesh(meshType, params, MESH_OPTION_RENDER_SOFT8 | MESH_OPTION_ENABLE_LIGHTING | MESH_OPTION_ENABLE_ENVMAP, cloudTex);
+	softMesh16 = initGenMesh(meshType, params, MESH_OPTION_RENDER_SOFT16 | MESH_OPTION_ENABLE_LIGHTING | MESH_OPTION_ENABLE_ENVMAP, cloudTex);
 	softMeshSemi = initGenMesh(meshType, params, MESH_OPTION_RENDER_SEMISOFT | MESH_OPTION_ENABLE_LIGHTING, NULL);
 
 	softObj = initObject3D(softMesh8);
@@ -124,11 +133,11 @@ void effectMeshSoftRun()
 
 	setObject3Dpos(softObj, 0, 0, zoom);
 	setObject3Drot(softObj, rotX, rotY, rotZ);
-	//renderObject3Dsoft(softObj);
+	renderObject3Dsoft(softObj);
 
-	setObject3Dpos(hardObj, 0, 0, zoom);
-	setObject3Drot(hardObj, rotX, rotY, rotZ);
-	renderObject3D(hardObj);
+	//setObject3Dpos(hardObj, 0, 0, zoom);
+	//setObject3Drot(hardObj, rotX, rotY, rotZ);
+	//renderObject3D(hardObj);
 
 	/*for (i=0; i<24; ++i) {
 		drawNumber(0, i * 8, fuck[i]);
