@@ -83,11 +83,11 @@ static bool isChunkyPixelTransparent(int pixel, int type, int bpp, uint16 *pal, 
 	palMax = (1 << palBpp) - 1;
 	
 	switch (type) {
-	case CREATECEL_CODED:
+	case CEL_TYPE_CODED:
 		return (pal[pixel & palMax] == transparentColor);
 		break;
 
-	case CREATECEL_UNCODED:
+	case CEL_TYPE_UNCODED:
 		return (pixel == transparentColor);
 		break;
 

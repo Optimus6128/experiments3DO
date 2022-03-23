@@ -65,8 +65,8 @@ void effectPackedRainInit()
 	generateUnpackedRain();
 
 	for (i=0; i<RAIN_LAYERS_NUM; ++i) {
-		unpackedRain[i] = newSprite(RAIN_LAYER_WIDTH, RAIN_LAYER_HEIGHT, 2, CREATECEL_CODED, pal2, unpackedRainBmp[i]);
-		packedRain[i] = newPackedSprite(RAIN_LAYER_WIDTH, RAIN_LAYER_HEIGHT, 2, CREATECEL_CODED, pal2, unpackedRainBmp[i], NULL, 0);
+		unpackedRain[i] = newSprite(RAIN_LAYER_WIDTH, RAIN_LAYER_HEIGHT, 2, CEL_TYPE_CODED, pal2, unpackedRainBmp[i]);
+		packedRain[i] = newPackedSprite(RAIN_LAYER_WIDTH, RAIN_LAYER_HEIGHT, 2, CEL_TYPE_CODED, pal2, unpackedRainBmp[i], NULL, 0);
 		totalPackedPercentage += packPercentage;
 	}
 }

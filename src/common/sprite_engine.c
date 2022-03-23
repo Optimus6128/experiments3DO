@@ -23,7 +23,7 @@ Sprite *newSprite(int width, int height, int bpp, int type, uint16 *pal, ubyte *
 
 Sprite *newFeedbackSprite(int posX, int posY, int width, int height, int bufferIndex)
 {
-	Sprite *spr = newSprite(width, height, 16, CREATECEL_UNCODED, NULL, (ubyte*)getBackBuffer());
+	Sprite *spr = newSprite(width, height, 16, CEL_TYPE_UNCODED, NULL, (ubyte*)getBackBuffer());
 
 	setupWindowFeedbackCel(posX, posY, width, height, bufferIndex, spr->cel);
 
@@ -35,7 +35,7 @@ Sprite *newPackedSprite(int width, int height, int bpp, int type, uint16 *pal, u
 	Sprite *spr;
 	ubyte *providedPackedData = packedData;
 
-	if (type == CREATECEL_CODED && !pal) return NULL;   // need palette to know when creating the packed sprite, which indexed color is transparent
+	if (type == CEL_TYPE_CODED && !pal) return NULL;   // need palette to know when creating the packed sprite, which indexed color is transparent
 
 	if (!providedPackedData) providedPackedData = createPackedDataFromUnpackedBmp(width, height, bpp, type, pal, unpackedBmp, transparentColor);
 
@@ -53,7 +53,7 @@ Sprite *loadSpriteCel(char *path)
 	int size;
 
 	tempCel = LoadCel(path, MEMTYPE_ANY);
-	spr = newSprite(tempCel->ccb_Width, tempCel->ccb_Height, 16, CREATECEL_UNCODED, NULL, NULL);
+	spr = newSprite(tempCel->ccb_Width, tempCel->ccb_Height, 16, CEL_TYPE_UNCODED, NULL, NULL);
 
 	size = (tempCel->ccb_Width * tempCel->ccb_Height * 16) / 8;
 	memcpy(spr->cel->ccb_SourcePtr, tempCel->ccb_SourcePtr, size);

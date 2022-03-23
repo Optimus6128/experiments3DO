@@ -117,11 +117,11 @@ static void initScanlinesSprite()
 
 	/*scanlinesPal[0] = MakeRGB15(0,0,0);
 	scanlinesPal[1] = MakeRGB15(0,0,1);
-	scanlinesSpr = newSprite(SCANLINES_SPR_WIDTH, SCANLINES_SPR_HEIGHT, 1, CREATECEL_CODED, scanlinesPal, scanlinesBmp);*/
+	scanlinesSpr = newSprite(SCANLINES_SPR_WIDTH, SCANLINES_SPR_HEIGHT, 1, CEL_TYPE_CODED, scanlinesPal, scanlinesBmp);*/
 
 	scanlinesPal[0] = MakeRGB15(0,0,0);
 	scanlinesPal[1] = transparentColor;
-	scanlinesSpr = newPackedSprite(SCANLINES_SPR_WIDTH, SCANLINES_SPR_HEIGHT, 1, CREATECEL_CODED, scanlinesPal, scanlinesBmp, NULL, transparentColor);
+	scanlinesSpr = newPackedSprite(SCANLINES_SPR_WIDTH, SCANLINES_SPR_HEIGHT, 1, CEL_TYPE_CODED, scanlinesPal, scanlinesBmp, NULL, transparentColor);
 	scanlinesSpr->cel->ccb_Flags |= CCB_BGND;
 }
 
@@ -148,9 +148,9 @@ void effectMeshPyramidsInit()
 	xorTexs = initGenTexturesTriangleHack(texWidth,texHeight,8,pyramidPal,2,TEXGEN_XOR, false, NULL);
 	xorTexs2 = initGenTexturesTriangleHack2(texWidth,texHeight,8,pyramidPal,2,TEXGEN_XOR, false, NULL);
 
-	sprTexture[0] = newSprite(texWidth, texHeight, 8, CREATECEL_CODED, pyramidPal, xorTexs[0].bitmap);
-	sprTexture[1] = newSprite(texWidth, texHeight, 8, CREATECEL_CODED, &pyramidPal[32], xorTexs[1].bitmap);
-	sprTexture[2] = newSprite(texWidth, texHeight, 8, CREATECEL_CODED, pyramidPal, xorTexs2[1].bitmap);
+	sprTexture[0] = newSprite(texWidth, texHeight, 8, CEL_TYPE_CODED, pyramidPal, xorTexs[0].bitmap);
+	sprTexture[1] = newSprite(texWidth, texHeight, 8, CEL_TYPE_CODED, &pyramidPal[32], xorTexs[1].bitmap);
+	sprTexture[2] = newSprite(texWidth, texHeight, 8, CEL_TYPE_CODED, pyramidPal, xorTexs2[1].bitmap);
 
 	for (i=0; i<3; ++i) {
 		setSpritePositionZoom(sprTexture[i], 280, 40, 127);

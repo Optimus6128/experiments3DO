@@ -154,7 +154,7 @@ void effectFeedbackCubeInit()
 	cubeObj = initObject3D(cubeMesh);
 	cubeBackObj = initObject3D(cubeMeshBack);
 
-	bgndSpr = newSprite(FB_WIDTH, FB_HEIGHT, 8, CREATECEL_UNCODED, NULL, bgndBmp);
+	bgndSpr = newSprite(FB_WIDTH, FB_HEIGHT, 8, CEL_TYPE_UNCODED, NULL, bgndBmp);
 	genBackgroundTex();
 
 	switchFeedback(hwFeedback);

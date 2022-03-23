@@ -298,8 +298,9 @@ void effectInit()
 	}
 
 	for (i=0; i<DOTS_DEPTH; ++i) {
-		dotCel[i] = CreateCel(TEX_WIDTH, TEX_HEIGHT, 8, CREATECEL_CODED, &dotTexBmp[i * TEX_SIZE_2D]);
-		dotCel[i]->ccb_PLUTPtr = (uint16*)dotTexPal;
+		dotCel[i] = createCel(TEX_WIDTH, TEX_HEIGHT, 8, CEL_TYPE_CODED);
+		setupCelData(dotTexPal, &dotTexBmp[i * TEX_SIZE_2D], dotCel[i]);
+
 		dotCel[i]->ccb_Flags |= (CCB_ACW | CCB_ACCW | CCB_MARIA);
 		if (i!=0) linkCel(dotCel[i-1], dotCel[i]);
 	}

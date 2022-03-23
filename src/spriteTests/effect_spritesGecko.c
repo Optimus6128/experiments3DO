@@ -32,8 +32,9 @@ void effectSpritesGeckoInit()
 			int *dstPtr = (int*)geckoCel->ccb_SourcePtr;
 			dstPtr += ((y * geckoCel->ccb_Width + x)>>1);
 
-			microGex[i] = CreateCel(SPR_W, SPR_H, 16, CREATECEL_UNCODED, dstPtr);
-			microGex[i]->ccb_SourcePtr = (CelData*)dstPtr;	// fuck libs, let's reinvent the wheel ALWAYS
+			microGex[i] = createCel(SPR_W, SPR_H, 16, CEL_TYPE_UNCODED);
+			setupCelData(NULL, dstPtr, microGex[i]);
+
 			microGex[i]->ccb_PRE1 = (microGex[i]->ccb_PRE1 & ~PRE1_WOFFSET10_MASK) | (((geckoCel->ccb_Width >> 1) - 2) << 16);
 			microGex[i]->ccb_XPos = x << 16;
 			microGex[i]->ccb_YPos = y << 16;
