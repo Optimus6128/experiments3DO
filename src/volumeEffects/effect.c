@@ -301,7 +301,7 @@ void effectInit()
 		dotCel[i] = CreateCel(TEX_WIDTH, TEX_HEIGHT, 8, CREATECEL_CODED, &dotTexBmp[i * TEX_SIZE_2D]);
 		dotCel[i]->ccb_PLUTPtr = (uint16*)dotTexPal;
 		dotCel[i]->ccb_Flags |= (CCB_ACW | CCB_ACCW | CCB_MARIA);
-		if (i!=0) LinkCel(dotCel[i-1], dotCel[i]);
+		if (i!=0) linkCel(dotCel[i-1], dotCel[i]);
 	}
 	dotCel[DOTS_DEPTH-1]->ccb_Flags |= CCB_LAST;
 

@@ -25,7 +25,6 @@ static int zoom=256;
 static const int rotVel = 2;
 static const int zoomVel = 2;
 
-static Mesh *cubeMesh;
 static Mesh *softMesh8;
 static Mesh *softMesh16;
 static Mesh *softMeshSemi;
@@ -37,7 +36,6 @@ static int renderSoftMethodIndex = RENDER_SOFT_METHOD_GOURAUD;
 
 
 static Object3D *softObj;
-static Object3D *hardObj;
 
 static void inputScript()
 {
@@ -114,32 +112,20 @@ void effectMeshSoftInit()
 	cloudTex = initGenTexture(128, 128, 16, NULL, 1, TEXGEN_CLOUDS, false, NULL);
 	params = makeMeshgenSquareColumnoidParams(size, ptArray->points, numPoints, true, true);
 
-	cubeMesh = initGenMesh(MESH_CUBE, params, MESH_OPTION_RENDER_HARD | MESH_OPTION_ENABLE_LIGHTING, cloudTex);
 	softMesh8 = initGenMesh(meshType, params, MESH_OPTION_RENDER_SOFT8 | MESH_OPTION_ENABLE_LIGHTING | MESH_OPTION_ENABLE_ENVMAP, cloudTex);
 	softMesh16 = initGenMesh(meshType, params, MESH_OPTION_RENDER_SOFT16 | MESH_OPTION_ENABLE_LIGHTING | MESH_OPTION_ENABLE_ENVMAP, cloudTex);
 	softMeshSemi = initGenMesh(meshType, params, MESH_OPTION_RENDER_SEMISOFT | MESH_OPTION_ENABLE_LIGHTING, NULL);
 
 	softObj = initObject3D(softMesh8);
-	hardObj = initObject3D(cubeMesh);
 
 	destroyPoint2Darray(ptArray);
 }
 
 void effectMeshSoftRun()
 {
-	//int i;
-
 	inputScript();
 
 	setObject3Dpos(softObj, 0, 0, zoom);
 	setObject3Drot(softObj, rotX, rotY, rotZ);
 	renderObject3Dsoft(softObj);
-
-	//setObject3Dpos(hardObj, 0, 0, zoom);
-	//setObject3Drot(hardObj, rotX, rotY, rotZ);
-	//renderObject3D(hardObj);
-
-	/*for (i=0; i<24; ++i) {
-		drawNumber(0, i * 8, fuck[i]);
-	}*/
 }

@@ -36,6 +36,7 @@
 #include "3d_examples.h"
 #include "getvideoinfo.h"
 
+#include "cel_helpers.h"
 
 #define CORE_EMPTY			0
 #define CORE_SHOW_FPS		(1 << 1)

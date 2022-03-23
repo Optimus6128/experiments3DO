@@ -14,12 +14,6 @@ Sprite *newSprite(int width, int height, int bpp, int type, uint16 *pal, ubyte *
 	spr->cel = createCel(width, height, bpp, type);
 	setupCelData(pal, bmp, spr->cel);
 
-	//CreateCel(width, height, bpp, type, bmp);
-	//spr->cel->ccb_SourcePtr = (void*)bmp;	// CreateCel is supposed to do that for you but fails for some pointer addresses, either a bug or something I miss
-
-	spr->cel->ccb_Flags |= (CCB_ACSC | CCB_ALSC);
-	if (type == CREATECEL_CODED) spr->cel->ccb_PLUTPtr = pal;
-
 	spr->posX = spr->posY = 0;
 	spr->angle = 0;
 	spr->zoom = 256;

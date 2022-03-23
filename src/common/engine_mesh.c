@@ -79,7 +79,7 @@ void prepareCelList(Mesh *ms)
 			if (!(tex->type & TEXTURE_TYPE_FEEDBACK))
 				cel->ccb_Flags |= (CCB_ACSC | CCB_ALSC);	// Enable Super Clipping only if Feedback Texture is not enabled, it might lock otherwise
 
-			if (i!=0) LinkCel(&ms->cel[i-1], &ms->cel[i]);
+			if (i!=0) linkCel(&ms->cel[i-1], &ms->cel[i]);
 		}
 		ms->cel[ms->polysNum-1].ccb_Flags |= CCB_LAST;
 	}

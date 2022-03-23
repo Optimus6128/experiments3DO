@@ -96,7 +96,7 @@ static void initSemiSoftGouraud()
 	for (i=0; i<MAX_SCANLINES; ++i) {
 		scanlineCel8[i] = createCel(GRADIENT_LENGTH, 1, 8, CEL_TYPE_CODED);
 		if (i>0) {
-			LinkCel(scanlineCel8[i-1], scanlineCel8[i]);
+			linkCel(scanlineCel8[i-1], scanlineCel8[i]);
 			scanlineCel8[i]->ccb_Flags |= CCB_BGND;
 			scanlineCel8[i]->ccb_Flags &= ~(CCB_LDPLUT | CCB_LDPRS | CCB_LDPPMP);
 			memcpy(&scanlineCel8[i]->ccb_HDDX, &scanlineCel8[i]->ccb_PRE0, 8);
@@ -782,8 +782,8 @@ void setRenderSoftMethod(int method)
 
 void initEngineSoft()
 {
-	if (!sprSoftBuffer8) sprSoftBuffer8 = newSprite(SOFT_BUFF_WIDTH, SOFT_BUFF_HEIGHT, 8, CREATECEL_CODED, NULL, (void*)softBuffer8);
-	if (!sprSoftBuffer16) sprSoftBuffer16 = newSprite(SOFT_BUFF_WIDTH, SOFT_BUFF_HEIGHT, 16, CREATECEL_UNCODED, NULL, (void*)softBuffer16);
+	if (!sprSoftBuffer8) sprSoftBuffer8 = newSprite(SOFT_BUFF_WIDTH, SOFT_BUFF_HEIGHT, 8, CEL_TYPE_CODED, NULL, (void*)softBuffer8);
+	if (!sprSoftBuffer16) sprSoftBuffer16 = newSprite(SOFT_BUFF_WIDTH, SOFT_BUFF_HEIGHT, 16, CEL_TYPE_UNCODED, NULL, (void*)softBuffer16);
 
 	initDivs();
 	initSemiSoftGouraud();

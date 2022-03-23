@@ -164,6 +164,14 @@ int getCelDataSizeInBytes(CCB *cel)
 	return (cel->ccb_Width * cel->ccb_Height * bpp) >> 3;
 }
 
+void linkCel(CCB *ccb, CCB *nextCCB)
+{
+	if (!ccb || !nextCCB) return;
+
+	ccb->ccb_NextPtr = nextCCB;
+	ccb->ccb_Flags &= ~CCB_LAST;
+}
+
 /*
 // Will finish later. Ness more, bpp, skipping pixels depending on bpp, etc..
 // It would be also nice to give the original CCB, get the max width/height from the extra structure that is not loaded to the hardware, get the bpp and other info from the bits

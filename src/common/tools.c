@@ -1,5 +1,6 @@
 #include "types.h"
 #include "tools.h"
+#include "cel_helpers.h"
 
 #include "core.h"
 #include "timerutils.h"
@@ -135,8 +136,8 @@ static void initTinyFonts()
 	}
 
 	for (i=0; i<MAX_STRING_LENGTH; ++i) {
-		textCel[i] = CreateCel(TINY_FONT_WIDTH, TINY_FONT_HEIGHT, 8, CREATECEL_CODED, fontsBmp);
-		textCel[i]->ccb_PLUTPtr = fontsPal;
+		textCel[i] = createCel(TINY_FONT_WIDTH, TINY_FONT_HEIGHT, 8, CEL_TYPE_CODED);
+		setupCelData(fontsPal, fontsBmp, textCel[i]);
 
 		textCel[i]->ccb_HDX = 1 << 20;
 		textCel[i]->ccb_HDY = 0 << 20;
@@ -145,7 +146,7 @@ static void initTinyFonts()
 
 		textCel[i]->ccb_Flags |= (CCB_ACSC | CCB_ALSC);
 
-		if (i > 0) LinkCel(textCel[i-1], textCel[i]);
+		if (i > 0) linkCel(textCel[i-1], textCel[i]);
 	}
 
 	fontsAreReady = true;
