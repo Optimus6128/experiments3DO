@@ -730,7 +730,16 @@ static void renderMeshSoftEnvmap(Mesh *ms, Vertex *vertices)
 			vrtxElements[1].x = pt1->x; vrtxElements[1].y = pt1->y; vrtxElements[1].u = tc1->u; vrtxElements[1].v = tc1->v;
 			vrtxElements[2].x = pt2->x; vrtxElements[2].y = pt2->y; vrtxElements[2].u = tc2->u; vrtxElements[2].v = tc2->v;
 
-			drawEnvmapTriangle(vrtxElements, tex);
+			//if (i == ms->polysNum-1) {
+				drawEnvmapTriangle(vrtxElements, tex);
+				/*printDebugNum(tc0->u);
+				printDebugNum(tc0->v);
+				printDebugNum(tc1->u);
+				printDebugNum(tc1->v);
+				printDebugNum(tc2->u);
+				printDebugNum(tc2->v);
+				printDebugNum(6128);*/
+			//}
 
 			if (ms->poly[i].numPoints == 4) {	// if quad then render another triangle
 				pt1 = pt2; tc1 = tc2;
@@ -740,7 +749,16 @@ static void renderMeshSoftEnvmap(Mesh *ms, Vertex *vertices)
 				vrtxElements[1].x = pt1->x; vrtxElements[1].y = pt1->y; vrtxElements[1].u = tc1->u; vrtxElements[1].v = tc1->v;
 				vrtxElements[2].x = pt2->x; vrtxElements[2].y = pt2->y; vrtxElements[2].u = tc2->u; vrtxElements[2].v = tc2->v;
 
-				drawEnvmapTriangle(vrtxElements, tex);
+				//if (i == ms->polysNum-1) {
+					drawEnvmapTriangle(vrtxElements, tex);
+					/*printDebugNum(tc0->u);
+					printDebugNum(tc0->v);
+					printDebugNum(tc1->u);
+					printDebugNum(tc1->v);
+					printDebugNum(tc2->u);
+					printDebugNum(tc2->v);
+					printDebugNum(6128);*/
+				//}
 			}
 		}
 		if (ms->poly[i].numPoints == 4) ++index;

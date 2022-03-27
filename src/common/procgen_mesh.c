@@ -21,9 +21,6 @@ typedef struct ConvergingNormals
 	int num;
 }ConvergingNormals;
 
-int fuck[256];
-
-
 static void setCurrentVertex(Vertex *v)
 {
 	currentVertex = v;
@@ -193,10 +190,6 @@ static void calculatePolyNormals(Mesh *ms)
 
 		calcVector3Dcross(&vCross, &v0, &v1);
 		normalizeVector3D(&vCross);
-
-		//fuck[3*i] = vCross.x;
-		//fuck[3*i+1] = vCross.y;
-		//fuck[3*i+2] = vCross.z;
 
 		addPolyNormal(vCross.x, vCross.y, vCross.z);
 	}

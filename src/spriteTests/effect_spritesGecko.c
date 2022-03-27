@@ -15,24 +15,32 @@ CCB *geckoCel;
 CCB **microGex;
 int mg_width, mg_height;
 
-void effectSpritesGeckoInit()
+static void loadAndInitGeckoCels()
 {
-	int x,y;
-	int i=0;
+	int i;
+	int celsNum;
 
 	geckoCel = LoadCel("data/gecko2.cel", MEMTYPE_CEL);	// original CEL image is 192x160, split this in 48x40 regions of size 4x4 (SPR_W * SPR_H)
 
 	mg_width = geckoCel->ccb_Width / SPR_W;
 	mg_height = geckoCel->ccb_Height / SPR_H;
 
-	microGex = (CCB**)AllocMem(sizeof(CCB*) * (mg_width * mg_height), MEMTYPE_ANY);
+	celsNum = mg_width * mg_height;
+	microGex = (CCB**)AllocMem(sizeof(CCB*) * celsNum, MEMTYPE_ANY);
+
+	for (i=0; i< celsNum; ++i) {
+		microGex[i] = createCel(SPR_W, SPR_H, 16, CEL_TYPE_UNCODED);
+	}
+}
+
+static void prepareGeckoCels()
+{
+	int x,y;
+	int i=0;
 
 	for (y=0; y<geckoCel->ccb_Height; y+=SPR_H) {
 		for (x=0; x<geckoCel->ccb_Width; x+=SPR_W) {
-			int *dstPtr = (int*)geckoCel->ccb_SourcePtr;
-			dstPtr += ((y * geckoCel->ccb_Width + x)>>1);
-
-			microGex[i] = createCel(SPR_W, SPR_H, 16, CEL_TYPE_UNCODED);
+			uint16 *dstPtr = (uint16*)geckoCel->ccb_SourcePtr + y * geckoCel->ccb_Width + x;
 			setupCelData(NULL, dstPtr, microGex[i]);
 
 			microGex[i]->ccb_PRE1 = (microGex[i]->ccb_PRE1 & ~PRE1_WOFFSET10_MASK) | (((geckoCel->ccb_Width >> 1) - 2) << 16);
@@ -42,6 +50,12 @@ void effectSpritesGeckoInit()
 			++i;
 		}
 	}
+}
+
+void effectSpritesGeckoInit()
+{
+	loadAndInitGeckoCels();
+	prepareGeckoCels();
 }
 
 void effectSpritesGeckoRun()

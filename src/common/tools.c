@@ -70,6 +70,13 @@ static unsigned char bitfonts[] = {0,0,0,0,0,0,0,0,
 34,18,22,12,12,8,24,0,
 31,2,4,4,8,24,62,0};
 
+
+#define MAX_DEBUG_NUMS 256
+
+static int debugNums[MAX_DEBUG_NUMS];
+static int debugIndex = 0;
+
+
 static CCB *textCel[MAX_STRING_LENGTH];
 
 static char sbuffer[MAX_STRING_LENGTH+1];
@@ -399,4 +406,23 @@ void drawBorderEdges(int posX, int posY, int width, int height)
 		*(vram + offY0) = col;
 		*(vram + offY1) = col;
 	}
+}
+
+void printDebugNum(int num)
+{
+	if (debugIndex < MAX_DEBUG_NUMS) {
+		debugNums[debugIndex] = num;
+		++debugIndex;
+	}
+}
+
+void displayDebugNums(bool resetAfter)
+{
+	int i;
+	for (i=0; i<debugIndex; ++i) {
+		const int xp = (i >> 4) * 64;
+		const int yp = 48 + (i & 15) * 8;
+		drawNumber(xp,yp, debugNums[i]);
+	}
+	if (resetAfter) debugIndex = 0;
 }

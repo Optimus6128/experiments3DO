@@ -207,12 +207,14 @@ static void calculateVertexEnvmapTC(Object3D *obj)
 		if (normZ != 0) {
 			int normX = (normals[i].x << 8) / normZ;
 			int normY = (normals[i].y << 8) / normZ;
-			CLAMP(normX, 0, 255)
-				CLAMP(normY, 0, 255)
+				CLAMP(normX, -128, 127)
+				CLAMP(normY, -128, 127)
+				normX += 128;
+				normY += 128;
 			vertexTC->u = normX;
 			vertexTC->v = normY;
-			vertexTC++;
 		}
+		vertexTC++;
 	}
 }
 
