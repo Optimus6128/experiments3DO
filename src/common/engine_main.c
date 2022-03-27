@@ -201,16 +201,34 @@ static void calculateVertexEnvmapTC(Object3D *obj)
 	int i;
 	const int verticesNum = obj->mesh->verticesNum;
 	TexCoords *vertexTC = obj->mesh->vertexTC;
+	
+	const int texWidth = obj->mesh->tex[0].width;
+	const int texHeight = obj->mesh->tex[0].height;
 
 	for (i=0; i<verticesNum; ++i) {
 		int normZ = normals[i].z;
 		if (normZ != 0) {
-			int normX = (normals[i].x << 8) / normZ;
-			int normY = (normals[i].y << 8) / normZ;
+			/*int normX = (normals[i].x << NORMAL_SHIFT) / normZ;
+			int normY = (normals[i].y << NORMAL_SHIFT) / normZ;
+				normX >>= 4;
+				normY >>= 4;
+
 				CLAMP(normX, -128, 127)
 				CLAMP(normY, -128, 127)
+
 				normX += 128;
 				normY += 128;
+
+				//printDebugNum(normX);
+				//printDebugNum(normY);
+			*/
+
+			int normX = (normals[i].x>>2) + 64;
+			int normY = (normals[i].y>>2) + 64;
+			
+			normX &= (texWidth - 1);
+			normY &= (texHeight - 1);
+
 			vertexTC->u = normX;
 			vertexTC->v = normY;
 		}

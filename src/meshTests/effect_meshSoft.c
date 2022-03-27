@@ -109,7 +109,7 @@ void effectMeshSoftInit()
 		addPoint2D(ptArray, r,y);
 	}
 
-	cloudTex = initGenTexture(256, 256, 16, NULL, 1, TEXGEN_CLOUDS, false, NULL);
+	cloudTex = initGenTexture(128, 128, 16, NULL, 1, TEXGEN_CLOUDS, false, NULL);
 	params = makeMeshgenSquareColumnoidParams(size, ptArray->points, numPoints, true, true);
 
 	softMesh8 = initGenMesh(meshType, params, MESH_OPTION_RENDER_SOFT8 | MESH_OPTION_ENABLE_LIGHTING | MESH_OPTION_ENABLE_ENVMAP, cloudTex);
