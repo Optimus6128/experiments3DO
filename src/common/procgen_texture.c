@@ -158,7 +158,8 @@ static int perlinOctave(int x, int y)
 static void genCloudTexture(int hashX, int hashY, int hashZ, int shrStart, int iterations, Texture *tex)
 {
 	int x, y;
-	ushort *dst = (ushort*)tex->bitmap;
+	uint8 *dst8 = (uint8*)tex->bitmap;
+	uint16 *dst16 = (uint16*)tex->bitmap;
 	const int width = tex->width;
 	const int height = tex->height;
 
@@ -172,7 +173,11 @@ static void genCloudTexture(int hashX, int hashY, int hashZ, int shrStart, int i
 	for (y = 0; y < height; ++y) {
 		for (x = 0; x < width; ++x) {
 			int c = perlinOctave(x, y) >> RANGE_TO_COL;
-			*dst++ = ((c>>1) << 10) | ((c>>1) << 5) | (c>>0);
+			if (tex->bpp==8) {
+				*dst8++ = c;
+			} else {
+				*dst16++ = (((31-c)>>0) << 10) | (((31-c)>>1) << 5) | c;
+			}
 		}
 	}
 }
