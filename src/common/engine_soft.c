@@ -2,6 +2,7 @@
 
 #include "tools.h"
 
+#include "engine_main.h"
 #include "engine_mesh.h"
 #include "engine_texture.h"
 #include "engine_soft.h"
@@ -36,15 +37,10 @@ typedef struct Edge
 {
 	int x;
 	int c;
-	int u, v;
+	int u,v;
 }Edge;
 
-typedef struct VrtxElement
-{
-	int x,y;
-	int c;
-	int u, v;
-}VrtxElement;
+static int renderSoftMethod = RENDER_SOFT_METHOD_GOURAUD;
 
 static Sprite *sprSoftBuffer = NULL;
 static Sprite *sprSoftBuffer8 = NULL;
@@ -61,12 +57,26 @@ static int32 divTab[DIV_TAB_SIZE];
 static uint16 *lineColorShades[4] = { NULL, NULL, NULL, NULL };
 static uint16 *gouraudColorShades;
 
-static void(*fillGouraudEdges)(int yMin, int yMax, uint16 *colorShades);
-static void(*fillEnvmapEdges)(int yMin, int yMax, Texture *tex);
-static void(*fillGouraudEnvmapEdges)(int yMin, int yMax, Texture *tex);
+static uint16 *activeGradient = NULL;
+static Texture *activeTexture = NULL;
 
 #define LN_BASE 8
 #define LN_AND ((1 << LN_BASE) - 1)
+
+
+static void(*fillEdges)(int yMin, int yMax);
+static void(*prepareEdgeList) (ScreenElement *e0, ScreenElement *e1);
+
+
+static void bindGradient(uint16 *gradient)
+{
+	activeGradient = gradient;
+}
+
+static void bindTexture(Texture *texture)
+{
+	activeTexture = texture;
+}
 
 static uint16 *crateColorShades(int r, int g, int b, int numShades, bool absoluteZero) {
 	uint16 *colorShades = (uint16*)AllocMem(sizeof(uint16) * numShades, MEMTYPE_ANY);
@@ -119,29 +129,131 @@ static void initSemiSoftGouraud()
 	}
 }
 
+static void drawAntialiasedLine(ScreenElement *e1, ScreenElement *e2)
+{
+	int x1 = e1->x;
+	int y1 = e1->y;
+	int x2 = e2->x;
+	int y2 = e2->y;
 
-static void prepareEdgeListGouraud(VrtxElement *ve0, VrtxElement *ve1)
+	int dx, dy, l;
+	int x00, y00;
+	int vramofs;
+
+	int x, y;
+	int frac, shade;
+
+	int temp;
+    int chdx, chdy;
+
+	uint16 *vram = (uint16*)softBuffer16;
+
+    // ==== Clipping ====
+
+    int outcode1 = 0, outcode2 = 0;
+
+    if (y1 < 1) outcode1 |= 0x0001;
+        else if (y1 > SOFT_BUFF_HEIGHT-2) outcode1 |= 0x0010;
+    if (x1 < 1) outcode1 |= 0x0100;
+        else if (x1 > SOFT_BUFF_WIDTH-2) outcode1 |= 0x1000;
+
+    if (y2 < 1) outcode2 |= 0x0001;
+        else if (y2 > SOFT_BUFF_HEIGHT-2) outcode2 |= 0x0010;
+    if (x2 < 1) outcode2 |= 0x0100;
+        else if (x2 > SOFT_BUFF_WIDTH-2) outcode2 |= 0x1000;
+
+    if ((outcode1 & outcode2)!=0) return;
+
+    //if ((outcode1 | outcode2)!=0) return; // normally, should check for possible clip
+	//I will do lame method now
+
+    // ==================
+
+	dx = x2 - x1;
+	dy = y2 - y1;
+
+	if (dx==0 && dy==0) return;
+
+    chdx = dx;
+	chdy = dy;
+    if (dx<0) chdx = -dx;
+    if (dy<0) chdy = -dy;
+
+	if (chdy < chdx) {
+		if (x1 > x2) {
+			temp = x1; x1 = x2; x2 = temp;
+			y1 = y2;
+		}
+
+		if (dx==0) return;
+        l = (dy << LN_BASE) / dx;
+        y00 = y1 << LN_BASE;
+		for (x=x1; x<x2; x++) {
+			const int yp = y00 >> LN_BASE;
+
+			if (x >= 0 && x < SOFT_BUFF_WIDTH && yp >=0 && yp < SOFT_BUFF_HEIGHT - 1) {
+				vramofs = yp*SOFT_BUFF_WIDTH + x;
+				frac = y00 & LN_AND;
+
+				shade = (LN_AND - frac) >> 4;
+				*(vram + vramofs) |= activeGradient[shade];
+
+				shade = frac >> 4;
+				*(vram + vramofs+SOFT_BUFF_WIDTH) |= activeGradient[shade];
+			}
+            y00+=l;
+		}
+	}
+	else {
+		if (y1 > y2) {
+			temp = y1; y1 = y2; y2 = temp;
+			x1 = x2;
+		}
+
+		if (dy==0) return;
+        l = (dx << LN_BASE) / dy;
+        x00 = x1 << LN_BASE;
+
+		for (y=y1; y<y2; y++) {
+			const int xp = x00 >> LN_BASE;
+
+			if (y >= 0 && y < SOFT_BUFF_HEIGHT && xp >=0 && xp < SOFT_BUFF_WIDTH - 1) {
+				vramofs = y*SOFT_BUFF_WIDTH + xp;
+				frac = x00 & LN_AND;
+
+				shade = (LN_AND - frac) >> 4;
+				*(vram + vramofs) |= activeGradient[shade];
+
+				shade = frac >> 4;
+				*(vram + vramofs + 1) |= activeGradient[shade];
+			}
+            x00+=l;
+		}
+	}
+}
+
+static void prepareEdgeListGouraud(ScreenElement *e0, ScreenElement *e1)
 {
 	Edge *edgeListToWrite;
-	VrtxElement *veTemp;
+	ScreenElement *eTemp;
 
-	if (ve0->y == ve1->y) return;
+	if (e0->y == e1->y) return;
 
 	// Assumes CCW
-	if (ve0->y < ve1->y) {
+	if (e0->y < e1->y) {
 		edgeListToWrite = leftEdge;
 	}
 	else {
 		edgeListToWrite = rightEdge;
 
-		veTemp = ve0;
-		ve0 = ve1;
-		ve1 = veTemp;
+		eTemp = e0;
+		e0 = e1;
+		e1 = eTemp;
 	}
 
     {
-        const int x0 = ve0->x; int y0 = ve0->y; int c0 = ve0->c;
-        const int x1 = ve1->x; int y1 = ve1->y; int c1 = ve1->c;
+        const int x0 = e0->x; int y0 = e0->y; int c0 = e0->c;
+        const int x1 = e1->x; int y1 = e1->y; int c1 = e1->c;
 
         int dy = y1 - y0 + 1;
 		const int repDiv = divTab[dy + DIV_TAB_SIZE / 2];
@@ -174,28 +286,28 @@ static void prepareEdgeListGouraud(VrtxElement *ve0, VrtxElement *ve1)
     }
 }
 
-static void prepareEdgeListEnvmap(VrtxElement *ve0, VrtxElement *ve1)
+static void prepareEdgeListEnvmap(ScreenElement *e0, ScreenElement *e1)
 {
 	Edge *edgeListToWrite;
-	VrtxElement *veTemp;
+	ScreenElement *eTemp;
 
-	if (ve0->y == ve1->y) return;
+	if (e0->y == e1->y) return;
 
 	// Assumes CCW
-	if (ve0->y < ve1->y) {
+	if (e0->y < e1->y) {
 		edgeListToWrite = leftEdge;
 	}
 	else {
 		edgeListToWrite = rightEdge;
 
-		veTemp = ve0;
-		ve0 = ve1;
-		ve1 = veTemp;
+		eTemp = e0;
+		e0 = e1;
+		e1 = eTemp;
 	}
 
     {
-        const int x0 = ve0->x; int y0 = ve0->y; int u0 = ve0->u; int v0 = ve0->v;
-        const int x1 = ve1->x; int y1 = ve1->y; int u1 = ve1->u; int v1 = ve1->v;
+        const int x0 = e0->x; int y0 = e0->y; int u0 = e0->u; int v0 = e0->v;
+        const int x1 = e1->x; int y1 = e1->y; int u1 = e1->u; int v1 = e1->v;
 
         int dy = y1 - y0 + 1;
 		const int repDiv = divTab[dy + DIV_TAB_SIZE / 2];
@@ -233,28 +345,28 @@ static void prepareEdgeListEnvmap(VrtxElement *ve0, VrtxElement *ve1)
     }
 }
 
-static void prepareEdgeListGouraudEnvmap(VrtxElement *ve0, VrtxElement *ve1)
+static void prepareEdgeListGouraudEnvmap(ScreenElement *e0, ScreenElement *e1)
 {
 	Edge *edgeListToWrite;
-	VrtxElement *veTemp;
+	ScreenElement *eTemp;
 
-	if (ve0->y == ve1->y) return;
+	if (e0->y == e1->y) return;
 
 	// Assumes CCW
-	if (ve0->y < ve1->y) {
+	if (e0->y < e1->y) {
 		edgeListToWrite = leftEdge;
 	}
 	else {
 		edgeListToWrite = rightEdge;
 
-		veTemp = ve0;
-		ve0 = ve1;
-		ve1 = veTemp;
+		eTemp = e0;
+		e0 = e1;
+		e1 = eTemp;
 	}
 
     {
-        const int x0 = ve0->x; int y0 = ve0->y; int c0 = ve0->c; int u0 = ve0->u; int v0 = ve0->v;
-        const int x1 = ve1->x; int y1 = ve1->y; int c1 = ve1->c; int u1 = ve1->u; int v1 = ve1->v;
+        const int x0 = e0->x; int y0 = e0->y; int c0 = e0->c; int u0 = e0->u; int v0 = e0->v;
+        const int x1 = e1->x; int y1 = e1->y; int c1 = e1->c; int u1 = e1->u; int v1 = e1->v;
 
         int dy = y1 - y0 + 1;
 		const int repDiv = divTab[dy + DIV_TAB_SIZE / 2];
@@ -297,7 +409,7 @@ static void prepareEdgeListGouraudEnvmap(VrtxElement *ve0, VrtxElement *ve1)
     }
 }
 
-static void fillGouraudEdges8_SemiSoft(int yMin, int yMax, uint16 *colorShades)
+static void fillGouraudEdges8_SemiSoft(int yMin, int yMax)
 {
 	Edge *le = &leftEdge[yMin];
 	Edge *re = &rightEdge[yMin];
@@ -330,11 +442,11 @@ static void fillGouraudEdges8_SemiSoft(int yMin, int yMax, uint16 *colorShades)
 		++le;
 		++re;
 	}
-	firstCel->ccb_PLUTPtr = (void*)colorShades;
+	firstCel->ccb_PLUTPtr = (void*)activeGradient;
 	firstCel->ccb_Flags |= CCB_LDPLUT;
 }
 
-static void fillGouraudEdges8(int yMin, int yMax, uint16 *colorShades)
+static void fillGouraudEdges8(int yMin, int yMax)
 {
 	uint8 *vram8 = softBuffer8 + yMin * SOFT_BUFF_WIDTH;
 	int count = yMax - yMin + 1;
@@ -400,7 +512,7 @@ static void fillGouraudEdges8(int yMin, int yMax, uint16 *colorShades)
 	} while(--count > 0);
 }
 
-static void fillGouraudEdges16(int yMin, int yMax, uint16 *colorShades)
+static void fillGouraudEdges16(int yMin, int yMax)
 {
 	uint16 *vram16 = softBuffer16 + yMin * SOFT_BUFF_WIDTH;
 	int count = yMax - yMin + 1;
@@ -424,7 +536,7 @@ static void fillGouraudEdges16(int yMin, int yMax, uint16 *colorShades)
 				CLAMP(c, 0, COLOR_GRADIENTS_SIZE-1)
 				fc += dc;
 
-				*dst++ = colorShades[c];
+				*dst++ = activeGradient[c];
 				length--;
 			}
 
@@ -439,7 +551,7 @@ static void fillGouraudEdges16(int yMin, int yMax, uint16 *colorShades)
 				//CLAMP(c1, 0, COLOR_GRADIENTS_SIZE-1)
 				fc += dc;
 
-				*dst32++ = (colorShades[c0] << 16) | colorShades[c1];
+				*dst32++ = (activeGradient[c0] << 16) | activeGradient[c1];
 				length -= 2;
 			};
 
@@ -449,7 +561,7 @@ static void fillGouraudEdges16(int yMin, int yMax, uint16 *colorShades)
 				CLAMP(c, 0, COLOR_GRADIENTS_SIZE-1)
 				fc += dc;
 
-				*dst++ = colorShades[c];
+				*dst++ = activeGradient[c];
 			}
 		}
 
@@ -459,16 +571,16 @@ static void fillGouraudEdges16(int yMin, int yMax, uint16 *colorShades)
 	} while(--count > 0);
 }
 
-static void fillEnvmapEdges8(int yMin, int yMax, Texture *tex)
+static void fillEnvmapEdges8(int yMin, int yMax)
 {
 	uint8 *vram8 = softBuffer8 + yMin * SOFT_BUFF_WIDTH;
 	int count = yMax - yMin + 1;
 	Edge *le = &leftEdge[yMin];
 	Edge *re = &rightEdge[yMin];
 
-	const int texWidth = tex->width;
-	const int texHeight = tex->height;
-	uint8* texData = (uint8*)tex->bitmap;
+	const int texWidth = activeTexture->width;
+	const int texHeight = activeTexture->height;
+	uint8* texData = (uint8*)activeTexture->bitmap;
 
 	do {
 		const int xl = le->x;
@@ -549,16 +661,16 @@ static void fillEnvmapEdges8(int yMin, int yMax, Texture *tex)
 	} while(--count > 0);
 }
 
-static void fillEnvmapEdges16(int yMin, int yMax, Texture *tex)
+static void fillEnvmapEdges16(int yMin, int yMax)
 {
 	uint16 *vram16 = softBuffer16 + yMin * SOFT_BUFF_WIDTH;
 	int count = yMax - yMin + 1;
 	Edge *le = &leftEdge[yMin];
 	Edge *re = &rightEdge[yMin];
 
-	const int texWidth = tex->width;
-	const int texHeight = tex->height;
-	uint16* texData = (uint16*)tex->bitmap;
+	const int texWidth = activeTexture->width;
+	const int texHeight = activeTexture->height;
+	uint16* texData = (uint16*)activeTexture->bitmap;
 
 	do {
 		const int xl = le->x;
@@ -634,16 +746,16 @@ static void fillEnvmapEdges16(int yMin, int yMax, Texture *tex)
 	} while(--count > 0);
 }
 
-static void fillGouraudEnvmapEdges8(int yMin, int yMax, Texture *tex)
+static void fillGouraudEnvmapEdges8(int yMin, int yMax)
 {
 	uint8 *vram8 = softBuffer8 + yMin * SOFT_BUFF_WIDTH;
 	int count = yMax - yMin + 1;
 	Edge *le = &leftEdge[yMin];
 	Edge *re = &rightEdge[yMin];
 
-	const int texWidth = tex->width;
-	const int texHeight = tex->height;
-	uint8* texData = (uint8*)tex->bitmap;
+	const int texWidth = activeTexture->width;
+	const int texHeight = activeTexture->height;
+	uint8* texData = (uint8*)activeTexture->bitmap;
 
 	do {
 		const int xl = le->x;
@@ -748,363 +860,160 @@ static void fillGouraudEnvmapEdges8(int yMin, int yMax, Texture *tex)
 	} while(--count > 0);
 }
 
-static void drawGouraudTriangle(VrtxElement *ves, uint16 *colorShades)
+static void drawTriangle(ScreenElement *e0, ScreenElement *e1, ScreenElement *e2)
 {
-	int yMin = ves[0].y;
+	int yMin = e0->y;
 	int yMax = yMin;
 
-	prepareEdgeListGouraud(&ves[0], &ves[1]);
-	prepareEdgeListGouraud(&ves[1], &ves[2]);
-	prepareEdgeListGouraud(&ves[2], &ves[0]);
+	prepareEdgeList(e0, e1);
+	prepareEdgeList(e1, e2);
+	prepareEdgeList(e2, e0);
 
-	{
-		const int y1 = ves[1].y;
-		const int y2 = ves[2].y;
-		if (y1 < yMin) yMin = y1; if (y1 > yMax) yMax = y1;
-		if (y2 < yMin) yMin = y2; if (y2 > yMax) yMax = y2;
-	}
+	if (e1->y < yMin) yMin = e1->y; if (e1->y > yMax) yMax = e1->y;
+	if (e2->y < yMin) yMin = e2->y; if (e2->y > yMax) yMax = e2->y;
 
 	if (yMin < 0) yMin = 0;
 	if (yMax > SOFT_BUFF_HEIGHT-1) yMax = SOFT_BUFF_HEIGHT-1;
 
-	fillGouraudEdges(yMin, yMax, colorShades);
+	fillEdges(yMin, yMax);
 }
 
-static void drawEnvmapTriangle(VrtxElement *ves, Texture *tex)
-{
-	int yMin = ves[0].y;
-	int yMax = yMin;
-
-	prepareEdgeListEnvmap(&ves[0], &ves[1]);
-	prepareEdgeListEnvmap(&ves[1], &ves[2]);
-	prepareEdgeListEnvmap(&ves[2], &ves[0]);
-
-	{
-		const int y1 = ves[1].y;
-		const int y2 = ves[2].y;
-		if (y1 < yMin) yMin = y1; if (y1 > yMax) yMax = y1;
-		if (y2 < yMin) yMin = y2; if (y2 > yMax) yMax = y2;
-	}
-
-	if (yMin < 0) yMin = 0;
-	if (yMax > SOFT_BUFF_HEIGHT-1) yMax = SOFT_BUFF_HEIGHT-1;
-
-	fillEnvmapEdges(yMin, yMax, tex);
-}
-
-static void drawGouraudEnvmapTriangle(VrtxElement *ves, Texture *tex)
-{
-	int yMin = ves[0].y;
-	int yMax = yMin;
-
-	prepareEdgeListGouraudEnvmap(&ves[0], &ves[1]);
-	prepareEdgeListGouraudEnvmap(&ves[1], &ves[2]);
-	prepareEdgeListGouraudEnvmap(&ves[2], &ves[0]);
-
-	{
-		const int y1 = ves[1].y;
-		const int y2 = ves[2].y;
-		if (y1 < yMin) yMin = y1; if (y1 > yMax) yMax = y1;
-		if (y2 < yMin) yMin = y2; if (y2 > yMax) yMax = y2;
-	}
-
-	if (yMin < 0) yMin = 0;
-	if (yMax > SOFT_BUFF_HEIGHT-1) yMax = SOFT_BUFF_HEIGHT-1;
-
-	fillGouraudEnvmapEdges(yMin, yMax, tex);
-}
-
-static void drawAntialiasedLine(Vertex *p1, Vertex *p2, uint16 *colorShades16)
-{
-	int x1 = p1->x;
-	int y1 = p1->y;
-	int x2 = p2->x;
-	int y2 = p2->y;
-
-	int dx, dy, l;
-	int x00, y00;
-	int vramofs;
-
-	int x, y;
-	int frac, shade;
-
-	int temp;
-    int chdx, chdy;
-
-	uint16 *vram = (uint16*)softBuffer16;
-
-    // ==== Clipping ====
-
-    int outcode1 = 0, outcode2 = 0;
-
-    if (y1 < 1) outcode1 |= 0x0001;
-        else if (y1 > SOFT_BUFF_HEIGHT-2) outcode1 |= 0x0010;
-    if (x1 < 1) outcode1 |= 0x0100;
-        else if (x1 > SOFT_BUFF_WIDTH-2) outcode1 |= 0x1000;
-
-    if (y2 < 1) outcode2 |= 0x0001;
-        else if (y2 > SOFT_BUFF_HEIGHT-2) outcode2 |= 0x0010;
-    if (x2 < 1) outcode2 |= 0x0100;
-        else if (x2 > SOFT_BUFF_WIDTH-2) outcode2 |= 0x1000;
-
-    if ((outcode1 & outcode2)!=0) return;
-
-    //if ((outcode1 | outcode2)!=0) return; // normally, should check for possible clip
-	//I will do lame method now
-
-    // ==================
-
-	dx = x2 - x1;
-	dy = y2 - y1;
-
-	if (dx==0 && dy==0) return;
-
-    chdx = dx;
-	chdy = dy;
-    if (dx<0) chdx = -dx;
-    if (dy<0) chdy = -dy;
-
-	if (chdy < chdx) {
-		if (x1 > x2) {
-			temp = x1; x1 = x2; x2 = temp;
-			temp = y1; y1 = y2; y2 = temp;
-		}
-
-		if (dx==0) return;
-        l = (dy << LN_BASE) / dx;
-        y00 = y1 << LN_BASE;
-		for (x=x1; x<x2; x++) {
-			const int yp = y00 >> LN_BASE;
-
-			if (x >= 0 && x < SOFT_BUFF_WIDTH && yp >=0 && yp < SOFT_BUFF_HEIGHT - 1) {
-				vramofs = yp*SOFT_BUFF_WIDTH + x;
-				frac = y00 & LN_AND;
-
-				shade = (LN_AND - frac) >> 4;
-				*(vram + vramofs) |= colorShades16[shade];
-
-				shade = frac >> 4;
-				*(vram + vramofs+SOFT_BUFF_WIDTH) |= colorShades16[shade];
-			}
-            y00+=l;
-		}
-	}
-	else {
-		if (y1 > y2) {
-			temp = x1; x1 = x2; x2 = temp;
-			temp = y1; y1 = y2; y2 = temp;
-		}
-
-		if (dy==0) return;
-        l = (dx << LN_BASE) / dy;
-        x00 = x1 << LN_BASE;
-
-		for (y=y1; y<y2; y++) {
-			const int xp = x00 >> LN_BASE;
-
-			if (y >= 0 && y < SOFT_BUFF_HEIGHT && xp >=0 && xp < SOFT_BUFF_WIDTH - 1) {
-				vramofs = y*SOFT_BUFF_WIDTH + xp;
-				frac = x00 & LN_AND;
-
-				shade = (LN_AND - frac) >> 4;
-				*(vram + vramofs) |= colorShades16[shade];
-
-				shade = frac >> 4;
-				*(vram + vramofs + 1) |= colorShades16[shade];
-			}
-            x00+=l;
-		}
-	}
-}
-
-static void renderMeshSoftWireframe(Mesh *ms, Vertex *vertices)
-{
-	Vertex *pt0, *pt1;
-
-	int *lineIndex = ms->lineIndex;
-	int i;
-	for (i=0; i<ms->linesNum; ++i) {
-		pt0 = &vertices[*lineIndex++];
-		pt1 = &vertices[*lineIndex++];
-
-		drawAntialiasedLine(pt0, pt1, lineColorShades[i & 3]);
-	}
-}
-
-static void renderMeshSoftGouraud(Mesh *ms, Vertex *vertices)
-{
-	static VrtxElement vrtxElements[3];
-	Vertex *pt0, *pt1, *pt2;
-	int c0, c1, c2;
-	int i,n;
-
-	int *index = ms->index;
-	int *vertexCol = ms->vertexCol;
-	
-	CCB *lastScanlineCel;
-	if (ms->renderType & MESH_OPTION_RENDER_SEMISOFT) {
-		currentScanlineCel8 = scanlineCel8;
-	}
-
-	fillGouraudEdges = fillGouraudEdges16;
-	if (ms->renderType & MESH_OPTION_RENDER_SOFT8) {
-		fillGouraudEdges = fillGouraudEdges8;
-	} else if (ms->renderType & MESH_OPTION_RENDER_SEMISOFT) {
-		fillGouraudEdges = fillGouraudEdges8_SemiSoft;
-	}
-
-	for (i=0; i<ms->polysNum; ++i) {
-		pt0 = &vertices[*index]; c0 = vertexCol[*index]; ++index;
-		pt1 = &vertices[*index]; c1 = vertexCol[*index]; ++index;
-		pt2 = &vertices[*index]; c2 = vertexCol[*index]; ++index;
-
-		n = (pt0->x - pt1->x) * (pt2->y - pt1->y) - (pt2->x - pt1->x) * (pt0->y - pt1->y);
-		if (n > 0) {
-			vrtxElements[0].x = pt0->x; vrtxElements[0].y = pt0->y; vrtxElements[0].c = c0;
-			vrtxElements[1].x = pt1->x; vrtxElements[1].y = pt1->y; vrtxElements[1].c = c1;
-			vrtxElements[2].x = pt2->x; vrtxElements[2].y = pt2->y; vrtxElements[2].c = c2;
-
-			drawGouraudTriangle(vrtxElements, lineColorShades[i & 3]);
-
-			if (ms->poly[i].numPoints == 4) {	// if quad then render another triangle
-				pt1 = pt2; c1 = c2;
-				pt2 = &vertices[*index]; c2 = vertexCol[*index];
-
-				vrtxElements[0].x = pt0->x; vrtxElements[0].y = pt0->y; vrtxElements[0].c = c0;
-				vrtxElements[1].x = pt1->x; vrtxElements[1].y = pt1->y; vrtxElements[1].c = c1;
-				vrtxElements[2].x = pt2->x; vrtxElements[2].y = pt2->y; vrtxElements[2].c = c2;
-
-				drawGouraudTriangle(vrtxElements, lineColorShades[i & 3]);
-			}
-		}
-		if (ms->poly[i].numPoints == 4) ++index;
-	}
-
-	if (ms->renderType & MESH_OPTION_RENDER_SEMISOFT) {
-		--currentScanlineCel8;
-		lastScanlineCel = *currentScanlineCel8;
-		lastScanlineCel->ccb_Flags |= CCB_LAST;
-		drawCels(*scanlineCel8);
-		lastScanlineCel->ccb_Flags &= ~CCB_LAST;
-	}
-}
-
-static void renderMeshSoftEnvmap(Mesh *ms, Vertex *vertices)
-{
-	static VrtxElement vrtxElements[3];
-	Vertex *pt0, *pt1, *pt2;
-	TexCoords* tc0, *tc1, *tc2;
-	int i,n;
-
-	int *index = ms->index;
-	TexCoords* vertexTC = ms->vertexTC;
-
-	fillEnvmapEdges = fillEnvmapEdges16;
-	if (ms->renderType & MESH_OPTION_RENDER_SOFT8) {
-		fillEnvmapEdges = fillEnvmapEdges8;
-	}
-
-	for (i=0; i<ms->polysNum; ++i) {
-		pt0 = &vertices[*index]; tc0 = &vertexTC[*index]; ++index;
-		pt1 = &vertices[*index]; tc1 = &vertexTC[*index]; ++index;
-		pt2 = &vertices[*index]; tc2 = &vertexTC[*index]; ++index;
-
-		n = (pt0->x - pt1->x) * (pt2->y - pt1->y) - (pt2->x - pt1->x) * (pt0->y - pt1->y);
-		if (n > 0) {
-			Texture* tex = &ms->tex[ms->poly[i].textureId];
-
-			vrtxElements[0].x = pt0->x; vrtxElements[0].y = pt0->y; vrtxElements[0].u = tc0->u; vrtxElements[0].v = tc0->v;
-			vrtxElements[1].x = pt1->x; vrtxElements[1].y = pt1->y; vrtxElements[1].u = tc1->u; vrtxElements[1].v = tc1->v;
-			vrtxElements[2].x = pt2->x; vrtxElements[2].y = pt2->y; vrtxElements[2].u = tc2->u; vrtxElements[2].v = tc2->v;
-
-			drawEnvmapTriangle(vrtxElements, tex);
-
-			if (ms->poly[i].numPoints == 4) {	// if quad then render another triangle
-				pt1 = pt2; tc1 = tc2;
-				pt2 = &vertices[*index]; tc2 = &vertexTC[*index];
-
-				vrtxElements[0].x = pt0->x; vrtxElements[0].y = pt0->y; vrtxElements[0].u = tc0->u; vrtxElements[0].v = tc0->v;
-				vrtxElements[1].x = pt1->x; vrtxElements[1].y = pt1->y; vrtxElements[1].u = tc1->u; vrtxElements[1].v = tc1->v;
-				vrtxElements[2].x = pt2->x; vrtxElements[2].y = pt2->y; vrtxElements[2].u = tc2->u; vrtxElements[2].v = tc2->v;
-
-				drawEnvmapTriangle(vrtxElements, tex);
-			}
-		}
-		if (ms->poly[i].numPoints == 4) ++index;
-	}
-}
-
-static void renderMeshSoftGouraudEnvmap(Mesh *ms, Vertex *vertices)
-{
-	static VrtxElement vrtxElements[3];
-	Vertex *pt0, *pt1, *pt2;
-	int c0, c1, c2;
-	TexCoords* tc0, *tc1, *tc2;
-	int i,n;
-
-	int *index = ms->index;
-	int *vertexCol = ms->vertexCol;
-	TexCoords* vertexTC = ms->vertexTC;
-
-	//fillGouraudEnvmapEdges = fillGouraudEnvmapEdges16;
-	//if (ms->renderType & MESH_OPTION_RENDER_SOFT8) {
-		fillGouraudEnvmapEdges = fillGouraudEnvmapEdges8;
-	//}
-
-	for (i=0; i<ms->polysNum; ++i) {
-		pt0 = &vertices[*index]; c0 = vertexCol[*index]; tc0 = &vertexTC[*index]; ++index;
-		pt1 = &vertices[*index]; c1 = vertexCol[*index]; tc1 = &vertexTC[*index]; ++index;
-		pt2 = &vertices[*index]; c2 = vertexCol[*index]; tc2 = &vertexTC[*index]; ++index;
-
-		n = (pt0->x - pt1->x) * (pt2->y - pt1->y) - (pt2->x - pt1->x) * (pt0->y - pt1->y);
-		if (n > 0) {
-			Texture* tex = &ms->tex[ms->poly[i].textureId];
-
-			vrtxElements[0].x = pt0->x; vrtxElements[0].y = pt0->y; vrtxElements[0].c = c0; vrtxElements[0].u = tc0->u; vrtxElements[0].v = tc0->v;
-			vrtxElements[1].x = pt1->x; vrtxElements[1].y = pt1->y; vrtxElements[1].c = c1; vrtxElements[1].u = tc1->u; vrtxElements[1].v = tc1->v;
-			vrtxElements[2].x = pt2->x; vrtxElements[2].y = pt2->y; vrtxElements[2].c = c2; vrtxElements[2].u = tc2->u; vrtxElements[2].v = tc2->v;
-
-			drawGouraudEnvmapTriangle(vrtxElements, tex);
-
-			if (ms->poly[i].numPoints == 4) {	// if quad then render another triangle
-				pt1 = pt2; c1 = c2; tc1 = tc2;
-				pt2 = &vertices[*index]; c2 = vertexCol[*index]; tc2 = &vertexTC[*index];
-
-				vrtxElements[0].x = pt0->x; vrtxElements[0].y = pt0->y; vrtxElements[0].c = c0; vrtxElements[0].u = tc0->u; vrtxElements[0].v = tc0->v;
-				vrtxElements[1].x = pt1->x; vrtxElements[1].y = pt1->y; vrtxElements[1].c = c1; vrtxElements[1].u = tc1->u; vrtxElements[1].v = tc1->v;
-				vrtxElements[2].x = pt2->x; vrtxElements[2].y = pt2->y; vrtxElements[2].c = c2; vrtxElements[2].u = tc2->u; vrtxElements[2].v = tc2->v;
-
-				drawGouraudEnvmapTriangle(vrtxElements, tex);
-			}
-		}
-		if (ms->poly[i].numPoints == 4) ++index;
-	}
-}
 
 static void clearSoftBuffer()
 {
 	vramSet(0, (void*)getSpriteBitmapData(sprSoftBuffer), getCelDataSizeInBytes(sprSoftBuffer->cel));
 }
 
+static void prepareMeshSoftRender(Mesh *ms)
+{
+	if (ms->renderType & MESH_OPTION_RENDER_SEMISOFT) {
+		currentScanlineCel8 = scanlineCel8;
+	} else {
+		clearSoftBuffer();
+	}
 
-static void(*renderMeshSoftFunc[RENDER_SOFT_METHOD_NUM])(Mesh *, Vertex *) = { renderMeshSoftWireframe, renderMeshSoftGouraud, renderMeshSoftEnvmap, renderMeshSoftGouraudEnvmap };
-static int renderSoftMethod = RENDER_SOFT_METHOD_GOURAUD;
+	switch(renderSoftMethod) {
+		case RENDER_SOFT_METHOD_GOURAUD:
+		{
+			prepareEdgeList = prepareEdgeListGouraud;
+			fillEdges = fillGouraudEdges16;
+			if (ms->renderType & MESH_OPTION_RENDER_SOFT8) {
+				fillEdges = fillGouraudEdges8;
+			} else if (ms->renderType & MESH_OPTION_RENDER_SEMISOFT) {
+				fillEdges = fillGouraudEdges8_SemiSoft;
+			}
+		}
+		break;
 
-void renderTransformedMeshSoft(Mesh *ms, Vertex *vertices)
+		case RENDER_SOFT_METHOD_ENVMAP:
+		{
+			prepareEdgeList = prepareEdgeListEnvmap;
+			fillEdges = fillEnvmapEdges16;
+			if (ms->renderType & MESH_OPTION_RENDER_SOFT8) {
+				fillEdges = fillEnvmapEdges8;
+			}
+		}
+		break;
+
+		case RENDER_SOFT_METHOD_GOURAUD_ENVMAP:
+		{
+			prepareEdgeList = prepareEdgeListGouraudEnvmap;
+			//fillEdges = fillGouraudEnvmapEdges16;
+			if (ms->renderType & MESH_OPTION_RENDER_SOFT8) {
+				fillEdges = fillGouraudEnvmapEdges8;
+			}
+		}
+		break;
+
+		default:
+		break;
+	}
+}
+
+static void bindMeshPolyData(Mesh *ms, int numPoly)
+{
+	if (renderSoftMethod <= RENDER_SOFT_METHOD_GOURAUD) {
+		bindGradient(lineColorShades[numPoly & 3]);
+	} else {
+		bindTexture(&ms->tex[ms->poly[numPoly].textureId]);
+	}
+}
+
+static void finalizeMeshSoftRender(Mesh *ms)
+{
+	if (ms->renderType & MESH_OPTION_RENDER_SEMISOFT) {
+		CCB *lastScanlineCel = *(currentScanlineCel8 - 1);
+		lastScanlineCel->ccb_Flags |= CCB_LAST;
+		drawCels(*scanlineCel8);
+		lastScanlineCel->ccb_Flags &= ~CCB_LAST;
+	} else {
+		drawSprite(sprSoftBuffer);
+	}
+}
+
+
+static void renderMeshSoft(Mesh *ms, ScreenElement *elements)
+{
+	ScreenElement *e0, *e1, *e2;
+	int i,n;
+
+	int *index = ms->index;
+
+	prepareMeshSoftRender(ms);
+
+	for (i=0; i<ms->polysNum; ++i) {
+		e0 = &elements[*index++];
+		e1 = &elements[*index++];
+		e2 = &elements[*index++];
+
+		n = (e0->x - e1->x) * (e2->y - e1->y) - (e2->x - e1->x) * (e0->y - e1->y);
+		if (n > 0) {
+			bindMeshPolyData(ms, i);
+			drawTriangle(e0, e1, e2);
+
+			if (ms->poly[i].numPoints == 4) {	// if quad then render another triangle
+				e1 = e2;
+				e2 = &elements[*index];
+				drawTriangle(e0, e1, e2);
+			}
+		}
+		if (ms->poly[i].numPoints == 4) ++index;
+	}
+
+	finalizeMeshSoftRender(ms);
+}
+
+static void renderMeshSoftWireframe(Mesh *ms, ScreenElement *elements)
+{
+	ScreenElement *e0, *e1;
+
+	int *lineIndex = ms->lineIndex;
+	int i;
+
+	prepareMeshSoftRender(ms);
+
+	for (i=0; i<ms->linesNum; ++i) {
+		e0 = &elements[*lineIndex++];
+		e1 = &elements[*lineIndex++];
+
+		bindMeshPolyData(ms, i);
+		drawAntialiasedLine(e0, e1);
+	}
+
+	finalizeMeshSoftRender(ms);
+}
+
+void renderTransformedMeshSoft(Mesh *ms, ScreenElement *elements)
 {
 	sprSoftBuffer = sprSoftBuffer16;
 	if (ms->renderType & MESH_OPTION_RENDER_SOFT8) {
 		sprSoftBuffer = sprSoftBuffer8;
 	}
 
-	if (!(ms->renderType & MESH_OPTION_RENDER_SEMISOFT)) {
-		clearSoftBuffer();
-	}
-
-	renderMeshSoftFunc[renderSoftMethod](ms, vertices);
-
-	if (!(ms->renderType & MESH_OPTION_RENDER_SEMISOFT)) {
-		drawSprite(sprSoftBuffer);
+	if (renderSoftMethod == RENDER_SOFT_METHOD_WIREFRAME) {
+		renderMeshSoftWireframe(ms, elements);
+	} else {
+		renderMeshSoft(ms, elements);
 	}
 }
 

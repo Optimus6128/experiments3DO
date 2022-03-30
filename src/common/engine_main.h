@@ -3,12 +3,18 @@
 
 #include "engine_mesh.h"
 
-#define MAX_VERTICES_NUM 1024
-#define MAX_NORMALS_NUM 1024
+#define MAX_VERTEX_ELEMENTS_NUM 1024
 
 #define PROJ_SHR 8
 #define REC_FPSHR 20
 #define NUM_REC_Z 32768
+
+typedef struct ScreenElement
+{
+	int x,y,z;
+	int c;
+	int u,v;
+}ScreenElement;
 
 typedef struct Object3D
 {

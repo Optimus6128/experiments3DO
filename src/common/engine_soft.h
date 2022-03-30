@@ -1,6 +1,7 @@
 #ifndef ENGINE_SOFT_H
 #define ENGINE_SOFT_H
 
+#include "engine_main.h"
 #include "engine_mesh.h"
 
 #define COLOR_GRADIENTS_SHR 5
@@ -14,7 +15,7 @@ enum {	RENDER_SOFT_METHOD_WIREFRAME,
 		RENDER_SOFT_METHOD_NUM };
 
 void initEngineSoft(void);
-void renderTransformedMeshSoft(Mesh *ms, Vertex *vertices);
+void renderTransformedMeshSoft(Mesh *ms, ScreenElement *elements);
 
 void setRenderSoftMethod(int method);
 #endif

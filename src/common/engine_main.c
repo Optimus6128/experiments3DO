@@ -13,9 +13,9 @@
 
 #include "mathutil.h"
 
-
-static Vertex vertices[MAX_VERTICES_NUM];
-static Vector3D normals[MAX_NORMALS_NUM];
+static Vertex screenVertices[MAX_VERTEX_ELEMENTS_NUM];
+static ScreenElement screenElements[MAX_VERTEX_ELEMENTS_NUM];
+static Vector3D rotatedNormals[MAX_VERTEX_ELEMENTS_NUM];
 
 static int icos[256], isin[256];
 static uint32 recZ[NUM_REC_Z];
@@ -111,12 +111,12 @@ static void translateAndProjectVertices(Object3D *obj)
 
 	for (i=0; i<lvNum; i++)
 	{
-		const int vz = vertices[i].z + posZ;
+		const int vz = screenVertices[i].z + posZ;
 		if (vz > 0) {
 			const int recDivZ = recZ[vz];
-			vertices[i].x = offsetX + ((((vertices[i].x + posX) << PROJ_SHR) * recDivZ) >> REC_FPSHR);
-			vertices[i].y = offsetY - ((((vertices[i].y + posY) << PROJ_SHR) * recDivZ) >> REC_FPSHR);
-			vertices[i].z = vz;
+			screenElements[i].x = offsetX + ((((screenVertices[i].x + posX) << PROJ_SHR) * recDivZ) >> REC_FPSHR);
+			screenElements[i].y = offsetY - ((((screenVertices[i].y + posY) << PROJ_SHR) * recDivZ) >> REC_FPSHR);
+			screenElements[i].z = vz;
 		}
 	}
 }
@@ -127,16 +127,16 @@ static void rotateVerticesHw(Object3D *obj, bool rotatePolyNormals, bool rotateV
 
 	createRotationMatrixValues(obj->rotX, obj->rotY, obj->rotZ, (int*)rotMat);
 
-	MulManyVec3Mat33_F16((vec3f16*)vertices, (vec3f16*)obj->mesh->vertex, rotMat, obj->mesh->verticesNum);
+	MulManyVec3Mat33_F16((vec3f16*)screenVertices, (vec3f16*)obj->mesh->vertex, rotMat, obj->mesh->verticesNum);
 
 	if (obj->mesh->renderType & MESH_OPTION_ENABLE_LIGHTING) {
 		// in the future, we might not need to rotate the normals but rather the light against the normals
 		// so we won't need the normals container, as we will test light vector against original mesh normals
 		if (rotatePolyNormals) {
-			MulManyVec3Mat33_F16((vec3f16*)normals, (vec3f16*)obj->mesh->polyNormal, rotMat, obj->mesh->polysNum); 
+			MulManyVec3Mat33_F16((vec3f16*)rotatedNormals, (vec3f16*)obj->mesh->polyNormal, rotMat, obj->mesh->polysNum); 
 		}
 		if (rotateVertexNormals) {
-			MulManyVec3Mat33_F16((vec3f16*)normals, (vec3f16*)obj->mesh->vertexNormal, rotMat, obj->mesh->verticesNum);
+			MulManyVec3Mat33_F16((vec3f16*)rotatedNormals, (vec3f16*)obj->mesh->vertexNormal, rotMat, obj->mesh->verticesNum);
 		}
 	}
 }
@@ -144,20 +144,19 @@ static void rotateVerticesHw(Object3D *obj, bool rotatePolyNormals, bool rotateV
 static void prepareTransformedMeshCELs(Mesh *ms)
 {
 	int i;
-	int *indices = ms->index;
+	int *index = ms->index;
 	Point qpt[4];
 	CCB *cel = ms->cel;
 
 	int n = 1;
-	int index = 0;
 	for (i=0; i<ms->polysNum; ++i) {
-		qpt[0].pt_X = vertices[indices[index]].x; qpt[0].pt_Y = vertices[indices[index]].y; ++index;
-		qpt[1].pt_X = vertices[indices[index]].x; qpt[1].pt_Y = vertices[indices[index]].y; ++index;
-		qpt[2].pt_X = vertices[indices[index]].x; qpt[2].pt_Y = vertices[indices[index]].y; ++index;
+		qpt[0].pt_X = screenVertices[*index].x; qpt[0].pt_Y = screenVertices[*index].y; ++index;
+		qpt[1].pt_X = screenVertices[*index].x; qpt[1].pt_Y = screenVertices[*index].y; ++index;
+		qpt[2].pt_X = screenVertices[*index].x; qpt[2].pt_Y = screenVertices[*index].y; ++index;
 
 		// Handling quads or triangles for now.
 		if (ms->poly[i].numPoints == 4) {
-			qpt[3].pt_X = vertices[indices[index]].x; qpt[3].pt_Y = vertices[indices[index]].y; ++index;
+			qpt[3].pt_X = screenVertices[*index].x; qpt[3].pt_Y = screenVertices[*index].y; ++index;
 		} else {
 			qpt[3].pt_X = qpt[2].pt_X; qpt[3].pt_Y = qpt[2].pt_Y;
 		}
@@ -170,7 +169,7 @@ static void prepareTransformedMeshCELs(Mesh *ms)
 			cel->ccb_Flags &= ~CCB_SKIP;
 
 			if (ms->renderType & MESH_OPTION_ENABLE_LIGHTING) {
-				int normZ = -normals[i].z;
+				int normZ = -rotatedNormals[i].z;
 				CLAMP(normZ,0,((1<<NORMAL_SHIFT)-1))
 				cel->ccb_PIXC = shadeTable[normZ >> (NORMAL_SHIFT-SHADE_TABLE_SHR)];
 			}
@@ -187,12 +186,11 @@ static void calculateVertexLighting(Object3D *obj)
 {
 	int i;
 	const int verticesNum = obj->mesh->verticesNum;
-	int *vertexCols = obj->mesh->vertexCol;
 
 	for (i=0; i<verticesNum; ++i) {
-		int normZ = -normals[i].z;
+		int normZ = -rotatedNormals[i].z;
 		CLAMP(normZ,0,((1<<NORMAL_SHIFT)-1))
-		*vertexCols++ = normZ >> (NORMAL_SHIFT-COLOR_GRADIENTS_SHR);
+		screenElements[i].c = normZ >> (NORMAL_SHIFT-COLOR_GRADIENTS_SHR);
 	}
 }
 
@@ -200,39 +198,22 @@ static void calculateVertexEnvmapTC(Object3D *obj)
 {
 	int i;
 	const int verticesNum = obj->mesh->verticesNum;
-	TexCoords *vertexTC = obj->mesh->vertexTC;
 	
 	const int texWidth = obj->mesh->tex[0].width;
 	const int texHeight = obj->mesh->tex[0].height;
 
 	for (i=0; i<verticesNum; ++i) {
-		int normZ = normals[i].z;
+		int normZ = rotatedNormals[i].z;
 		if (normZ != 0) {
-			/*int normX = (normals[i].x << NORMAL_SHIFT) / normZ;
-			int normY = (normals[i].y << NORMAL_SHIFT) / normZ;
-				normX >>= 4;
-				normY >>= 4;
-
-				CLAMP(normX, -128, 127)
-				CLAMP(normY, -128, 127)
-
-				normX += 128;
-				normY += 128;
-
-				//printDebugNum(normX);
-				//printDebugNum(normY);
-			*/
-
-			int normX = (normals[i].x>>2) + 64;
-			int normY = (normals[i].y>>2) + 64;
+			int normX = (rotatedNormals[i].x>>2) + 64;
+			int normY = (rotatedNormals[i].y>>2) + 64;
 			
 			normX &= (texWidth - 1);
 			normY &= (texHeight - 1);
 
-			vertexTC->u = normX;
-			vertexTC->v = normY;
+			screenElements[i].u = normX;
+			screenElements[i].v = normY;
 		}
-		vertexTC++;
 	}
 }
 
@@ -276,7 +257,7 @@ void renderObject3Dsoft(Object3D *obj)
 	if (obj->mesh->renderType & MESH_OPTION_ENABLE_ENVMAP) {
 		calculateVertexEnvmapTC(obj);
 	}
-	renderTransformedMeshSoft(obj->mesh, vertices);
+	renderTransformedMeshSoft(obj->mesh, screenElements);
 }
 
 void setScreenRegion(int posX, int posY, int width, int height)
