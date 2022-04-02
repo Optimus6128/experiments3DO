@@ -861,6 +861,7 @@ static void fillGouraudEnvmapEdges16(int yMin, int yMax)
 
 	const int texWidth = activeTexture->width;
 	const int texHeight = activeTexture->height;
+	uint16* texData = (uint16*)activeTexture->bitmap;
 
 	do {
 		const int xl = le->x;
@@ -870,10 +871,10 @@ static void fillGouraudEnvmapEdges16(int yMin, int yMax)
 		const int ur = re->u;
 		const int vl = le->v;
 		const int vr = re->v;
+		int r,g,b;
 		int length = re->x - xl;
 		uint16 *dst = vram16 + xl;
 		uint32 *dst32;
-		uint16* texData;
 
 		const int repDiv = divTab[length + DIV_TAB_SIZE / 2];
 		const int dc = (((cr - cl) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE)) >> FP_BASE;
@@ -884,7 +885,7 @@ static void fillGouraudEnvmapEdges16(int yMin, int yMax)
 		int fv = vl;
 
 		if (length>0){
-			int u, v, c;
+			int u, v, c, cc;
 			if (xl & 1) {
 				c = FIXED_TO_INT(fc, FP_BASE);
 				CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
@@ -894,8 +895,11 @@ static void fillGouraudEnvmapEdges16(int yMin, int yMax)
 				fu += du;
 				fv += dv;
 
-				texData = (uint16*)activeTexture[(COLOR_GRADIENTS_SIZE - c - 1) >> GRADIENT_TO_SHADED_SHR].bitmap;
-				*dst++ = texData[v * texWidth + u];
+				cc = texData[v * texWidth + u];
+				r = (((cc >> 10) & 31) * c) >> COLOR_ENVMAP_SHR;
+				g = (((cc >> 5) & 31) * c) >> COLOR_ENVMAP_SHR;
+				b = ((cc  & 31) * c) >> COLOR_ENVMAP_SHR;
+				*dst++ = (r << 10) | (g << 5) | b;
 				length--;
 			}
 
@@ -907,8 +911,12 @@ static void fillGouraudEnvmapEdges16(int yMin, int yMax)
 				CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
 				u = (FIXED_TO_INT(fu, FP_BASE)) & (texWidth-1);
 				v = (FIXED_TO_INT(fv, FP_BASE)) & (texHeight-1);
-				texData = (uint16*)activeTexture[(COLOR_GRADIENTS_SIZE - c - 1) >> GRADIENT_TO_SHADED_SHR].bitmap;
-				c0 = texData[v * texWidth + u];
+
+				cc = texData[v * texWidth + u];
+				r = (((cc >> 10) & 31) * c) >> COLOR_ENVMAP_SHR;
+				g = (((cc >> 5) & 31) * c) >> COLOR_ENVMAP_SHR;
+				b = ((cc  & 31) * c) >> COLOR_ENVMAP_SHR;
+				c0 = (r << 10) | (g << 5) | b;
 				fc += dc;
 				fu += du;
 				fv += dv;
@@ -917,8 +925,12 @@ static void fillGouraudEnvmapEdges16(int yMin, int yMax)
 				CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
 				u = (FIXED_TO_INT(fu, FP_BASE)) & (texWidth-1);
 				v = (FIXED_TO_INT(fv, FP_BASE)) & (texHeight-1);
-				texData = (uint16*)activeTexture[(COLOR_GRADIENTS_SIZE - c - 1) >> GRADIENT_TO_SHADED_SHR].bitmap;
-				c1 = texData[v * texWidth + u];
+
+				cc = texData[v * texWidth + u];
+				r = (((cc >> 10) & 31) * c) >> COLOR_ENVMAP_SHR;
+				g = (((cc >> 5) & 31) * c) >> COLOR_ENVMAP_SHR;
+				b = ((cc  & 31) * c) >> COLOR_ENVMAP_SHR;
+				c1 = (r << 10) | (g << 5) | b;
 				fc += dc;
 				fu += du;
 				fv += dv;
@@ -938,8 +950,11 @@ static void fillGouraudEnvmapEdges16(int yMin, int yMax)
 				fu += du;
 				fv += dv;
 
-				texData = (uint16*)activeTexture[(COLOR_GRADIENTS_SIZE - c - 1) >> GRADIENT_TO_SHADED_SHR].bitmap;
-				*dst++ = texData[v * texWidth + u];
+				cc = texData[v * texWidth + u];
+				r = (((cc >> 10) & 31) * c) >> COLOR_ENVMAP_SHR;
+				g = (((cc >> 5) & 31) * c) >> COLOR_ENVMAP_SHR;
+				b = ((cc  & 31) * c) >> COLOR_ENVMAP_SHR;
+				*dst++ = (r << 10) | (g << 5) | b;
 			}
 		}
 

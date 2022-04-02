@@ -111,7 +111,7 @@ void effectMeshSoftInit()
 	}
 
 	cloudTex8 = initGenTexture(128, 128, 8, NULL, 1, TEXGEN_CLOUDS, false, NULL);
-	cloudTex16 = initGenTextureShades(128, 128, 16, NULL, 0, TEXGEN_CLOUDS, false, SHADED_TEXTURES_NUM, NULL);
+	cloudTex16 = initGenTexture(128, 128, 16, NULL, 0, TEXGEN_CLOUDS, false, NULL);
 	params = makeMeshgenSquareColumnoidParams(size, ptArray->points, numPoints, true, true);
 
 	softMesh8 = initGenMesh(meshType, params, MESH_OPTION_RENDER_SOFT8 | MESH_OPTION_ENABLE_LIGHTING | MESH_OPTION_ENABLE_ENVMAP, cloudTex8);
