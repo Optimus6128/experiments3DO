@@ -162,11 +162,15 @@ static void effectInit16()
 
 void effectPackedSpritesInit()
 {
+	initCelPackerEngine();
+
 	loadAndSetBackgroundImage("data/background.img", (ubyte*)getBackBuffer());
 
 	if (ENABLE_4) effectInit4();
 	if (ENABLE_8) effectInit8();
 	if (ENABLE_16) effectInit16();
+
+	deinitCelPackerEngine();
 }
 
 static void updateFromInput()

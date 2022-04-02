@@ -3,7 +3,7 @@
 
 #include "engine_mesh.h"
 
-#define MAX_VERTEX_ELEMENTS_NUM 1024
+#define MAX_VERTEX_ELEMENTS_NUM 256
 
 #define PROJ_SHR 8
 #define REC_FPSHR 20

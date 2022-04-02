@@ -57,6 +57,8 @@ static void generateUnpackedRain()
 void effectPackedRainInit()
 {
 	int i;
+
+	initCelPackerEngine();
 	
 	//loadAndSetBackgroundImage("data/background.cel", NULL);
 	//Bugs memory if on. Lib3DO function bug again? Let's try giving my own pointer next.
@@ -69,6 +71,8 @@ void effectPackedRainInit()
 		packedRain[i] = newPackedSprite(RAIN_LAYER_WIDTH, RAIN_LAYER_HEIGHT, 2, CEL_TYPE_CODED, pal2, unpackedRainBmp[i], NULL, 0);
 		totalPackedPercentage += packPercentage;
 	}
+
+	deinitCelPackerEngine();
 }
 
 static void updateFromInput()

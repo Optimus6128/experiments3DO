@@ -861,7 +861,6 @@ static void fillGouraudEnvmapEdges16(int yMin, int yMax)
 
 	const int texWidth = activeTexture->width;
 	const int texHeight = activeTexture->height;
-	uint16* texData = (uint16*)activeTexture->bitmap;
 
 	do {
 		const int xl = le->x;
@@ -874,6 +873,7 @@ static void fillGouraudEnvmapEdges16(int yMin, int yMax)
 		int length = re->x - xl;
 		uint16 *dst = vram16 + xl;
 		uint32 *dst32;
+		uint16* texData;
 
 		const int repDiv = divTab[length + DIV_TAB_SIZE / 2];
 		const int dc = (((cr - cl) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE)) >> FP_BASE;
@@ -894,6 +894,7 @@ static void fillGouraudEnvmapEdges16(int yMin, int yMax)
 				fu += du;
 				fv += dv;
 
+				texData = (uint16*)activeTexture[(COLOR_GRADIENTS_SIZE - c - 1) >> GRADIENT_TO_SHADED_SHR].bitmap;
 				*dst++ = texData[v * texWidth + u];
 				length--;
 			}
@@ -906,6 +907,7 @@ static void fillGouraudEnvmapEdges16(int yMin, int yMax)
 				CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
 				u = (FIXED_TO_INT(fu, FP_BASE)) & (texWidth-1);
 				v = (FIXED_TO_INT(fv, FP_BASE)) & (texHeight-1);
+				texData = (uint16*)activeTexture[(COLOR_GRADIENTS_SIZE - c - 1) >> GRADIENT_TO_SHADED_SHR].bitmap;
 				c0 = texData[v * texWidth + u];
 				fc += dc;
 				fu += du;
@@ -915,6 +917,7 @@ static void fillGouraudEnvmapEdges16(int yMin, int yMax)
 				CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
 				u = (FIXED_TO_INT(fu, FP_BASE)) & (texWidth-1);
 				v = (FIXED_TO_INT(fv, FP_BASE)) & (texHeight-1);
+				texData = (uint16*)activeTexture[(COLOR_GRADIENTS_SIZE - c - 1) >> GRADIENT_TO_SHADED_SHR].bitmap;
 				c1 = texData[v * texWidth + u];
 				fc += dc;
 				fu += du;
@@ -928,12 +931,14 @@ static void fillGouraudEnvmapEdges16(int yMin, int yMax)
 			dst = (uint16*)dst32;
 			if (length & 1) {
 				c = FIXED_TO_INT(fc, FP_BASE);
+				CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
 				u = (FIXED_TO_INT(fu, FP_BASE)) & (texWidth-1);
 				v = (FIXED_TO_INT(fv, FP_BASE)) & (texHeight-1);
 				fc += dc;
 				fu += du;
 				fv += dv;
 
+				texData = (uint16*)activeTexture[(COLOR_GRADIENTS_SIZE - c - 1) >> GRADIENT_TO_SHADED_SHR].bitmap;
 				*dst++ = texData[v * texWidth + u];
 			}
 		}

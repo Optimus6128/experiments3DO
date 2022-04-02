@@ -7,12 +7,17 @@ typedef struct pixelRepeatsType
 	int pixelRepeats;
 }pixelRepeatsType;
 
-static ubyte tempBuff[262144];
-static int tempLine[1024];
+#define TEMP_BUFF_SIZE 262144
+#define TEMP_LINE_SIZE 1024
+
+static ubyte *tempBuff;
+static int *tempLine;
 
 int packPercentage;
 
 static int currentBit;
+
+static bool packerIsReady = false;
 
 
 static void extractPixelsToChunkyBytes(ubyte *unpackedLine, int width, int bpp)
@@ -228,11 +233,28 @@ static void padLineBitsAndWriteAddressOffset(int addressOffsetIndex, int bpp)
 		tempBuff[addressOffsetIndex] = wordOffset & 255;
 }
 
+
+void initCelPackerEngine()
+{
+	tempBuff = (ubyte*)AllocMem(TEMP_BUFF_SIZE, MEMTYPE_ANY);
+	tempLine = (int*)AllocMem(TEMP_LINE_SIZE * 4, MEMTYPE_ANY);
+	packerIsReady = true;
+}
+
+void deinitCelPackerEngine()
+{
+	FreeMem(tempBuff, TEMP_BUFF_SIZE);
+	FreeMem(tempLine, TEMP_LINE_SIZE * 4);
+	packerIsReady = false;
+}
+
 ubyte* createPackedDataFromUnpackedBmp(int width, int height, int bpp, int type, uint16 *pal, ubyte *unpackedBmp, int transparentColor)
 {
 	int x, y;
 	int countBytes = 0;
 	ubyte *packedData = NULL;
+
+	if (!packerIsReady) initCelPackerEngine();
 
 	currentBit = 0;
 

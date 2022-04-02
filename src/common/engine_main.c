@@ -205,8 +205,8 @@ static void calculateVertexEnvmapTC(Object3D *obj)
 	for (i=0; i<verticesNum; ++i) {
 		int normZ = rotatedNormals[i].z;
 		if (normZ != 0) {
-			int normX = (rotatedNormals[i].x>>2) + 64;
-			int normY = (rotatedNormals[i].y>>2) + 64;
+			int normX = (rotatedNormals[i].x>>2) + (texWidth >> 1);
+			int normY = (rotatedNormals[i].y>>2) + (texHeight >> 1);
 			
 			normX &= (texWidth - 1);
 			normY &= (texHeight - 1);
