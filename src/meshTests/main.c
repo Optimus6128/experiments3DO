@@ -13,7 +13,9 @@ static char *effectName[EFFECTS_NUM] = { "mesh pyramids test", "software 3d" };
 
 int main()
 {
-	const int effectIndex = EFFECT_MESH_SOFT;//runEffectSelector(effectName, EFFECTS_NUM);
+	const int effectIndex = runEffectSelector(effectName, EFFECTS_NUM);
+	
+	//const int effectIndex = EFFECT_MESH_SOFT;
 
 	coreInit(effectInitFunc[effectIndex], CORE_NO_VSYNC | CORE_SHOW_FPS | CORE_DEFAULT_INPUT | CORE_VRAM_MAXBUFFERS);	// max buffersto not flicker when vsync off and clear screen on
 	coreRun(effectRunFunc[effectIndex]);

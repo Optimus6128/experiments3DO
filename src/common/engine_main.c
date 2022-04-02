@@ -150,13 +150,13 @@ static void prepareTransformedMeshCELs(Mesh *ms)
 
 	int n = 1;
 	for (i=0; i<ms->polysNum; ++i) {
-		qpt[0].pt_X = screenVertices[*index].x; qpt[0].pt_Y = screenVertices[*index].y; ++index;
-		qpt[1].pt_X = screenVertices[*index].x; qpt[1].pt_Y = screenVertices[*index].y; ++index;
-		qpt[2].pt_X = screenVertices[*index].x; qpt[2].pt_Y = screenVertices[*index].y; ++index;
+		qpt[0].pt_X = screenElements[*index].x; qpt[0].pt_Y = screenElements[*index].y; ++index;
+		qpt[1].pt_X = screenElements[*index].x; qpt[1].pt_Y = screenElements[*index].y; ++index;
+		qpt[2].pt_X = screenElements[*index].x; qpt[2].pt_Y = screenElements[*index].y; ++index;
 
 		// Handling quads or triangles for now.
 		if (ms->poly[i].numPoints == 4) {
-			qpt[3].pt_X = screenVertices[*index].x; qpt[3].pt_Y = screenVertices[*index].y; ++index;
+			qpt[3].pt_X = screenElements[*index].x; qpt[3].pt_Y = screenElements[*index].y; ++index;
 		} else {
 			qpt[3].pt_X = qpt[2].pt_X; qpt[3].pt_Y = qpt[2].pt_Y;
 		}

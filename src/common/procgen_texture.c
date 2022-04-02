@@ -155,6 +155,16 @@ static int perlinOctave(int x, int y)
 	return c;
 }
 
+static int addLightBlobToTexel(int x, int y, int width, int height)
+{
+	int xc = x - width / 2;
+	int yc = y - height / 2;
+
+	int r = xc * xc + yc * yc;
+	if (r == 0) r = 1;
+	return 256 / sqrt(r);
+}
+
 static void genCloudTexture(int hashX, int hashY, int hashZ, int shrStart, int iterations, Texture *tex)
 {
 	int x, y;
@@ -173,10 +183,19 @@ static void genCloudTexture(int hashX, int hashY, int hashZ, int shrStart, int i
 	for (y = 0; y < height; ++y) {
 		for (x = 0; x < width; ++x) {
 			int c = perlinOctave(x, y) >> RANGE_TO_COL;
+			int a = addLightBlobToTexel(x, y, width, height);
 			if (tex->bpp==8) {
+				//c += a;
+				//CLAMP(c, 1, 31)
 				*dst8++ = c;
 			} else {
-				*dst16++ = (((31-c)>>0) << 10) | (((31-c)>>1) << 5) | c;
+				int cr = 31-c+a;
+				int cg = c+a;
+				int cb = c+a;
+				CLAMP(cr, 1, 31)
+				CLAMP(cg, 1, 63)
+				CLAMP(cb, 1, 31)
+				*dst16++ = ((cr>>0) << 10) | ((cg>>1) << 5) | cb;
 			}
 		}
 	}
@@ -252,7 +271,17 @@ static void genTexture(int texgenId, void *params, Texture *tex)
 	}
 }
 
-static Texture* initGenTextures(int width, int height, int bpp, uint16 *pal, ubyte numPals, ubyte numTextures, int texgenId, bool dynamic, void *params)
+static void copyTextureData(Texture *src, Texture *dst)
+{
+	const int size = (src->width * src->height * src->bpp) >> 3;
+	memcpy(dst->bitmap, src->bitmap, size);
+}
+
+static void copyAndShadeTextureData(Texture *src, Texture *dst, int shade, int bright)
+{
+}
+
+static Texture* initGenTextures(int width, int height, int bpp, uint16 *pal, ubyte numPals, ubyte numTextures, int texgenId, bool dynamic, bool shade, void *params)
 {
 	int i;
 	Texture *tex;
@@ -262,8 +291,14 @@ static Texture* initGenTextures(int width, int height, int bpp, uint16 *pal, uby
 	if (bpp <= 8 && numPals > 0) type |= TEXTURE_TYPE_PALLETIZED;
 
 	tex = initTextures(width, height, bpp, type, NULL, pal, numPals, numTextures);
-	for (i=0; i<numTextures; ++i) {
-		genTexture(texgenId, params, &tex[i]);
+	genTexture(texgenId, params, &tex[0]);
+
+	for (i=1; i<numTextures; ++i) {
+		if (!shade) {
+			copyTextureData(&tex[0],&tex[i]);
+		} else {
+			copyAndShadeTextureData(&tex[0],&tex[i], numTextures-i, numTextures);
+		}
 	}
 
 	return tex;
@@ -271,14 +306,19 @@ static Texture* initGenTextures(int width, int height, int bpp, uint16 *pal, uby
 
 Texture* initGenTexture(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, bool dynamic, void *params)
 {
-	return initGenTextures(width, height, bpp, pal, numPals, 1, texgenId, dynamic, params);
+	return initGenTextures(width, height, bpp, pal, numPals, 1, texgenId, dynamic, false, params);
+}
+
+Texture* initGenTextureShades(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, bool dynamic, int numShades, void *params)
+{
+	return initGenTextures(width, height, bpp, pal, numPals, numShades, texgenId, dynamic, true, params);
 }
 
 Texture *initGenTexturesTriangleHack(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, bool dynamic, void *params)
 {
 	Texture *tex;
 
-	tex = initGenTextures(width, height, bpp, pal, numPals, 2, texgenId, dynamic, params);
+	tex = initGenTextures(width, height, bpp, pal, numPals, 2, texgenId, dynamic, false, params);
 	// COMMENT OUT PALETTE BUG
 	eraseHalfTextureTriangleArea(&tex[1], TRI_AREA_LR_TOP, 0);
 
@@ -289,7 +329,7 @@ Texture *initGenTexturesTriangleHack2(int width, int height, int bpp, uint16 *pa
 {
 	Texture *tex;
 
-	tex = initGenTextures(width, height, bpp, pal, numPals, 2, texgenId, dynamic, params);
+	tex = initGenTextures(width, height, bpp, pal, numPals, 2, texgenId, dynamic, false, params);
 	// COMMENT OUT PALETTE BUG
 	squishTextureToTriangleArea(&tex[1], TRI_AREA_LR_TOP);
 

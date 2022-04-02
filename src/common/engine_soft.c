@@ -691,10 +691,8 @@ static void fillEnvmapEdges16(int yMin, int yMax)
 		if (length>0){
 			int u, v;
 			if (xl & 1) {
-				u = FIXED_TO_INT(fu, FP_BASE);
-				v = FIXED_TO_INT(fv, FP_BASE);
-				u &= (texWidth-1);
-				v &= (texHeight-1);
+				u = (FIXED_TO_INT(fu, FP_BASE)) & (texWidth-1);
+				v = (FIXED_TO_INT(fv, FP_BASE)) & (texHeight-1);
 				fu += du;
 				fv += dv;
 
@@ -706,18 +704,14 @@ static void fillEnvmapEdges16(int yMin, int yMax)
 			while(length >= 2) {
 				int c0, c1;
 
-				u = FIXED_TO_INT(fu, FP_BASE);
-				v = FIXED_TO_INT(fv, FP_BASE);
-				u &= (texWidth-1);
-				v &= (texHeight-1);
+				u = (FIXED_TO_INT(fu, FP_BASE)) & (texWidth-1);
+				v = (FIXED_TO_INT(fv, FP_BASE)) & (texHeight-1);
 				c0 = texData[v * texWidth + u];
 				fu += du;
 				fv += dv;
 
-				u = FIXED_TO_INT(fu, FP_BASE);
-				v = FIXED_TO_INT(fv, FP_BASE);
-				u &= (texWidth-1);
-				v &= (texHeight-1);
+				u = (FIXED_TO_INT(fu, FP_BASE)) & (texWidth-1);
+				v = (FIXED_TO_INT(fv, FP_BASE)) & (texHeight-1);
 				c1 = texData[v * texWidth + u];
 				fu += du;
 				fv += dv;
@@ -729,10 +723,8 @@ static void fillEnvmapEdges16(int yMin, int yMax)
 
 			dst = (uint16*)dst32;
 			if (length & 1) {
-				u = FIXED_TO_INT(fu, FP_BASE);
-				v = FIXED_TO_INT(fv, FP_BASE);
-				u &= 255;
-				v &= 255;
+				u = (FIXED_TO_INT(fu, FP_BASE)) & (texWidth-1);
+				v = (FIXED_TO_INT(fv, FP_BASE)) & (texHeight-1);
 				fu += du;
 				fv += dv;
 
@@ -860,6 +852,98 @@ static void fillGouraudEnvmapEdges8(int yMin, int yMax)
 	} while(--count > 0);
 }
 
+static void fillGouraudEnvmapEdges16(int yMin, int yMax)
+{
+	uint16 *vram16 = softBuffer16 + yMin * SOFT_BUFF_WIDTH;
+	int count = yMax - yMin + 1;
+	Edge *le = &leftEdge[yMin];
+	Edge *re = &rightEdge[yMin];
+
+	const int texWidth = activeTexture->width;
+	const int texHeight = activeTexture->height;
+	uint16* texData = (uint16*)activeTexture->bitmap;
+
+	do {
+		const int xl = le->x;
+		const int cl = le->c;
+		const int cr = re->c;
+		const int ul = le->u;
+		const int ur = re->u;
+		const int vl = le->v;
+		const int vr = re->v;
+		int length = re->x - xl;
+		uint16 *dst = vram16 + xl;
+		uint32 *dst32;
+
+		const int repDiv = divTab[length + DIV_TAB_SIZE / 2];
+		const int dc = (((cr - cl) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE)) >> FP_BASE;
+		const int du = (((ur - ul) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE)) >> FP_BASE;
+		const int dv = (((vr - vl) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE)) >> FP_BASE;
+		int fc = cl;
+		int fu = ul;
+		int fv = vl;
+
+		if (length>0){
+			int u, v, c;
+			if (xl & 1) {
+				c = FIXED_TO_INT(fc, FP_BASE);
+				CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
+				u = (FIXED_TO_INT(fu, FP_BASE)) & (texWidth-1);
+				v = (FIXED_TO_INT(fv, FP_BASE)) & (texHeight-1);
+				fc += dc;
+				fu += du;
+				fv += dv;
+
+				*dst++ = texData[v * texWidth + u];
+				length--;
+			}
+
+			dst32 = (uint32*)dst;
+			while(length >= 2) {
+				int c0, c1;
+
+				c = FIXED_TO_INT(fc, FP_BASE);
+				CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
+				u = (FIXED_TO_INT(fu, FP_BASE)) & (texWidth-1);
+				v = (FIXED_TO_INT(fv, FP_BASE)) & (texHeight-1);
+				c0 = texData[v * texWidth + u];
+				fc += dc;
+				fu += du;
+				fv += dv;
+
+				c = FIXED_TO_INT(fc, FP_BASE);
+				CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
+				u = (FIXED_TO_INT(fu, FP_BASE)) & (texWidth-1);
+				v = (FIXED_TO_INT(fv, FP_BASE)) & (texHeight-1);
+				c1 = texData[v * texWidth + u];
+				fc += dc;
+				fu += du;
+				fv += dv;
+
+				*dst32++ = (c0 << 16) | c1;
+
+				length -= 2;
+			};
+
+			dst = (uint16*)dst32;
+			if (length & 1) {
+				c = FIXED_TO_INT(fc, FP_BASE);
+				u = (FIXED_TO_INT(fu, FP_BASE)) & (texWidth-1);
+				v = (FIXED_TO_INT(fv, FP_BASE)) & (texHeight-1);
+				fc += dc;
+				fu += du;
+				fv += dv;
+
+				*dst++ = texData[v * texWidth + u];
+			}
+		}
+
+		++le;
+		++re;
+		vram16 += SOFT_BUFF_WIDTH;
+	} while(--count > 0);
+}
+
 static void drawTriangle(ScreenElement *e0, ScreenElement *e1, ScreenElement *e2)
 {
 	int yMin = e0->y;
@@ -918,7 +1002,7 @@ static void prepareMeshSoftRender(Mesh *ms)
 		case RENDER_SOFT_METHOD_GOURAUD_ENVMAP:
 		{
 			prepareEdgeList = prepareEdgeListGouraudEnvmap;
-			//fillEdges = fillGouraudEnvmapEdges16;
+			fillEdges = fillGouraudEnvmapEdges16;
 			if (ms->renderType & MESH_OPTION_RENDER_SOFT8) {
 				fillEdges = fillGouraudEnvmapEdges8;
 			}
