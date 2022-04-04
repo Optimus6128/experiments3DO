@@ -469,7 +469,7 @@ static void fillGouraudEdges8(int yMin, int yMax)
 			xlp = 4 - xlp;
 			while (xlp-- > 0 && length-- > 0) {
 				int c = FIXED_TO_INT(fc, FP_BASE);
-				CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
+				//CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
 				fc += dc;
 
 				*dst++ = c;
@@ -481,16 +481,16 @@ static void fillGouraudEdges8(int yMin, int yMax)
 			int c0,c1,c2,c3;
 
 			c0 = FIXED_TO_INT(fc, FP_BASE);
-			CLAMP_LEFT(c0, 1)
+			//CLAMP_LEFT(c0, 1)
 			fc += dc;
 			c1 = FIXED_TO_INT(fc, FP_BASE);
-			CLAMP_LEFT(c1, 1)
+			//CLAMP_LEFT(c1, 1)
 			fc += dc;
 			c2 = FIXED_TO_INT(fc, FP_BASE);
-			CLAMP_LEFT(c2, 1)
+			//CLAMP_LEFT(c2, 1)
 			fc += dc;
 			c3 = FIXED_TO_INT(fc, FP_BASE);
-			CLAMP_LEFT(c3, 1)
+			//CLAMP_LEFT(c3, 1)
 			fc += dc;
 
 			*dst32++ = (c0 << 24) | (c1 << 16) | (c2 << 8) | c3;
@@ -500,7 +500,7 @@ static void fillGouraudEdges8(int yMin, int yMax)
 		dst = (uint8*)dst32;
 		while (length-- > 0) {
 			int c = FIXED_TO_INT(fc, FP_BASE);
-			CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
+			//CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
 			fc += dc;
 
 			*dst++ = c;
@@ -533,7 +533,7 @@ static void fillGouraudEdges16(int yMin, int yMax)
 		if (length>0){
 			if (xl & 1) {
 				int c = FIXED_TO_INT(fc, FP_BASE);
-				CLAMP(c, 0, COLOR_GRADIENTS_SIZE-1)
+				//CLAMP(c, 0, COLOR_GRADIENTS_SIZE-1)
 				fc += dc;
 
 				*dst++ = activeGradient[c];
@@ -558,7 +558,7 @@ static void fillGouraudEdges16(int yMin, int yMax)
 			dst = (uint16*)dst32;
 			if (length & 1) {
 				int c = FIXED_TO_INT(fc, FP_BASE);
-				CLAMP(c, 0, COLOR_GRADIENTS_SIZE-1)
+				//CLAMP(c, 0, COLOR_GRADIENTS_SIZE-1)
 				fc += dc;
 
 				*dst++ = activeGradient[c];
@@ -746,7 +746,7 @@ static void fillGouraudEnvmapEdges8(int yMin, int yMax)
 		if (xlp) {
 			while (xlp++ < 4 && length-- > 0) {
 				c = (texData[(FIXED_TO_INT(fv, FP_BASE) << texHeightShift) + FIXED_TO_INT(fu, FP_BASE)] * FIXED_TO_INT(fc, FP_BASE)) >> COLOR_ENVMAP_SHR;
-				CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
+				//CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
 				*dst++ = c;
 
 				fc += dc;
@@ -760,25 +760,25 @@ static void fillGouraudEnvmapEdges8(int yMin, int yMax)
 			int c0,c1,c2,c3;
 
 			c0 = (texData[(FIXED_TO_INT(fv, FP_BASE) << texHeightShift) + FIXED_TO_INT(fu, FP_BASE)] * FIXED_TO_INT(fc, FP_BASE)) >> COLOR_ENVMAP_SHR;
-			CLAMP(c0, 1, COLOR_GRADIENTS_SIZE-1)
+			//CLAMP(c0, 1, COLOR_GRADIENTS_SIZE-1)
 			fc += dc;
 			fu += du;
 			fv += dv;
 
 			c1 = (texData[(FIXED_TO_INT(fv, FP_BASE) << texHeightShift) + FIXED_TO_INT(fu, FP_BASE)] * FIXED_TO_INT(fc, FP_BASE)) >> COLOR_ENVMAP_SHR;
-			CLAMP(c1, 1, COLOR_GRADIENTS_SIZE-1)
+			//CLAMP(c1, 1, COLOR_GRADIENTS_SIZE-1)
 			fc += dc;
 			fu += du;
 			fv += dv;
 
 			c2 = (texData[(FIXED_TO_INT(fv, FP_BASE) << texHeightShift) + FIXED_TO_INT(fu, FP_BASE)] * FIXED_TO_INT(fc, FP_BASE)) >> COLOR_ENVMAP_SHR;
-			CLAMP(c2, 1, COLOR_GRADIENTS_SIZE-1)
+			//CLAMP(c2, 1, COLOR_GRADIENTS_SIZE-1)
 			fc += dc;
 			fu += du;
 			fv += dv;
 
 			c3 = (texData[(FIXED_TO_INT(fv, FP_BASE) << texHeightShift) + FIXED_TO_INT(fu, FP_BASE)] * FIXED_TO_INT(fc, FP_BASE)) >> COLOR_ENVMAP_SHR;
-			CLAMP(c3, 1, COLOR_GRADIENTS_SIZE-1)
+			//CLAMP(c3, 1, COLOR_GRADIENTS_SIZE-1)
 			fc += dc;
 			fu += du;
 			fv += dv;
@@ -790,7 +790,7 @@ static void fillGouraudEnvmapEdges8(int yMin, int yMax)
 		dst = (uint8*)dst32;
 		while (length-- > 0) {
 			c = (texData[(FIXED_TO_INT(fv, FP_BASE) << texHeightShift) + FIXED_TO_INT(fu, FP_BASE)] * FIXED_TO_INT(fc, FP_BASE)) >> COLOR_ENVMAP_SHR;
-			CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
+			//CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
 			*dst++ = c;
 
 			fc += dc;
@@ -840,7 +840,7 @@ static void fillGouraudEnvmapEdges16(int yMin, int yMax)
 			int c, cc;
 			if (xl & 1) {
 				c = FIXED_TO_INT(fc, FP_BASE);
-				CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
+				//CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
 				cc = texData[(FIXED_TO_INT(fv, FP_BASE) << texHeightShift) + FIXED_TO_INT(fu, FP_BASE)];
 				r = (((cc >> 10) & 31) * c) >> COLOR_ENVMAP_SHR;
 				g = (((cc >> 5) & 31) * c) >> COLOR_ENVMAP_SHR;
@@ -858,7 +858,7 @@ static void fillGouraudEnvmapEdges16(int yMin, int yMax)
 				int c0, c1;
 
 				c = FIXED_TO_INT(fc, FP_BASE);
-				CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
+				//CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
 				cc = texData[(FIXED_TO_INT(fv, FP_BASE) << texHeightShift) + FIXED_TO_INT(fu, FP_BASE)];
 				r = (((cc >> 10) & 31) * c) >> COLOR_ENVMAP_SHR;
 				g = (((cc >> 5) & 31) * c) >> COLOR_ENVMAP_SHR;
@@ -869,7 +869,7 @@ static void fillGouraudEnvmapEdges16(int yMin, int yMax)
 				fv += dv;
 
 				c = FIXED_TO_INT(fc, FP_BASE);
-				CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
+				//CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
 				cc = texData[(FIXED_TO_INT(fv, FP_BASE) << texHeightShift) + FIXED_TO_INT(fu, FP_BASE)];
 				r = (((cc >> 10) & 31) * c) >> COLOR_ENVMAP_SHR;
 				g = (((cc >> 5) & 31) * c) >> COLOR_ENVMAP_SHR;
@@ -887,7 +887,7 @@ static void fillGouraudEnvmapEdges16(int yMin, int yMax)
 			dst = (uint16*)dst32;
 			if (length & 1) {
 				c = FIXED_TO_INT(fc, FP_BASE);
-				CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
+				//CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
 				cc = texData[(FIXED_TO_INT(fv, FP_BASE) << texHeightShift) + FIXED_TO_INT(fu, FP_BASE)];
 				r = (((cc >> 10) & 31) * c) >> COLOR_ENVMAP_SHR;
 				g = (((cc >> 5) & 31) * c) >> COLOR_ENVMAP_SHR;
