@@ -257,8 +257,8 @@ static void prepareEdgeListGouraud(ScreenElement *e0, ScreenElement *e1)
 
         int dy = y1 - y0 + 1;
 		const int repDiv = divTab[dy + DIV_TAB_SIZE / 2];
-        const int dx = ((x1 - x0) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE);
-		const int dc = ((c1 - c0) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE);
+        const int dx = ((x1 - x0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
+		const int dc = ((c1 - c0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
 
         int fx = INT_TO_FIXED(x0, FP_BASE);
 		int fc = INT_TO_FIXED(c0, FP_BASE);
@@ -311,9 +311,9 @@ static void prepareEdgeListEnvmap(ScreenElement *e0, ScreenElement *e1)
 
         int dy = y1 - y0 + 1;
 		const int repDiv = divTab[dy + DIV_TAB_SIZE / 2];
-        const int dx = ((x1 - x0) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE);
-		const int du = ((u1 - u0) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE);
-		const int dv = ((v1 - v0) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE);
+        const int dx = ((x1 - x0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
+		const int du = ((u1 - u0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
+		const int dv = ((v1 - v0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
 
         int fx = INT_TO_FIXED(x0, FP_BASE);
 		int fu = INT_TO_FIXED(u0, FP_BASE);
@@ -370,10 +370,10 @@ static void prepareEdgeListGouraudEnvmap(ScreenElement *e0, ScreenElement *e1)
 
         int dy = y1 - y0 + 1;
 		const int repDiv = divTab[dy + DIV_TAB_SIZE / 2];
-        const int dx = ((x1 - x0) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE);
-		const int dc = ((c1 - c0) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE);
-		const int du = ((u1 - u0) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE);
-		const int dv = ((v1 - v0) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE);
+        const int dx = ((x1 - x0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
+		const int dc = ((c1 - c0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
+		const int du = ((u1 - u0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
+		const int dv = ((v1 - v0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
 
         int fx = INT_TO_FIXED(x0, FP_BASE);
 		int fc = INT_TO_FIXED(c0, FP_BASE);
@@ -461,7 +461,7 @@ static void fillGouraudEdges8(int yMin, int yMax)
 		uint32 *dst32;
 
 		const int repDiv = divTab[length + DIV_TAB_SIZE / 2];
-		const int dc = (((cr - cl) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE)) >> FP_BASE;
+		const int dc = ((cr - cl) * repDiv) >> DIV_TAB_SHIFT;
 		int fc = cl;
 
 		int xlp = xl & 3;
@@ -527,7 +527,7 @@ static void fillGouraudEdges16(int yMin, int yMax)
 		uint32 *dst32;
 
 		const int repDiv = divTab[length + DIV_TAB_SIZE / 2];
-		const int dc = (((cr - cl) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE)) >> FP_BASE;
+		const int dc = ((cr - cl) * repDiv) >> DIV_TAB_SHIFT;
 		int fc = cl;
 
 		if (length>0){
@@ -578,8 +578,7 @@ static void fillEnvmapEdges8(int yMin, int yMax)
 	Edge *le = &leftEdge[yMin];
 	Edge *re = &rightEdge[yMin];
 
-	const int texWidth = activeTexture->width;
-	const int texHeight = activeTexture->height;
+	const int texHeightShift = activeTexture->hShift;
 	uint8* texData = (uint8*)activeTexture->bitmap;
 
 	do {
@@ -589,27 +588,22 @@ static void fillEnvmapEdges8(int yMin, int yMax)
 		const int vl = le->v;
 		const int vr = re->v;
 		int length = re->x - xl;
+
 		uint8 *dst = vram8 + xl;
 		uint32 *dst32;
 
 		const int repDiv = divTab[length + DIV_TAB_SIZE / 2];
-		const int du = (((ur - ul) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE)) >> FP_BASE;
-		const int dv = (((vr - vl) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE)) >> FP_BASE;
+		const int du = ((ur - ul) * repDiv) >> DIV_TAB_SHIFT;
+		const int dv = ((vr - vl) * repDiv) >> DIV_TAB_SHIFT;
 		int fu = ul;
 		int fv = vl;
 
-		int u, v;
-
 		int xlp = xl & 3;
 		if (xlp) {
-			xlp = 4 - xlp;
-			while (xlp-- > 0 && length-- > 0) {
-				u = (FIXED_TO_INT(fu, FP_BASE)) & (texWidth-1);
-				v = (FIXED_TO_INT(fv, FP_BASE)) & (texHeight-1);
+			while (xlp++ < 4 && length-- > 0) {
+				*dst++ = texData[(FIXED_TO_INT(fv, FP_BASE) << texHeightShift) + FIXED_TO_INT(fu, FP_BASE)];
 				fu += du;
 				fv += dv;
-
-				*dst++ = texData[v * texWidth + u];
 			}
 		}
 
@@ -617,27 +611,19 @@ static void fillEnvmapEdges8(int yMin, int yMax)
 		while(length >= 4) {
 			int c0,c1,c2,c3;
 
-			u = (FIXED_TO_INT(fu, FP_BASE)) & (texWidth-1);
-			v = (FIXED_TO_INT(fv, FP_BASE)) & (texHeight-1);
-			c0 = texData[v * texWidth + u];
+			c0 = texData[(FIXED_TO_INT(fv, FP_BASE) << texHeightShift) + FIXED_TO_INT(fu, FP_BASE)];
 			fu += du;
 			fv += dv;
 
-			u = (FIXED_TO_INT(fu, FP_BASE)) & (texWidth-1);
-			v = (FIXED_TO_INT(fv, FP_BASE)) & (texHeight-1);
-			c1 = texData[v * texWidth + u];
+			c1 = texData[(FIXED_TO_INT(fv, FP_BASE) << texHeightShift) + FIXED_TO_INT(fu, FP_BASE)];
 			fu += du;
 			fv += dv;
 
-			u = (FIXED_TO_INT(fu, FP_BASE)) & (texWidth-1);
-			v = (FIXED_TO_INT(fv, FP_BASE)) & (texHeight-1);
-			c2 = texData[v * texWidth + u];
+			c2 = texData[(FIXED_TO_INT(fv, FP_BASE) << texHeightShift) + FIXED_TO_INT(fu, FP_BASE)];
 			fu += du;
 			fv += dv;
 
-			u = (FIXED_TO_INT(fu, FP_BASE)) & (texWidth-1);
-			v = (FIXED_TO_INT(fv, FP_BASE)) & (texHeight-1);
-			c3 = texData[v * texWidth + u];
+			c3 = texData[(FIXED_TO_INT(fv, FP_BASE) << texHeightShift) + FIXED_TO_INT(fu, FP_BASE)];
 			fu += du;
 			fv += dv;
 
@@ -647,12 +633,9 @@ static void fillEnvmapEdges8(int yMin, int yMax)
 
 		dst = (uint8*)dst32;
 		while (length-- > 0) {
-			u = (FIXED_TO_INT(fu, FP_BASE)) & (texWidth-1);
-			v = (FIXED_TO_INT(fv, FP_BASE)) & (texHeight-1);
+			*dst++ = texData[(FIXED_TO_INT(fv, FP_BASE) << texHeightShift) + FIXED_TO_INT(fu, FP_BASE)];
 			fu += du;
 			fv += dv;
-
-			*dst++ = texData[v * texWidth + u];
 		}
 
 		++le;
@@ -668,8 +651,7 @@ static void fillEnvmapEdges16(int yMin, int yMax)
 	Edge *le = &leftEdge[yMin];
 	Edge *re = &rightEdge[yMin];
 
-	const int texWidth = activeTexture->width;
-	const int texHeight = activeTexture->height;
+	const int texHeightShift = activeTexture->hShift;
 	uint16* texData = (uint16*)activeTexture->bitmap;
 
 	do {
@@ -679,24 +661,22 @@ static void fillEnvmapEdges16(int yMin, int yMax)
 		const int vl = le->v;
 		const int vr = re->v;
 		int length = re->x - xl;
-		uint16 *dst = vram16 + xl;
-		uint32 *dst32;
-
-		const int repDiv = divTab[length + DIV_TAB_SIZE / 2];
-		const int du = (((ur - ul) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE)) >> FP_BASE;
-		const int dv = (((vr - vl) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE)) >> FP_BASE;
-		int fu = ul;
-		int fv = vl;
 
 		if (length>0){
-			int u, v;
+			uint16 *dst = vram16 + xl;
+			uint32 *dst32;
+
+			const int repDiv = divTab[length + DIV_TAB_SIZE / 2];
+			const int du = ((ur - ul) * repDiv) >> DIV_TAB_SHIFT;
+			const int dv = ((vr - vl) * repDiv) >> DIV_TAB_SHIFT;
+			int fu = ul;
+			int fv = vl;
+			
 			if (xl & 1) {
-				u = (FIXED_TO_INT(fu, FP_BASE)) & (texWidth-1);
-				v = (FIXED_TO_INT(fv, FP_BASE)) & (texHeight-1);
+				*dst++ = texData[(FIXED_TO_INT(fv, FP_BASE) << texHeightShift) + FIXED_TO_INT(fu, FP_BASE)];
 				fu += du;
 				fv += dv;
 
-				*dst++ = texData[v * texWidth + u];
 				length--;
 			}
 
@@ -704,31 +684,23 @@ static void fillEnvmapEdges16(int yMin, int yMax)
 			while(length >= 2) {
 				int c0, c1;
 
-				u = (FIXED_TO_INT(fu, FP_BASE)) & (texWidth-1);
-				v = (FIXED_TO_INT(fv, FP_BASE)) & (texHeight-1);
-				c0 = texData[v * texWidth + u];
+				c0 = texData[(FIXED_TO_INT(fv, FP_BASE) << texHeightShift) + FIXED_TO_INT(fu, FP_BASE)];
 				fu += du;
 				fv += dv;
 
-				u = (FIXED_TO_INT(fu, FP_BASE)) & (texWidth-1);
-				v = (FIXED_TO_INT(fv, FP_BASE)) & (texHeight-1);
-				c1 = texData[v * texWidth + u];
+				c1 = texData[(FIXED_TO_INT(fv, FP_BASE) << texHeightShift) + FIXED_TO_INT(fu, FP_BASE)];
 				fu += du;
 				fv += dv;
 
 				*dst32++ = (c0 << 16) | c1;
-
 				length -= 2;
 			};
 
 			dst = (uint16*)dst32;
-			if (length & 1) {
-				u = (FIXED_TO_INT(fu, FP_BASE)) & (texWidth-1);
-				v = (FIXED_TO_INT(fv, FP_BASE)) & (texHeight-1);
+			if (length != 0) {
+				*dst++ = texData[(FIXED_TO_INT(fv, FP_BASE) << texHeightShift) + FIXED_TO_INT(fu, FP_BASE)];
 				fu += du;
 				fv += dv;
-
-				*dst++ = texData[v * texWidth + u];
 			}
 		}
 
@@ -745,8 +717,7 @@ static void fillGouraudEnvmapEdges8(int yMin, int yMax)
 	Edge *le = &leftEdge[yMin];
 	Edge *re = &rightEdge[yMin];
 
-	const int texWidth = activeTexture->width;
-	const int texHeight = activeTexture->height;
+	const int texHeightShift = activeTexture->hShift;
 	uint8* texData = (uint8*)activeTexture->bitmap;
 
 	do {
@@ -762,29 +733,25 @@ static void fillGouraudEnvmapEdges8(int yMin, int yMax)
 		uint32 *dst32;
 
 		const int repDiv = divTab[length + DIV_TAB_SIZE / 2];
-		const int dc = (((cr - cl) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE)) >> FP_BASE;
-		const int du = (((ur - ul) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE)) >> FP_BASE;
-		const int dv = (((vr - vl) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE)) >> FP_BASE;
+		const int dc = ((cr - cl) * repDiv) >> DIV_TAB_SHIFT;
+		const int du = ((ur - ul) * repDiv) >> DIV_TAB_SHIFT;
+		const int dv = ((vr - vl) * repDiv) >> DIV_TAB_SHIFT;
 		int fc = cl;
 		int fu = ul;
 		int fv = vl;
 
-		int u, v, c;
+		int c;
 
 		int xlp = xl & 3;
 		if (xlp) {
-			xlp = 4 - xlp;
-			while (xlp-- > 0 && length-- > 0) {
-				c = FIXED_TO_INT(fc, FP_BASE);
-				u = (FIXED_TO_INT(fu, FP_BASE)) & (texWidth-1);
-				v = (FIXED_TO_INT(fv, FP_BASE)) & (texHeight-1);
+			while (xlp++ < 4 && length-- > 0) {
+				c = (texData[(FIXED_TO_INT(fv, FP_BASE) << texHeightShift) + FIXED_TO_INT(fu, FP_BASE)] * FIXED_TO_INT(fc, FP_BASE)) >> COLOR_ENVMAP_SHR;
+				CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
+				*dst++ = c;
+
 				fc += dc;
 				fu += du;
 				fv += dv;
-
-				c = (texData[v * texWidth + u] * c) >> COLOR_ENVMAP_SHR;
-				CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
-				*dst++ = c;
 			}
 		}
 
@@ -792,37 +759,25 @@ static void fillGouraudEnvmapEdges8(int yMin, int yMax)
 		while(length >= 4) {
 			int c0,c1,c2,c3;
 
-			c = FIXED_TO_INT(fc, FP_BASE);
-			u = (FIXED_TO_INT(fu, FP_BASE)) & (texWidth-1);
-			v = (FIXED_TO_INT(fv, FP_BASE)) & (texHeight-1);
-			c0 = (texData[v * texWidth + u] * c) >> COLOR_ENVMAP_SHR;
+			c0 = (texData[(FIXED_TO_INT(fv, FP_BASE) << texHeightShift) + FIXED_TO_INT(fu, FP_BASE)] * FIXED_TO_INT(fc, FP_BASE)) >> COLOR_ENVMAP_SHR;
 			CLAMP(c0, 1, COLOR_GRADIENTS_SIZE-1)
 			fc += dc;
 			fu += du;
 			fv += dv;
 
-			c = FIXED_TO_INT(fc, FP_BASE);
-			u = (FIXED_TO_INT(fu, FP_BASE)) & (texWidth-1);
-			v = (FIXED_TO_INT(fv, FP_BASE)) & (texHeight-1);
-			c1 = (texData[v * texWidth + u] * c) >> COLOR_ENVMAP_SHR;
+			c1 = (texData[(FIXED_TO_INT(fv, FP_BASE) << texHeightShift) + FIXED_TO_INT(fu, FP_BASE)] * FIXED_TO_INT(fc, FP_BASE)) >> COLOR_ENVMAP_SHR;
 			CLAMP(c1, 1, COLOR_GRADIENTS_SIZE-1)
 			fc += dc;
 			fu += du;
 			fv += dv;
 
-			c = FIXED_TO_INT(fc, FP_BASE);
-			u = (FIXED_TO_INT(fu, FP_BASE)) & (texWidth-1);
-			v = (FIXED_TO_INT(fv, FP_BASE)) & (texHeight-1);
-			c2 = (texData[v * texWidth + u] * c) >> COLOR_ENVMAP_SHR;
+			c2 = (texData[(FIXED_TO_INT(fv, FP_BASE) << texHeightShift) + FIXED_TO_INT(fu, FP_BASE)] * FIXED_TO_INT(fc, FP_BASE)) >> COLOR_ENVMAP_SHR;
 			CLAMP(c2, 1, COLOR_GRADIENTS_SIZE-1)
 			fc += dc;
 			fu += du;
 			fv += dv;
 
-			c = FIXED_TO_INT(fc, FP_BASE);
-			u = (FIXED_TO_INT(fu, FP_BASE)) & (texWidth-1);
-			v = (FIXED_TO_INT(fv, FP_BASE)) & (texHeight-1);
-			c3 = (texData[v * texWidth + u] * c) >> COLOR_ENVMAP_SHR;
+			c3 = (texData[(FIXED_TO_INT(fv, FP_BASE) << texHeightShift) + FIXED_TO_INT(fu, FP_BASE)] * FIXED_TO_INT(fc, FP_BASE)) >> COLOR_ENVMAP_SHR;
 			CLAMP(c3, 1, COLOR_GRADIENTS_SIZE-1)
 			fc += dc;
 			fu += du;
@@ -834,16 +789,13 @@ static void fillGouraudEnvmapEdges8(int yMin, int yMax)
 
 		dst = (uint8*)dst32;
 		while (length-- > 0) {
-			c = FIXED_TO_INT(fc, FP_BASE);
-			u = (FIXED_TO_INT(fu, FP_BASE)) & (texWidth-1);
-			v = (FIXED_TO_INT(fv, FP_BASE)) & (texHeight-1);
+			c = (texData[(FIXED_TO_INT(fv, FP_BASE) << texHeightShift) + FIXED_TO_INT(fu, FP_BASE)] * FIXED_TO_INT(fc, FP_BASE)) >> COLOR_ENVMAP_SHR;
+			CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
+			*dst++ = c;
+
 			fc += dc;
 			fu += du;
 			fv += dv;
-
-			c = (texData[v * texWidth + u] * c) >> COLOR_ENVMAP_SHR;
-			CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
-			*dst++ = c;
 		}
 
 		++le;
@@ -859,8 +811,7 @@ static void fillGouraudEnvmapEdges16(int yMin, int yMax)
 	Edge *le = &leftEdge[yMin];
 	Edge *re = &rightEdge[yMin];
 
-	const int texWidth = activeTexture->width;
-	const int texHeight = activeTexture->height;
+	const int texHeightShift = activeTexture->hShift;
 	uint16* texData = (uint16*)activeTexture->bitmap;
 
 	do {
@@ -873,33 +824,32 @@ static void fillGouraudEnvmapEdges16(int yMin, int yMax)
 		const int vr = re->v;
 		int r,g,b;
 		int length = re->x - xl;
-		uint16 *dst = vram16 + xl;
-		uint32 *dst32;
-
-		const int repDiv = divTab[length + DIV_TAB_SIZE / 2];
-		const int dc = (((cr - cl) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE)) >> FP_BASE;
-		const int du = (((ur - ul) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE)) >> FP_BASE;
-		const int dv = (((vr - vl) * repDiv) >>  (DIV_TAB_SHIFT - FP_BASE)) >> FP_BASE;
-		int fc = cl;
-		int fu = ul;
-		int fv = vl;
 
 		if (length>0){
-			int u, v, c, cc;
+			uint16 *dst = vram16 + xl;
+			uint32 *dst32;
+
+			const int repDiv = divTab[length + DIV_TAB_SIZE / 2];
+			const int dc = ((cr - cl) * repDiv) >> DIV_TAB_SHIFT;
+			const int du = ((ur - ul) * repDiv) >> DIV_TAB_SHIFT;
+			const int dv = ((vr - vl) * repDiv) >> DIV_TAB_SHIFT;
+			int fc = cl;
+			int fu = ul;
+			int fv = vl;
+
+			int c, cc;
 			if (xl & 1) {
 				c = FIXED_TO_INT(fc, FP_BASE);
 				CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
-				u = (FIXED_TO_INT(fu, FP_BASE)) & (texWidth-1);
-				v = (FIXED_TO_INT(fv, FP_BASE)) & (texHeight-1);
-				fc += dc;
-				fu += du;
-				fv += dv;
-
-				cc = texData[v * texWidth + u];
+				cc = texData[(FIXED_TO_INT(fv, FP_BASE) << texHeightShift) + FIXED_TO_INT(fu, FP_BASE)];
 				r = (((cc >> 10) & 31) * c) >> COLOR_ENVMAP_SHR;
 				g = (((cc >> 5) & 31) * c) >> COLOR_ENVMAP_SHR;
 				b = ((cc  & 31) * c) >> COLOR_ENVMAP_SHR;
 				*dst++ = (r << 10) | (g << 5) | b;
+				fc += dc;
+				fu += du;
+				fv += dv;
+
 				length--;
 			}
 
@@ -909,10 +859,7 @@ static void fillGouraudEnvmapEdges16(int yMin, int yMax)
 
 				c = FIXED_TO_INT(fc, FP_BASE);
 				CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
-				u = (FIXED_TO_INT(fu, FP_BASE)) & (texWidth-1);
-				v = (FIXED_TO_INT(fv, FP_BASE)) & (texHeight-1);
-
-				cc = texData[v * texWidth + u];
+				cc = texData[(FIXED_TO_INT(fv, FP_BASE) << texHeightShift) + FIXED_TO_INT(fu, FP_BASE)];
 				r = (((cc >> 10) & 31) * c) >> COLOR_ENVMAP_SHR;
 				g = (((cc >> 5) & 31) * c) >> COLOR_ENVMAP_SHR;
 				b = ((cc  & 31) * c) >> COLOR_ENVMAP_SHR;
@@ -923,10 +870,7 @@ static void fillGouraudEnvmapEdges16(int yMin, int yMax)
 
 				c = FIXED_TO_INT(fc, FP_BASE);
 				CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
-				u = (FIXED_TO_INT(fu, FP_BASE)) & (texWidth-1);
-				v = (FIXED_TO_INT(fv, FP_BASE)) & (texHeight-1);
-
-				cc = texData[v * texWidth + u];
+				cc = texData[(FIXED_TO_INT(fv, FP_BASE) << texHeightShift) + FIXED_TO_INT(fu, FP_BASE)];
 				r = (((cc >> 10) & 31) * c) >> COLOR_ENVMAP_SHR;
 				g = (((cc >> 5) & 31) * c) >> COLOR_ENVMAP_SHR;
 				b = ((cc  & 31) * c) >> COLOR_ENVMAP_SHR;
@@ -944,17 +888,14 @@ static void fillGouraudEnvmapEdges16(int yMin, int yMax)
 			if (length & 1) {
 				c = FIXED_TO_INT(fc, FP_BASE);
 				CLAMP(c, 1, COLOR_GRADIENTS_SIZE-1)
-				u = (FIXED_TO_INT(fu, FP_BASE)) & (texWidth-1);
-				v = (FIXED_TO_INT(fv, FP_BASE)) & (texHeight-1);
-				fc += dc;
-				fu += du;
-				fv += dv;
-
-				cc = texData[v * texWidth + u];
+				cc = texData[(FIXED_TO_INT(fv, FP_BASE) << texHeightShift) + FIXED_TO_INT(fu, FP_BASE)];
 				r = (((cc >> 10) & 31) * c) >> COLOR_ENVMAP_SHR;
 				g = (((cc >> 5) & 31) * c) >> COLOR_ENVMAP_SHR;
 				b = ((cc  & 31) * c) >> COLOR_ENVMAP_SHR;
 				*dst++ = (r << 10) | (g << 5) | b;
+				fc += dc;
+				fu += du;
+				fv += dv;
 			}
 		}
 

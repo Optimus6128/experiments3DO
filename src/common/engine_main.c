@@ -198,18 +198,21 @@ static void calculateVertexEnvmapTC(Object3D *obj)
 {
 	int i;
 	const int verticesNum = obj->mesh->verticesNum;
-	
-	const int texWidth = obj->mesh->tex[0].width;
-	const int texHeight = obj->mesh->tex[0].height;
+	Texture *tex = &obj->mesh->tex[0];
+
+	const int texWidthHalf = tex->width >> 1;
+	const int texHeightHalf = tex->height >> 1;
+	const int wShiftHalf = NORMAL_SHIFT - tex->wShift + 1;
+	const int hShiftHalf = NORMAL_SHIFT - tex->hShift + 1;
 
 	for (i=0; i<verticesNum; ++i) {
 		int normZ = rotatedNormals[i].z;
 		if (normZ != 0) {
-			int normX = (rotatedNormals[i].x>>2) + (texWidth >> 1);
-			int normY = (rotatedNormals[i].y>>2) + (texHeight >> 1);
-			
-			normX &= (texWidth - 1);
-			normY &= (texHeight - 1);
+			int normX = (rotatedNormals[i].x>>wShiftHalf) + texWidthHalf;
+			int normY = (rotatedNormals[i].y>>hShiftHalf) + texHeightHalf;
+
+//			normX &= (texWidth - 1);
+//			normY &= (texHeight - 1);
 
 			screenElements[i].u = normX;
 			screenElements[i].v = normY;

@@ -4,6 +4,8 @@
 #include "engine_texture.h"
 #include "cel_helpers.h"
 
+#include "mathutil.h"
+
 void setupTexture(int width, int height, int bpp, int type, ubyte *bmp, uint16 *pal, ubyte numPals, Texture *tex)
 {
 	// Can't have palettized texture if bpp over 8
@@ -13,6 +15,8 @@ void setupTexture(int width, int height, int bpp, int type, ubyte *bmp, uint16 *
 
 	tex->width = width;
 	tex->height = height;
+	tex->wShift = shr[width];
+	tex->hShift = shr[height];
 	tex->bpp = bpp;
 	tex->type = type;
 
