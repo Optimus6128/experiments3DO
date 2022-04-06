@@ -18,6 +18,10 @@
 
 #include "sprite_engine.h"
 
+//0 0 0			39 18 11	20 15 7		131
+//-64 0 0		25 14 9		17 13 6		41
+//-64 32 0		23 13 8		16 12 6		35
+
 
 static int rotX=0, rotY=0, rotZ=0;
 static int zoom=256;
@@ -121,6 +125,8 @@ void effectMeshSoftInit()
 	softObj = initObject3D(softMesh8);
 
 	destroyPoint2Darray(ptArray);
+
+	setBackgroundColor(0x12341234);
 }
 
 void effectMeshSoftRun()
@@ -130,6 +136,10 @@ void effectMeshSoftRun()
 	setObject3Dpos(softObj, 0, 0, zoom);
 	setObject3Drot(softObj, rotX, rotY, rotZ);
 	renderObject3Dsoft(softObj);
+
+	drawNumber(8,192, rotX);
+	drawNumber(8,200, rotY);
+	drawNumber(8,208, rotZ);
 
 	displayDebugNums(true);
 }
