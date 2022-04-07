@@ -18,6 +18,9 @@ Sprite *newSprite(int width, int height, int bpp, int type, uint16 *pal, ubyte *
 	spr->angle = 0;
 	spr->zoom = 256;
 
+	spr->data = bmp;
+	spr->pal = pal;
+
 	return spr;
 }
 
@@ -173,7 +176,7 @@ void setSpritePositionZoomRotate(Sprite *spr, int px, int py, int zoom, int angl
 
 void *getSpriteBitmapData(Sprite *spr)
 {
-	return spr->cel->ccb_SourcePtr;
+	return spr->data;
 }
 
 void drawSprite(Sprite *spr)

@@ -738,7 +738,7 @@ static void fillGouraudEnvmapEdges8(int yMin, int yMax)
 		if (xlp) {
 			while (xlp++ < 4 && length-- > 0) {
 				c = (texData[(FIXED_TO_INT(fv, FP_BASE) << texHeightShift) + FIXED_TO_INT(fu, FP_BASE)] * FIXED_TO_INT(fc, FP_BASE)) >> COLOR_ENVMAP_SHR;
-				*dst++ = c;
+				*dst++ = c + 1;
 
 				fc += dc;
 				fu += du;
@@ -770,14 +770,14 @@ static void fillGouraudEnvmapEdges8(int yMin, int yMax)
 			fu += du;
 			fv += dv;
 
-			*dst32++ = (c0 << 24) | (c1 << 16) | (c2 << 8) | c3;
+			*dst32++ = ((c0 << 24) | (c1 << 16) | (c2 << 8) | c3) + 0x01010101;
 			length-=4;
 		};
 
 		dst = (uint8*)dst32;
 		while (length-- > 0) {
 			c = (texData[(FIXED_TO_INT(fv, FP_BASE) << texHeightShift) + FIXED_TO_INT(fu, FP_BASE)] * FIXED_TO_INT(fc, FP_BASE)) >> COLOR_ENVMAP_SHR;
-			*dst++ = c;
+			*dst++ = c + 1;
 
 			fc += dc;
 			fu += du;
@@ -830,7 +830,7 @@ static void fillGouraudEnvmapEdges16(int yMin, int yMax)
 				r = (((cc >> 10) & 31) * c) >> COLOR_ENVMAP_SHR;
 				g = (((cc >> 5) & 31) * c) >> COLOR_ENVMAP_SHR;
 				b = ((cc  & 31) * c) >> COLOR_ENVMAP_SHR;
-				*dst++ = (r << 10) | (g << 5) | b | 1;
+				*dst++ = (r << 10) | (g << 5) | b + 1;
 				fc += dc;
 				fu += du;
 				fv += dv;
@@ -862,7 +862,7 @@ static void fillGouraudEnvmapEdges16(int yMin, int yMax)
 				fu += du;
 				fv += dv;
 
-				*dst32++ = (c0 << 16) | c1 | 65537;
+				*dst32++ = (c0 << 16) | c1 + 65537;
 
 				length -= 2;
 			};
@@ -874,7 +874,7 @@ static void fillGouraudEnvmapEdges16(int yMin, int yMax)
 				r = (((cc >> 10) & 31) * c) >> COLOR_ENVMAP_SHR;
 				g = (((cc >> 5) & 31) * c) >> COLOR_ENVMAP_SHR;
 				b = ((cc  & 31) * c) >> COLOR_ENVMAP_SHR;
-				*dst++ = (r << 10) | (g << 5) | b | 1;
+				*dst++ = (r << 10) | (g << 5) | b + 1;
 				fc += dc;
 				fu += du;
 				fv += dv;
@@ -912,7 +912,7 @@ static void clearMinMaxRegion()
 	const int xPos32 = (minX * bpp) >> 5;
 	const int xLen32 = (((maxX - minX + 1) * bpp) >> 5) + 1;
 	const int lineSize32 = (sprSoftBuffer->width * bpp) >> 5;
-	const uint32 clearColor = 0x10101010;
+	const uint32 clearColor = 0;//0x10101010;
 	int x,y;
 
 	for (y=minY; y<=maxY; ++y) {
@@ -945,11 +945,15 @@ static void findMinMaxRegion(Mesh *ms, ScreenElement *elements)
 	CLAMP(minY, 0, sprSoftBuffer->height-1)
 }
 
-static void clearSoftBuffer(Mesh *ms, ScreenElement *elements)
+static void clearAndPositionSoftBuffer(Mesh *ms, ScreenElement *elements)
 {
-	vramSet(0, (void*)getSpriteBitmapData(sprSoftBuffer), getCelDataSizeInBytes(sprSoftBuffer->cel));
+	//vramSet(0, (void*)getSpriteBitmapData(sprSoftBuffer), getCelDataSizeInBytes(sprSoftBuffer->cel));
 
 	clearMinMaxRegion();
+
+	updateWindowCel(minX, minY, maxX - minX + 1, maxY - minY + 1, getSpriteBitmapData(sprSoftBuffer), sprSoftBuffer->cel);
+
+	setSpritePosition(sprSoftBuffer, minX, minY);
 
 	findMinMaxRegion(ms, elements);
 }
@@ -959,7 +963,7 @@ static void prepareMeshSoftRender(Mesh *ms, ScreenElement *elements)
 	if (ms->renderType & MESH_OPTION_RENDER_SEMISOFT) {
 		currentScanlineCel8 = scanlineCel8;
 	} else {
-		clearSoftBuffer(ms, elements);
+		clearAndPositionSoftBuffer(ms, elements);
 	}
 
 	switch(renderSoftMethod) {
@@ -1106,6 +1110,6 @@ void initEngineSoft()
 	if (!lineColorShades[2]) lineColorShades[2] = crateColorShades(15,31,23, COLOR_GRADIENTS_SIZE, false);
 	if (!lineColorShades[3]) lineColorShades[3] = crateColorShades(31,15,23, COLOR_GRADIENTS_SIZE, false);
 
-	if (!gouraudColorShades) gouraudColorShades = crateColorShades(27,29,31, COLOR_GRADIENTS_SIZE, false);
+	if (!gouraudColorShades) gouraudColorShades = crateColorShades(27,29,31, COLOR_GRADIENTS_SIZE, true);
 	sprSoftBuffer8->cel->ccb_PLUTPtr = gouraudColorShades;
 }

@@ -24,7 +24,7 @@
 
 
 static int rotX=0, rotY=0, rotZ=0;
-static int zoom=256;
+static int zoom=640;
 
 static const int rotVel = 2;
 static const int zoomVel = 2;
@@ -39,8 +39,12 @@ static Texture *cloudTex16;
 static int selectedSoftMesh = 0;
 static int renderSoftMethodIndex = RENDER_SOFT_METHOD_GOURAUD;
 
+static Mesh *draculMesh;
+static Object3D *draculObj;
+static Texture *draculTex;
 
 static Object3D *softObj;
+
 
 static void inputScript()
 {
@@ -126,20 +130,43 @@ void effectMeshSoftInit()
 
 	destroyPoint2Darray(ptArray);
 
-	setBackgroundColor(0x12341234);
+
+	setBackgroundColor(0x01020102);
+
+	draculTex = loadTexture("data/draculin64.cel");
+	draculMesh = initGenMesh(MESH_CUBE, DEFAULT_MESHGEN_PARAMS(192), MESH_OPTIONS_DEFAULT | MESH_OPTION_ENABLE_LIGHTING, draculTex);
+	draculObj = initObject3D(draculMesh);
+}
+
+static void renderHardObj(int posX, int posZ, int t)
+{
+	setObject3Dpos(draculObj, posX, 0, zoom + posZ);
+	setObject3Drot(draculObj, t, t<<1, t>>1);
+	renderObject3D(draculObj);
+}
+
+static void renderSoftObj(int posX, int posZ, int t)
+{
+	setObject3Dpos(softObj, -posX, 0, zoom + -posZ);
+	setObject3Drot(softObj, t<<1, t>>1, t);
+	renderObject3Dsoft(softObj);
 }
 
 void effectMeshSoftRun()
 {
+	const int t = getTicks() >> 5;
+	int posX = SinF16(t<<16) >> 8;
+	int posZ = CosF16(t<<16) >> 8;
+
+	if (posZ < 0) {
+		renderSoftObj(posX, posZ, t);
+		renderHardObj(posX, posZ, t);
+	} else {
+		renderHardObj(posX, posZ, t);
+		renderSoftObj(posX, posZ, t);
+	}
+
 	inputScript();
 
-	setObject3Dpos(softObj, 0, 0, zoom);
-	setObject3Drot(softObj, rotX, rotY, rotZ);
-	renderObject3Dsoft(softObj);
-
-	drawNumber(8,192, rotX);
-	drawNumber(8,200, rotY);
-	drawNumber(8,208, rotZ);
-
-	displayDebugNums(true);
+	//displayDebugNums(true);
 }

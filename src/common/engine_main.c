@@ -184,13 +184,15 @@ static void prepareTransformedMeshCELs(Mesh *ms)
 
 static void calculateVertexLighting(Object3D *obj)
 {
-	int i;
+	int i, c;
 	const int verticesNum = obj->mesh->verticesNum;
 
 	for (i=0; i<verticesNum; ++i) {
 		int normZ = -rotatedNormals[i].z;
 		CLAMP(normZ,0,((1<<NORMAL_SHIFT)-1))
-		screenElements[i].c = normZ >> (NORMAL_SHIFT-COLOR_GRADIENTS_SHR);
+		c = normZ >> (NORMAL_SHIFT-COLOR_GRADIENTS_SHR);
+		CLAMP(c,1,COLOR_GRADIENTS_SIZE-2)
+		screenElements[i].c = c;
 	}
 }
 

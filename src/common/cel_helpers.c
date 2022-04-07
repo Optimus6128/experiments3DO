@@ -63,6 +63,19 @@ void* getCelBitmap(CCB *cel)
 	return cel->ccb_SourcePtr;
 }
 
+void updateCelWidth(int width, CCB *cel)
+{
+	if (width < 1 || width > 2048) return;
+
+	cel->ccb_PRE1 = (cel->ccb_PRE1 & ~PRE1_TLHPCNT_MASK) | (width - PRE1_TLHPCNT_PREFETCH);
+}
+
+void updateCelHeight(int height, CCB *cel)
+{
+	if (height < 1 || height > 1024) return;
+
+	cel->ccb_PRE0 = (cel->ccb_PRE0 & ~PRE0_VCNT_MASK) | ((height - PRE0_VCNT_PREFETCH) << PRE0_VCNT_SHIFT);
+}
 
 void setCelWidth(int width, CCB *cel)
 {
@@ -75,12 +88,13 @@ void setCelWidth(int width, CCB *cel)
 	if (woffset < 2) woffset = 2;	// woffset can be minimum 2 words (8 bytes)
 	woffset -= PRE1_WOFFSET_PREFETCH;
 
-	cel->ccb_PRE1 = (cel->ccb_PRE1 & ~PRE1_TLHPCNT_MASK) | (width - PRE1_TLHPCNT_PREFETCH);
 	if (bpp < 8) {
 		cel->ccb_PRE1 = (cel->ccb_PRE1 & ~PRE1_WOFFSET8_MASK) | (woffset << PRE1_WOFFSET8_SHIFT);
 	} else {
 		cel->ccb_PRE1 = (cel->ccb_PRE1 & ~PRE1_WOFFSET10_MASK) | (woffset << PRE1_WOFFSET10_SHIFT);
 	}
+
+	updateCelWidth(width, cel);
 
 	cel->ccb_Width = width;	// in the future in full replace we won't save this, Lib3DO functions need it right now!
 }
@@ -89,7 +103,7 @@ void setCelHeight(int height, CCB *cel)
 {
 	if (height < 1 || height > 1024) return;
 
-	cel->ccb_PRE0 = (cel->ccb_PRE0 & ~PRE0_VCNT_MASK) | ((height - PRE0_VCNT_PREFETCH) << PRE0_VCNT_SHIFT);
+	updateCelHeight(height, cel);
 
 	cel->ccb_Height = height;	// in the future in full replace we won't save this, Lib3DO functions need it right now!
 }
@@ -172,23 +186,21 @@ void linkCel(CCB *ccb, CCB *nextCCB)
 	ccb->ccb_Flags &= ~CCB_LAST;
 }
 
-/*
-// Will finish later. Ness more, bpp, skipping pixels depending on bpp, etc..
-// It would be also nice to give the original CCB, get the max width/height from the extra structure that is not loaded to the hardware, get the bpp and other info from the bits
-void setupWindowNormalCel(int posX, int posY, int width, int height, int totalWidth, int totalHeight, void *bitmap, CCB *cel)
+void updateWindowCel(int posX, int posY, int width, int height, int *bitmap, CCB *cel)
 {
-	int woffset;
-	int vcnt;
+	int xPos32, lineSize32;
+	const int bpp = getCelBpp(cel);
 
-	cel->ccb_PRE1 &= ~PRE1_LRFORM;
-	cel->ccb_SourcePtr = (CelData*)bitmap;
-	woffset = (width >> 1) - 2;
-	vcnt = height - 1;
+	if (bpp==0 || width < 1 || width > 2048 || height < 1 || height > 2048) return;
 
-	// Should spare the magic numbers at some point
-	cel->ccb_PRE0 = (cel->ccb_PRE0 & ~(((1<<10) - 1)<<6)) | (vcnt << 6);
-	cel->ccb_PRE1 = (cel->ccb_PRE1 & (65536 - 1024)) | (woffset << 16) | (width-1);
-}*/
+	updateCelWidth(width, cel);
+	updateCelHeight(height, cel);
+
+	xPos32 = (posX * bpp) >> 5;
+	lineSize32 = (cel->ccb_Width * bpp) >> 5;
+
+	cel->ccb_SourcePtr = (CelData*)&bitmap[posY * lineSize32 + xPos32];
+}
 
 void setupWindowFeedbackCel(int posX, int posY, int width, int height, int bufferIndex, CCB *cel)
 {
@@ -199,10 +211,10 @@ void setupWindowFeedbackCel(int posX, int posY, int width, int height, int buffe
 	cel->ccb_Flags |= CCB_BGND;
 	cel->ccb_PRE1 |= PRE1_LRFORM;
 	cel->ccb_SourcePtr = (CelData*)(getBackBufferByIndex(bufferIndex) + (posY & ~1) * SCREEN_WIDTH + 2*posX);
-	woffset = SCREEN_WIDTH - 2;
-	vcnt = (height >> 1) - 1;
 
-	// Should spare the magic numbers at some point
-	cel->ccb_PRE0 = (cel->ccb_PRE0 & ~(((1<<10) - 1)<<6)) | (vcnt << 6);
-	cel->ccb_PRE1 = (cel->ccb_PRE1 & (65536 - 1024)) | (woffset << 16) | (width-1);
+	woffset = SCREEN_WIDTH - PRE1_WOFFSET_PREFETCH;
+	vcnt = (height >> 1) - PRE0_VCNT_PREFETCH;
+
+	cel->ccb_PRE0 = (cel->ccb_PRE0 & ~PRE0_VCNT_MASK) | (vcnt << PRE0_VCNT_SHIFT);
+	cel->ccb_PRE1 = (cel->ccb_PRE1 & ~PRE1_WOFFSET10_MASK) | (woffset << PRE1_WOFFSET10_SHIFT) | (width-PRE1_TLHPCNT_PREFETCH);
 }
