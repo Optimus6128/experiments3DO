@@ -63,21 +63,37 @@ void* getCelBitmap(CCB *cel)
 	return cel->ccb_SourcePtr;
 }
 
-void updateCelWidth(int width, CCB *cel)
+void setCelWidth(int width, CCB *cel)
 {
 	if (width < 1 || width > 2048) return;
 
 	cel->ccb_PRE1 = (cel->ccb_PRE1 & ~PRE1_TLHPCNT_MASK) | (width - PRE1_TLHPCNT_PREFETCH);
 }
 
-void updateCelHeight(int height, CCB *cel)
+void setCelHeight(int height, CCB *cel)
 {
 	if (height < 1 || height > 1024) return;
 
 	cel->ccb_PRE0 = (cel->ccb_PRE0 & ~PRE0_VCNT_MASK) | ((height - PRE0_VCNT_PREFETCH) << PRE0_VCNT_SHIFT);
 }
 
-void setCelWidth(int width, CCB *cel)
+void setCelStride(int stride, CCB *cel)
+{
+	const int bpp = getCelBpp(cel);
+	int woffset;
+
+	if (bpp==0 || stride < 8 || stride > 2048) return;
+
+	woffset = (stride >> 2) - PRE1_WOFFSET_PREFETCH;
+
+	if (bpp < 8) {
+		cel->ccb_PRE1 = (cel->ccb_PRE1 & ~PRE1_WOFFSET8_MASK) | (woffset << PRE1_WOFFSET8_SHIFT);
+	} else {
+		cel->ccb_PRE1 = (cel->ccb_PRE1 & ~PRE1_WOFFSET10_MASK) | (woffset << PRE1_WOFFSET10_SHIFT);
+	}
+}
+
+static void initCelWidth(int width, CCB *cel)
 {
 	const int bpp = getCelBpp(cel);
 	int woffset;
@@ -94,16 +110,16 @@ void setCelWidth(int width, CCB *cel)
 		cel->ccb_PRE1 = (cel->ccb_PRE1 & ~PRE1_WOFFSET10_MASK) | (woffset << PRE1_WOFFSET10_SHIFT);
 	}
 
-	updateCelWidth(width, cel);
+	setCelWidth(width, cel);
 
 	cel->ccb_Width = width;	// in the future in full replace we won't save this, Lib3DO functions need it right now!
 }
 
-void setCelHeight(int height, CCB *cel)
+static void initCelHeight(int height, CCB *cel)
 {
 	if (height < 1 || height > 1024) return;
 
-	updateCelHeight(height, cel);
+	setCelHeight(height, cel);
 
 	cel->ccb_Height = height;	// in the future in full replace we won't save this, Lib3DO functions need it right now!
 }
@@ -141,6 +157,12 @@ void setCelBitmap(void *bitmap, CCB *cel)
 	cel->ccb_SourcePtr = (CelData*)bitmap;
 }
 
+void setCelPosition(int x, int y, CCB *cel)
+{
+	cel->ccb_XPos = x << 16;
+	cel->ccb_YPos = y << 16;
+}
+
 void initCel(int width, int height, int bpp, int type, CCB *cel)
 {
 	if (!cel) return;
@@ -150,8 +172,8 @@ void initCel(int width, int height, int bpp, int type, CCB *cel)
 	// Don't change the order of these four!
 	setCelBpp(bpp, cel);
 	setCelType(type, cel);
-	setCelHeight(height, cel);
-	setCelWidth(width, cel);
+	initCelHeight(height, cel);
+	initCelWidth(width, cel);
 }
 
 CCB *createCel(int width, int height, int bpp, int type)
@@ -193,8 +215,8 @@ void updateWindowCel(int posX, int posY, int width, int height, int *bitmap, CCB
 
 	if (bpp==0 || width < 1 || width > 2048 || height < 1 || height > 2048) return;
 
-	updateCelWidth(width, cel);
-	updateCelHeight(height, cel);
+	setCelWidth(width, cel);
+	setCelHeight(height, cel);
 
 	xPos32 = (posX * bpp) >> 5;
 	lineSize32 = (cel->ccb_Width * bpp) >> 5;

@@ -24,7 +24,7 @@
 
 
 static int rotX=0, rotY=0, rotZ=0;
-static int zoom=640;
+static int zoom=512;
 
 static const int rotVel = 2;
 static const int zoomVel = 2;
@@ -157,6 +157,8 @@ void effectMeshSoftRun()
 	const int t = getTicks() >> 5;
 	int posX = SinF16(t<<16) >> 8;
 	int posZ = CosF16(t<<16) >> 8;
+	
+	clearSoftEngineBuffer();
 
 	if (posZ < 0) {
 		renderSoftObj(posX, posZ, t);

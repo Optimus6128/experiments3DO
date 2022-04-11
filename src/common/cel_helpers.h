@@ -23,12 +23,15 @@ int getCelType(CCB *cel);
 uint16* getCelPalette(CCB *cel);
 void* getCelBitmap(CCB *cel);
 
-void setCelWidth(int width, CCB *cel);
-void setCelHeight(int height, CCB *cel);
 void setCelBpp(int bpp, CCB *cel);
 void setCelType(int type, CCB *cel);
 void setCelPalette(uint16 *pal, CCB *cel);
 void setCelBitmap(void *bitmap, CCB *cel);
+void setCelPosition(int x, int y, CCB *cel);
+
+void setCelWidth(int width, CCB *cel);
+void setCelHeight(int height, CCB *cel);
+void setCelStride(int stride, CCB *cel);
 
 void linkCel(CCB *ccb, CCB *nextCCB);
 
