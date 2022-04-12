@@ -158,8 +158,6 @@ void effectMeshSoftRun()
 	int posX = SinF16(t<<16) >> 8;
 	int posZ = CosF16(t<<16) >> 8;
 	
-	clearSoftEngineBuffer();
-
 	if (posZ < 0) {
 		renderSoftObj(posX, posZ, t);
 		renderHardObj(posX, posZ, t);

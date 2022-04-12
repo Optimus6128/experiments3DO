@@ -27,7 +27,7 @@ loopVramSet
 		stmia r1!,{r4-r11}
 		stmia r1!,{r4-r11}
 	subs r2,r2,#256
-	bge loopVramSet
+	bgt loopVramSet
 
 	ldmfd sp!, {r4-r11, pc}
 

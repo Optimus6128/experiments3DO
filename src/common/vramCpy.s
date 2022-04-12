@@ -26,7 +26,7 @@ loopVramCpy
 		ldmia r0!,{r4-r11}
 		stmia r1!,{r4-r11}
 	subs r2,r2,#256
-	bge loopVramCpy
+	bgt loopVramCpy
 
 	ldmfd sp!, {r4-r11, pc}
 

@@ -345,7 +345,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 	int xp, yp;
 	int dx, dy;
 
-	Mesh *ms;
+	Mesh *ms = NULL;
 
 	const int size = params.size;
 	const int s = size / 2;

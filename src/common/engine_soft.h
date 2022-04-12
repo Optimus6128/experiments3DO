@@ -21,7 +21,6 @@ enum {	RENDER_SOFT_METHOD_WIREFRAME,
 
 void initEngineSoft(void);
 void renderTransformedMeshSoft(Mesh *ms, ScreenElement *elements);
-void clearSoftEngineBuffer(void);
 
 void setRenderSoftMethod(int method);
 #endif

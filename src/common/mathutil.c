@@ -57,7 +57,7 @@ void calcVector3Dcross(Vector3D *vRes, Vector3D *v0, Vector3D *v1)
 
 void normalizeVector3D(Vector3D *v)
 {
-	int length = sqrt(v->x * v->x + v->y * v->y + v->z * v->z);
+	int length = (int)sqrt(v->x * v->x + v->y * v->y + v->z * v->z);
 
 	v->x = (v->x << NORMAL_SHIFT) / length;
 	v->y = (v->y << NORMAL_SHIFT) / length;

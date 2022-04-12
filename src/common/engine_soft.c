@@ -43,7 +43,7 @@ typedef struct SoftBuffer
 	int width;
 	int height;
 	int stride;
-	int nextIndex;
+	int currentIndex;
 	uint8 *data;
 	CCB *cel;
 }SoftBuffer;
@@ -936,6 +936,7 @@ static void drawTriangle(ScreenElement *e0, ScreenElement *e1, ScreenElement *e2
 static void updateSoftBufferVariables(int posX, int posY, int width, int height, Mesh *ms)
 {
 	int celType = CEL_TYPE_UNCODED;
+	int currentBufferSize;
 	softBuffer.bpp = 16;
 	if (ms->renderType & MESH_OPTION_RENDER_SOFT8) {
 		softBuffer.bpp = 8;
@@ -947,8 +948,16 @@ static void updateSoftBufferVariables(int posX, int posY, int width, int height,
 	softBuffer.stride = (((softBuffer.width * softBuffer.bpp) + 31) >> 5) << 2;	// must be multiples of 4 bytes
 	if (softBuffer.stride < 8) softBuffer.stride = 8;					// and no less than 8 bytes
 
-	softBufferCurrentPtr = &softBuffer.data[softBuffer.nextIndex];
-	softBuffer.nextIndex += ((((softBuffer.stride * softBuffer.height) + 255) >> 8) << 8);	// must be in multiples of 256 bytes for the unrolled optimized memset
+	currentBufferSize = (((softBuffer.stride * softBuffer.height) + 255) >> 8) << 8; // must be in multiples of 256 bytes for the unrolled optimized memset
+	if (softBuffer.currentIndex + currentBufferSize > SOFT_BUFF_MAX_SIZE) {
+		softBuffer.currentIndex = 0;
+	}
+	softBufferCurrentPtr = &softBuffer.data[softBuffer.currentIndex];
+	if (currentBufferSize <= SOFT_BUFF_MAX_SIZE) {
+		vramSet(0, softBufferCurrentPtr, currentBufferSize);
+		//memset(softBufferCurrentPtr, 0, currentBufferSize);
+		softBuffer.currentIndex += currentBufferSize;
+	}	// else something went wrong
 
 	setCelWidth(softBuffer.width, softBuffer.cel);
 	setCelHeight(softBuffer.height, softBuffer.cel);
@@ -1112,20 +1121,12 @@ void setRenderSoftMethod(int method)
 	renderSoftMethod = method;
 }
 
-void clearSoftEngineBuffer()
-{
-	if (softBuffer.nextIndex > 0) {
-		vramSet(0, softBuffer.data, softBuffer.nextIndex);
-	}
-	softBuffer.nextIndex = 0;
-}
-
 static void initSoftBuffer()
 {
 	softBuffer.bpp = 16;
 	softBuffer.width = SCREEN_WIDTH;
 	softBuffer.height = SCREEN_HEIGHT;
-	softBuffer.nextIndex = 0;
+	softBuffer.currentIndex = 0;
 
 	softBuffer.data = AllocMem(SOFT_BUFF_MAX_SIZE, MEMTYPE_ANY);
 	softBuffer.cel = createCel(softBuffer.width, softBuffer.height, softBuffer.bpp, CEL_TYPE_UNCODED);
