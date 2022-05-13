@@ -44,9 +44,9 @@ static void generateUnpackedRain()
 
 		for (j=0; j<128; ++j) {
 			// noise test for now (will use the two above functions later)
-			const int bx = rand() & (RAIN_LAYER_WIDTH / 4 - 1);
-			const int by = rand() & (RAIN_LAYER_HEIGHT - 1);
-			*(dst + by * (RAIN_LAYER_WIDTH / 4) + bx) = (ubyte)rand();
+			const int bx = getRand(0, RAIN_LAYER_WIDTH / 4 - 1);
+			const int by = getRand(0, RAIN_LAYER_HEIGHT - 1);
+			*(dst + by * (RAIN_LAYER_WIDTH / 4) + bx) = (ubyte)getRand(0, 255);
 		}
 	}
 

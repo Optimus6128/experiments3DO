@@ -7,6 +7,24 @@
 
 int shr[257]; // ugly way to get precalced fast right shift for division with power of two numbers
 
+int isqrt(int x) {
+    int q = 1, r = 0;
+    while (q <= x) {
+        q <<= 2;
+    }
+    while (q > 1) {
+        int t;
+        q >>= 2;
+        t = x - r - q;
+        r >>= 1;
+        if (t >= 0) {
+            x = t;
+            r += q;
+        }
+    }
+    return r;
+} 
+
 int getRand(int from, int to)
 {
 	int rnd;
@@ -57,11 +75,13 @@ void calcVector3Dcross(Vector3D *vRes, Vector3D *v0, Vector3D *v1)
 
 void normalizeVector3D(Vector3D *v)
 {
-	int length = (int)sqrt(v->x * v->x + v->y * v->y + v->z * v->z);
+	int length = isqrt(v->x * v->x + v->y * v->y + v->z * v->z);
 
-	v->x = (v->x << NORMAL_SHIFT) / length;
-	v->y = (v->y << NORMAL_SHIFT) / length;
-	v->z = (v->z << NORMAL_SHIFT) / length;
+	if (length != 0) {
+		v->x = (v->x << NORMAL_SHIFT) / length;
+		v->y = (v->y << NORMAL_SHIFT) / length;
+		v->z = (v->z << NORMAL_SHIFT) / length;
+	}
 }
 
 Point2Darray *initPoint2Darray(int numPoints)

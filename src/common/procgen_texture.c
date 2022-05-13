@@ -162,7 +162,7 @@ static int addLightBlobToTexel(int x, int y, int width, int height)
 
 	int r = xc * xc + yc * yc;
 	if (r == 0) r = 1;
-	return 256 / sqrt(r);
+	return 256 / isqrt(r);
 }
 
 static void genCloudTexture(int hashX, int hashY, int hashZ, int shrStart, int iterations, Texture *tex)
@@ -213,7 +213,7 @@ static void genTexture(int texgenId, void *params, Texture *tex)
 
 	if (!genRandValues) {
 		for (i = 0; i < RANDV_NUM; ++i)
-			randV[i] = (int)(sin(rand() * 0.01f) * ((RANGE >> 1) - 1));
+			randV[i] = (SinF16(getRand(0, 32767) * getRand(0, 32767)) * ((RANGE >> 1) - 1)) >> 16;
 		genRandValues = true;
 	}
 

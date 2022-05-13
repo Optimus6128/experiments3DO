@@ -12,7 +12,7 @@ AS 		= $(ARMDEV)bin/armasm
 LD		= $(ARMDEV)bin/armlink
 RM		= $(3DODEV)bin/rm
 MODBIN	= $(3DODEV)bin/modbin
-CCFLAGS	= -O2 -Otime -bi -za1 -d DEBUG=0 -cpu ARM60
+CCFLAGS	= -O2 -Otime -bi -za1 -d DEBUG=0 -cpu ARM60 -D BIG_ENDIAN
 ASFLAGS	= -BI
 INCPATH	= -I$(3DODEV)includes -I$(COMMON_DIR)
 LDFLAGS	= -reloc -nodebug -remove -ro-base 0x80
@@ -58,4 +58,4 @@ clean:
 	RM -f $(CD_DIR)../demo.iso
 
 copy:
-	CP $(NAME) $(CD_DIR)LaunchMe
+	copy $(NAME) "$(CD_DIR)LaunchMe"

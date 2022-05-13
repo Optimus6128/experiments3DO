@@ -29,6 +29,7 @@ static CCB **currentScanlineCel8 = scanlineCel8;
 #define GRADIENT_GROUP_SIZE (GRADIENT_SHADES * GRADIENT_LENGTH)
 static uint8 gourGrads[GRADIENT_SHADES * GRADIENT_GROUP_SIZE];
 
+static bool fastGouraud = false;
 
 typedef struct Edge
 {
@@ -506,7 +507,11 @@ static void fillGouraudEdges8(int yMin, int yMax)
 			c3 = FIXED_TO_INT(fc, FP_BASE);
 			fc += dc;
 
-			*dst32++ = (c0 << 24) | (c1 << 16) | (c2 << 8) | c3;
+			#ifdef BIG_ENDIAN
+				*dst32++ = (c0 << 24) | (c1 << 16) | (c2 << 8) | c3;
+			#else
+				*dst32++ = (c3 << 24) | (c2 << 16) | (c1 << 8) | c0;
+			#endif
 			length-=4;
 		};
 
@@ -562,7 +567,11 @@ static void fillGouraudEdges16(int yMin, int yMax)
 				c1 = FIXED_TO_INT(fc, FP_BASE);
 				fc += dc;
 
-				*dst32++ = (activeGradient[c0] << 16) | activeGradient[c1];
+				#ifdef BIG_ENDIAN
+					*dst32++ = (activeGradient[c0] << 16) | activeGradient[c1];
+				#else
+					*dst32++ = (activeGradient[c1] << 16) | activeGradient[c0];
+				#endif
 				length -= 2;
 			};
 
@@ -639,7 +648,11 @@ static void fillEnvmapEdges8(int yMin, int yMax)
 			fu += du;
 			fv += dv;
 
-			*dst32++ = (c0 << 24) | (c1 << 16) | (c2 << 8) | c3;
+			#ifdef BIG_ENDIAN
+				*dst32++ = (c0 << 24) | (c1 << 16) | (c2 << 8) | c3;
+			#else
+				*dst32++ = (c3 << 24) | (c2 << 16) | (c1 << 8) | c0;
+			#endif
 			length-=4;
 		};
 
@@ -706,7 +719,11 @@ static void fillEnvmapEdges16(int yMin, int yMax)
 				fu += du;
 				fv += dv;
 
-				*dst32++ = (c0 << 16) | c1;
+				#ifdef BIG_ENDIAN
+					*dst32++ = (c0 << 16) | c1;
+				#else
+					*dst32++ = (c1 << 16) | c0;
+				#endif
 				length -= 2;
 			};
 
@@ -795,7 +812,11 @@ static void fillGouraudEnvmapEdges8(int yMin, int yMax)
 			fu += du;
 			fv += dv;
 
-			*dst32++ = ((c0 << 24) | (c1 << 16) | (c2 << 8) | c3) + 0x01010101;
+			#ifdef BIG_ENDIAN
+				*dst32++ = ((c0 << 24) | (c1 << 16) | (c2 << 8) | c3) + 0x01010101;
+			#else
+				*dst32++ = ((c3 << 24) | (c2 << 16) | (c1 << 8) | c0) + 0x01010101;
+			#endif
 			length-=4;
 		};
 
@@ -890,7 +911,11 @@ static void fillGouraudEnvmapEdges16(int yMin, int yMax)
 				fu += du;
 				fv += dv;
 
-				*dst32++ = (c0 << 16) | c1 + 65537;
+				#ifdef BIG_ENDIAN
+					*dst32++ = (c0 << 16) | c1 + 65537;
+				#else
+					*dst32++ = (c1 << 16) | c0 + 65537;
+				#endif
 
 				length -= 2;
 			};
@@ -998,9 +1023,16 @@ static void prepareAndPositionSoftBuffer(Mesh *ms, ScreenElement *elements)
 	updateSoftBufferVariables(minX, minY, maxX - minX + 1, maxY - minY + 1, ms);
 }
 
+static bool mustUseFastGouraud(Mesh *ms)
+{
+	return fastGouraud && (renderSoftMethod == RENDER_SOFT_METHOD_GOURAUD) && (ms->renderType & MESH_OPTION_RENDER_SOFT8);
+}
+
 static void prepareMeshSoftRender(Mesh *ms, ScreenElement *elements)
 {
-	if (ms->renderType & MESH_OPTION_RENDER_SEMISOFT) {
+	const bool useFastGouraud = mustUseFastGouraud(ms);
+
+	if (useFastGouraud) {
 		currentScanlineCel8 = scanlineCel8;
 	} else {
 		prepareAndPositionSoftBuffer(ms, elements);
@@ -1010,11 +1042,13 @@ static void prepareMeshSoftRender(Mesh *ms, ScreenElement *elements)
 		case RENDER_SOFT_METHOD_GOURAUD:
 		{
 			prepareEdgeList = prepareEdgeListGouraud;
+			if (useFastGouraud) {
+				fillEdges = fillGouraudEdges8_SemiSoft;
+			} else {
 			fillEdges = fillGouraudEdges16;
 			if (ms->renderType & MESH_OPTION_RENDER_SOFT8) {
 				fillEdges = fillGouraudEdges8;
-			} else if (ms->renderType & MESH_OPTION_RENDER_SEMISOFT) {
-				fillEdges = fillGouraudEdges8_SemiSoft;
+				}
 			}
 		}
 		break;
@@ -1046,7 +1080,7 @@ static void prepareMeshSoftRender(Mesh *ms, ScreenElement *elements)
 
 static void finalizeMeshSoftRender(Mesh *ms)
 {
-	if (ms->renderType & MESH_OPTION_RENDER_SEMISOFT) {
+	if (mustUseFastGouraud(ms)) {
 		CCB *lastScanlineCel = *(currentScanlineCel8 - 1);
 		lastScanlineCel->ccb_Flags |= CCB_LAST;
 		drawCels(*scanlineCel8);

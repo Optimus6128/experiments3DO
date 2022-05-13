@@ -18,10 +18,6 @@
 
 #include "sprite_engine.h"
 
-//0 0 0			39 18 11	20 15 7		131
-//-64 0 0		25 14 9		17 13 6		41
-//-64 32 0		23 13 8		16 12 6		35
-
 
 static int rotX=0, rotY=0, rotZ=0;
 static int zoom=512;
@@ -31,7 +27,6 @@ static const int zoomVel = 2;
 
 static Mesh *softMesh8;
 static Mesh *softMesh16;
-static Mesh *softMeshSemi;
 
 static Texture *cloudTex8;
 static Texture *cloudTex16;
@@ -73,15 +68,12 @@ static void inputScript()
 	}
 
 	if (isJoyButtonPressedOnce(JOY_BUTTON_C)) {
-		++selectedSoftMesh;
-		if (selectedSoftMesh==3) selectedSoftMesh = 0;
+		selectedSoftMesh = (selectedSoftMesh+1) & 1;
 
 		if (selectedSoftMesh==0) {
 			setObject3Dmesh(softObj, softMesh8);
 		} else if (selectedSoftMesh==1) {
 			setObject3Dmesh(softObj, softMesh16);
-		} else {
-			setObject3Dmesh(softObj, softMeshSemi);
 		}
 	}
 
@@ -114,7 +106,7 @@ void effectMeshSoftInit()
 
 	for (i=0; i<numPoints; ++i) {
 		const int y = (size/4) * (numPoints/2 - i);
-		const int r = (int)(sin((float)i / 2.0f) * (size / 2) + size / 2);
+		const int r = ((SinF16((i*20) << 16) * (size / 2)) >> 16) + size / 2;
 		addPoint2D(ptArray, r,y);
 	}
 
@@ -124,7 +116,6 @@ void effectMeshSoftInit()
 
 	softMesh8 = initGenMesh(meshType, params, MESH_OPTION_RENDER_SOFT8 | MESH_OPTION_ENABLE_LIGHTING | MESH_OPTION_ENABLE_ENVMAP, cloudTex8);
 	softMesh16 = initGenMesh(meshType, params, MESH_OPTION_RENDER_SOFT16 | MESH_OPTION_ENABLE_LIGHTING | MESH_OPTION_ENABLE_ENVMAP, cloudTex16);
-	softMeshSemi = initGenMesh(meshType, params, MESH_OPTION_RENDER_SEMISOFT | MESH_OPTION_ENABLE_LIGHTING, NULL);
 
 	softObj = initObject3D(softMesh8);
 
@@ -153,18 +144,20 @@ static void renderSoftObj(int posX, int posZ, int t)
 }
 
 void effectMeshSoftRun()
-{
+{int i;
 	const int t = getTicks() >> 5;
 	int posX = SinF16(t<<16) >> 8;
 	int posZ = CosF16(t<<16) >> 8;
-	
-	if (posZ < 0) {
+
+	renderSoftObj(0, 256, t);
+
+	/*if (posZ < 0) {
 		renderSoftObj(posX, posZ, t);
 		renderHardObj(posX, posZ, t);
 	} else {
 		renderHardObj(posX, posZ, t);
 		renderSoftObj(posX, posZ, t);
-	}
+	}*/
 
 	inputScript();
 
