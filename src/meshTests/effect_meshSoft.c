@@ -102,7 +102,7 @@ void effectMeshSoftInit()
 
 	Point2Darray *ptArray = initPoint2Darray(numPoints);
 	
-	int meshType = MESH_SQUARE_COLUMNOID;
+	int meshType = MESH_CUBE; //MESH_SQUARE_COLUMNOID;
 
 	for (i=0; i<numPoints; ++i) {
 		const int y = (size/4) * (numPoints/2 - i);
@@ -122,7 +122,7 @@ void effectMeshSoftInit()
 	destroyPoint2Darray(ptArray);
 
 
-	setBackgroundColor(0x01020102);
+	//setBackgroundColor(0x01020102);
 
 	draculTex = loadTexture("data/draculin64.cel");
 	draculMesh = initGenMesh(MESH_CUBE, DEFAULT_MESHGEN_PARAMS(192), MESH_OPTIONS_DEFAULT | MESH_OPTION_ENABLE_LIGHTING, draculTex);

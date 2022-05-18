@@ -65,11 +65,13 @@ static uint16 *gouraudColorShades;
 static uint16 *activeGradient = NULL;
 static Texture *activeTexture = NULL;
 
+static int minX, maxX, minY, maxY;
+
 #define LN_BASE 8
 #define LN_AND ((1 << LN_BASE) - 1)
 
 
-static void(*fillEdges)(int yMin, int yMax);
+static void(*fillEdges)(int y0, int y1);
 static void(*prepareEdgeList) (ScreenElement *e0, ScreenElement *e1);
 
 
@@ -169,15 +171,15 @@ static void drawAntialiasedLine(ScreenElement *e1, ScreenElement *e2)
 
     int outcode1 = 0, outcode2 = 0;
 
-    if (y1 < 1) outcode1 |= 0x0001;
-        else if (y1 > screenHeight-2) outcode1 |= 0x0010;
-    if (x1 < 1) outcode1 |= 0x0100;
-        else if (x1 > screenWidth-2) outcode1 |= 0x1000;
+    if (y1 < 0) outcode1 |= 0x0001;
+        else if (y1 > screenHeight-1) outcode1 |= 0x0010;
+    if (x1 < 0) outcode1 |= 0x0100;
+        else if (x1 > screenWidth-1) outcode1 |= 0x1000;
 
-    if (y2 < 1) outcode2 |= 0x0001;
-        else if (y2 > screenHeight-2) outcode2 |= 0x0010;
-    if (x2 < 1) outcode2 |= 0x0100;
-        else if (x2 > screenWidth-2) outcode2 |= 0x1000;
+    if (y2 < 0) outcode2 |= 0x0001;
+        else if (y2 > screenHeight-1) outcode2 |= 0x0010;
+    if (x2 < 0) outcode2 |= 0x0100;
+        else if (x2 > screenWidth-1) outcode2 |= 0x1000;
 
     if ((outcode1 & outcode2)!=0) return;
 
@@ -254,7 +256,7 @@ static void prepareEdgeListGouraud(ScreenElement *e0, ScreenElement *e1)
 	Edge *edgeListToWrite;
 	ScreenElement *eTemp;
 
-	if (e0->y == e1->y) return;
+	//if (e0->y == e1->y) return;
 
 	// Assumes CCW
 	if (e0->y < e1->y) {
@@ -293,7 +295,7 @@ static void prepareEdgeListGouraud(ScreenElement *e0, ScreenElement *e1)
         edgeListToWrite = &edgeListToWrite[y0];
         do {
 			int x = FIXED_TO_INT(fx, FP_BASE);
-			CLAMP(x, 0, SCREEN_WIDTH-1)
+			//CLAMP(x, 0, SCREEN_WIDTH-1)
 			edgeListToWrite->x = x;
 			edgeListToWrite->c = fc;
             ++edgeListToWrite;
@@ -308,7 +310,7 @@ static void prepareEdgeListEnvmap(ScreenElement *e0, ScreenElement *e1)
 	Edge *edgeListToWrite;
 	ScreenElement *eTemp;
 
-	if (e0->y == e1->y) return;
+	//if (e0->y == e1->y) return;
 
 	// Assumes CCW
 	if (e0->y < e1->y) {
@@ -350,7 +352,7 @@ static void prepareEdgeListEnvmap(ScreenElement *e0, ScreenElement *e1)
         edgeListToWrite = &edgeListToWrite[y0];
         do {
 			int x = FIXED_TO_INT(fx, FP_BASE);
-			CLAMP(x, 0, SCREEN_WIDTH-1)
+			//CLAMP(x, 0, SCREEN_WIDTH-1)
 			edgeListToWrite->x = x;
 			edgeListToWrite->u = fu;
 			edgeListToWrite->v = fv;
@@ -367,7 +369,7 @@ static void prepareEdgeListGouraudEnvmap(ScreenElement *e0, ScreenElement *e1)
 	Edge *edgeListToWrite;
 	ScreenElement *eTemp;
 
-	if (e0->y == e1->y) return;
+	//if (e0->y == e1->y) return;
 
 	// Assumes CCW
 	if (e0->y < e1->y) {
@@ -412,7 +414,7 @@ static void prepareEdgeListGouraudEnvmap(ScreenElement *e0, ScreenElement *e1)
         edgeListToWrite = &edgeListToWrite[y0];
         do {
 			int x = FIXED_TO_INT(fx, FP_BASE);
-			CLAMP(x, 0, SCREEN_WIDTH-1)
+			//CLAMP(x, 0, SCREEN_WIDTH-1)
 			edgeListToWrite->x = x;
 			edgeListToWrite->c = fc;
 			edgeListToWrite->u = fu;
@@ -426,15 +428,15 @@ static void prepareEdgeListGouraudEnvmap(ScreenElement *e0, ScreenElement *e1)
     }
 }
 
-static void fillGouraudEdges8_SemiSoft(int yMin, int yMax)
+static void fillGouraudEdges8_SemiSoft(int y0, int y1)
 {
-	Edge *le = &leftEdge[yMin];
-	Edge *re = &rightEdge[yMin];
+	Edge *le = &leftEdge[y0];
+	Edge *re = &rightEdge[y1];
 
 	int y;
 	CCB *firstCel = *currentScanlineCel8;
 
-	for (y=yMin; y<=yMax; ++y) {
+	for (y=y0; y<=y1; ++y) {
 		const int xl = le->x;
 		int cl = le->c;
 		int cr = re->c;
@@ -463,14 +465,14 @@ static void fillGouraudEdges8_SemiSoft(int yMin, int yMax)
 	firstCel->ccb_Flags |= CCB_LDPLUT;
 }
 
-static void fillGouraudEdges8(int yMin, int yMax)
+static void fillGouraudEdges8(int y0, int y1)
 {
 	const int stride8 = softBuffer.stride;
-	uint8 *vram8 = (uint8*)softBufferCurrentPtr + yMin * stride8;
+	uint8 *vram8 = (uint8*)softBufferCurrentPtr + y0 * stride8;
 
-	int count = yMax - yMin + 1;
-	Edge *le = &leftEdge[yMin];
-	Edge *re = &rightEdge[yMin];
+	int count = y1 - y0 + 1;
+	Edge *le = &leftEdge[y0];
+	Edge *re = &rightEdge[y0];
 	do {
 		const int xl = le->x;
 		const int cl = le->c;
@@ -529,14 +531,15 @@ static void fillGouraudEdges8(int yMin, int yMax)
 	} while(--count > 0);
 }
 
-static void fillGouraudEdges16(int yMin, int yMax)
+
+static void fillGouraudEdges16(int y0, int y1)
 {
 	const int stride16 = softBuffer.stride >> 1;
-	uint16 *vram16 = (uint16*)softBufferCurrentPtr + yMin * stride16;
+	uint16 *vram16 = (uint16*)softBufferCurrentPtr + y0 * stride16;
 
-	int count = yMax - yMin + 1;
-	Edge *le = &leftEdge[yMin];
-	Edge *re = &rightEdge[yMin];
+	int count = y1 - y0 + 1;
+	Edge *le = &leftEdge[y0];
+	Edge *re = &rightEdge[y0];
 	do {
 		const int xl = le->x;
 		const int cl = le->c;
@@ -590,14 +593,14 @@ static void fillGouraudEdges16(int yMin, int yMax)
 	} while(--count > 0);
 }
 
-static void fillEnvmapEdges8(int yMin, int yMax)
+static void fillEnvmapEdges8(int y0, int y1)
 {
 	const int stride8 = softBuffer.stride;
-	uint8 *vram8 = (uint8*)softBufferCurrentPtr + yMin * stride8;
+	uint8 *vram8 = (uint8*)softBufferCurrentPtr + y0 * stride8;
 
-	int count = yMax - yMin + 1;
-	Edge *le = &leftEdge[yMin];
-	Edge *re = &rightEdge[yMin];
+	int count = y1 - y0 + 1;
+	Edge *le = &leftEdge[y0];
+	Edge *re = &rightEdge[y0];
 
 	const int texHeightShift = activeTexture->hShift;
 	uint8* texData = (uint8*)activeTexture->bitmap;
@@ -669,14 +672,14 @@ static void fillEnvmapEdges8(int yMin, int yMax)
 	} while(--count > 0);
 }
 
-static void fillEnvmapEdges16(int yMin, int yMax)
+static void fillEnvmapEdges16(int y0, int y1)
 {
 	const int stride16 = softBuffer.stride >> 1;
-	uint16 *vram16 = (uint16*)softBufferCurrentPtr + yMin * stride16;
+	uint16 *vram16 = (uint16*)softBufferCurrentPtr + y0 * stride16;
 
-	int count = yMax - yMin + 1;
-	Edge *le = &leftEdge[yMin];
-	Edge *re = &rightEdge[yMin];
+	int count = y1 - y0 + 1;
+	Edge *le = &leftEdge[y0];
+	Edge *re = &rightEdge[y0];
 
 	const int texHeightShift = activeTexture->hShift;
 	uint16* texData = (uint16*)activeTexture->bitmap;
@@ -741,15 +744,15 @@ static void fillEnvmapEdges16(int yMin, int yMax)
 	} while(--count > 0);
 }
 
-static void fillGouraudEnvmapEdges8(int yMin, int yMax)
+static void fillGouraudEnvmapEdges8(int y0, int y1)
 {
 	const int stride8 = softBuffer.stride;
 
-	uint8 *vram8 = (uint8*)softBufferCurrentPtr + yMin * stride8;
+	uint8 *vram8 = (uint8*)softBufferCurrentPtr + y0 * stride8;
 
-	int count = yMax - yMin + 1;
-	Edge *le = &leftEdge[yMin];
-	Edge *re = &rightEdge[yMin];
+	int count = y1 - y0 + 1;
+	Edge *le = &leftEdge[y0];
+	Edge *re = &rightEdge[y0];
 
 	const int texHeightShift = activeTexture->hShift;
 	uint8* texData = (uint8*)activeTexture->bitmap;
@@ -836,15 +839,15 @@ static void fillGouraudEnvmapEdges8(int yMin, int yMax)
 	} while(--count > 0);
 }
 
-static void fillGouraudEnvmapEdges16(int yMin, int yMax)
+static void fillGouraudEnvmapEdges16(int y0, int y1)
 {
 	const int stride16 = softBuffer.stride >> 1;
 
-	uint16 *vram16 = (uint16*)softBufferCurrentPtr + yMin * stride16;
+	uint16 *vram16 = (uint16*)softBufferCurrentPtr + y0 * stride16;
 
-	int count = yMax - yMin + 1;
-	Edge *le = &leftEdge[yMin];
-	Edge *re = &rightEdge[yMin];
+	int count = y1 - y0 + 1;
+	Edge *le = &leftEdge[y0];
+	Edge *re = &rightEdge[y0];
 
 	const int texHeightShift = activeTexture->hShift;
 	uint16* texData = (uint16*)activeTexture->bitmap;
@@ -940,22 +943,61 @@ static void fillGouraudEnvmapEdges16(int yMin, int yMax)
 	} while(--count > 0);
 }
 
+static bool shouldSkipTriangle(ScreenElement *e0, ScreenElement *e1, ScreenElement *e2)
+{
+	int outcode1 = 0, outcode2 = 0, outcode3 = 0;
+
+	const int edgeL = 0;
+	const int edgeR = SCREEN_WIDTH - 1;
+	const int edgeU = 0;
+	const int edgeD = SCREEN_HEIGHT - 1;
+
+	const int x0 = e0->x + minX;
+	const int y0 = e0->y + minY;
+	const int x1 = e1->x + minX;
+	const int y1 = e1->y + minY;
+	const int x2 = e2->x + minX;
+	const int y2 = e2->y + minY;
+
+    if (y0 < edgeU) outcode1 |= 0x0001;
+        else if (y0 > edgeD) outcode1 |= 0x0010;
+    if (x0 < edgeL) outcode1 |= 0x0100;
+        else if (x0 > edgeR) outcode1 |= 0x1000;
+
+    if (y1 < edgeU) outcode2 |= 0x0001;
+        else if (y1 > edgeD) outcode2 |= 0x0010;
+    if (x1 < edgeL) outcode2 |= 0x0100;
+        else if (x1 > edgeR) outcode2 |= 0x1000;
+
+	if (y2 < edgeU) outcode3 |= 0x0001;
+        else if (y2 > edgeD) outcode3 |= 0x0010;
+    if (x2 < edgeL) outcode3 |= 0x0100;
+        else if (x2 > edgeR) outcode3 |= 0x1000;
+
+    return ((outcode1 & outcode2 & outcode3)!=0);
+}
+
+
 static void drawTriangle(ScreenElement *e0, ScreenElement *e1, ScreenElement *e2)
 {
-	int yMin = e0->y;
-	int yMax = yMin;
+	int y0, y1;
+
+	if (shouldSkipTriangle(e0, e1, e2)) return;
+
+	y0 = e0->y;
+	y1 = y0;
 
 	prepareEdgeList(e0, e1);
 	prepareEdgeList(e1, e2);
 	prepareEdgeList(e2, e0);
 
-	if (e1->y < yMin) yMin = e1->y; if (e1->y > yMax) yMax = e1->y;
-	if (e2->y < yMin) yMin = e2->y; if (e2->y > yMax) yMax = e2->y;
+	if (e1->y < y0) y0 = e1->y; if (e1->y > y1) y1 = e1->y;
+	if (e2->y < y0) y0 = e2->y; if (e2->y > y1) y1 = e2->y;
 
-	if (yMin < 0) yMin = 0;
-	if (yMax > SCREEN_HEIGHT-1) yMax = SCREEN_HEIGHT-1;
+	if (y0 < 0) y0 = 0;
+	if (y1 > SCREEN_HEIGHT-1) y1 = SCREEN_HEIGHT-1;
 
-	fillEdges(yMin, yMax);
+	fillEdges(y0, y1);
 }
 
 static void updateSoftBufferVariables(int posX, int posY, int width, int height, Mesh *ms)
@@ -996,7 +1038,6 @@ static void updateSoftBufferVariables(int posX, int posY, int width, int height,
 static void prepareAndPositionSoftBuffer(Mesh *ms, ScreenElement *elements)
 {
 	int i;
-	int minX, maxX, minY, maxY;
 	const int count = ms->verticesNum;
 
 	minX = maxX = elements[0].x;
@@ -1010,9 +1051,6 @@ static void prepareAndPositionSoftBuffer(Mesh *ms, ScreenElement *elements)
 		if (y < minY) minY = y;
 		if (y > maxY) maxY = y;
 	}
-
-	//CLAMP(minX, 0, SCREEN_WIDTH-1)
-	//CLAMP(minY, 0, SCREEN_HEIGHT-1)
 
 	// Offset element positions to upper left min corner
 	for (i=0; i<count; ++i) {
