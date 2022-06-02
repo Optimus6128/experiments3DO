@@ -25,20 +25,58 @@ static int zoom=512;
 static const int rotVel = 2;
 static const int zoomVel = 2;
 
-static Mesh *softMesh8;
-static Mesh *softMesh16;
+static Object3D *softObj[4];
 
-static Texture *cloudTex8;
-static Texture *cloudTex16;
-
-static int selectedSoftMesh = 0;
 static int renderSoftMethodIndex = RENDER_SOFT_METHOD_GOURAUD;
 
-static Mesh *draculMesh;
-static Object3D *draculObj;
-static Texture *draculTex;
+static bool autoRot = false;
 
-static Object3D *softObj;
+static int selectedSoftObj = 0;
+
+ 
+static Object3D *initMeshObject(int meshgenId, const MeshgenParams params, int optionsFlags, Texture *tex)
+{
+	Object3D *meshObj;
+
+	Mesh *softMesh = initGenMesh(meshgenId, params, optionsFlags, tex);
+	meshObj = initObject3D(softMesh);
+	setObject3Dmesh(meshObj, softMesh);
+
+	return meshObj;
+}
+
+static MeshgenParams initMeshObjectParams(int meshgenId)
+{
+	MeshgenParams params;
+
+	switch(meshgenId) {
+		case MESH_CUBE:
+		{
+			params = makeDefaultMeshgenParams(96);
+		}
+		break;
+
+		case MESH_SQUARE_COLUMNOID:
+		{
+			int i;
+			const int numPoints = 8;
+			const int size = 64;
+			Point2Darray *ptArray = initPoint2Darray(numPoints);
+
+			for (i=0; i<numPoints; ++i) {
+				const int y = (size/4) * (numPoints/2 - i);
+				const int r = ((SinF16((i*20) << 16) * (size / 2)) >> 16) + size / 2;
+				addPoint2D(ptArray, r,y);
+			}
+			params = makeMeshgenSquareColumnoidParams(size, ptArray->points, numPoints, true, true);
+
+			//destroyPoint2Darray(ptArray); //why it crashes now?
+		}
+		break;
+	}
+
+	return params;
+}
 
 
 static void inputScript()
@@ -68,13 +106,7 @@ static void inputScript()
 	}
 
 	if (isJoyButtonPressedOnce(JOY_BUTTON_C)) {
-		selectedSoftMesh = (selectedSoftMesh+1) & 1;
-
-		if (selectedSoftMesh==0) {
-			setObject3Dmesh(softObj, softMesh8);
-		} else if (selectedSoftMesh==1) {
-			setObject3Dmesh(softObj, softMesh16);
-		}
+		autoRot = !autoRot;
 	}
 
 	if (isJoyButtonPressed(JOY_BUTTON_LPAD)) {
@@ -85,81 +117,61 @@ static void inputScript()
 		zoom -= zoomVel;
 	}
 
+	if (isJoyButtonPressedOnce(JOY_BUTTON_SELECT)) {
+		selectedSoftObj = (selectedSoftObj+1) & 3;
+	}
+
 	if (isJoyButtonPressedOnce(JOY_BUTTON_START)) {
-		++renderSoftMethodIndex;
-		if (renderSoftMethodIndex == RENDER_SOFT_METHOD_NUM) renderSoftMethodIndex = 0;
+		if (++renderSoftMethodIndex == RENDER_SOFT_METHOD_NUM) renderSoftMethodIndex = 0;
 
 		setRenderSoftMethod(renderSoftMethodIndex);
 	}
 }
 
+
 void effectMeshSoftInit()
 {
-	int i;
-	const int numPoints = 8;
-	const int size = 64;
-	MeshgenParams params;
+	const int lightingOptions = MESH_OPTION_ENABLE_LIGHTING | MESH_OPTION_ENABLE_ENVMAP;
+	MeshgenParams paramsCube = initMeshObjectParams(MESH_CUBE);
+	MeshgenParams paramsColumnoid = initMeshObjectParams(MESH_SQUARE_COLUMNOID);
 
-	Point2Darray *ptArray = initPoint2Darray(numPoints);
-	
-	int meshType = MESH_CUBE; //MESH_SQUARE_COLUMNOID;
+	const int texWidth = 64;
+	const int texHeight = 64;
 
-	for (i=0; i<numPoints; ++i) {
-		const int y = (size/4) * (numPoints/2 - i);
-		const int r = ((SinF16((i*20) << 16) * (size / 2)) >> 16) + size / 2;
-		addPoint2D(ptArray, r,y);
-	}
+	Texture *cloudTex8 = initGenTexture(texWidth, texHeight, 8, NULL, 1, TEXGEN_CLOUDS, false, NULL);
+	Texture *cloudTex16 = initGenTexture(texWidth, texHeight, 16, NULL, 1, TEXGEN_CLOUDS, false, NULL);
 
-	cloudTex8 = initGenTexture(128, 128, 8, NULL, 1, TEXGEN_CLOUDS, false, NULL);
-	cloudTex16 = initGenTexture(128, 128, 16, NULL, 0, TEXGEN_CLOUDS, false, NULL);
-	params = makeMeshgenSquareColumnoidParams(size, ptArray->points, numPoints, true, true);
+	softObj[0] = initMeshObject(MESH_CUBE, paramsCube, MESH_OPTION_RENDER_SOFT8 | lightingOptions, cloudTex8);
+	softObj[1] = initMeshObject(MESH_SQUARE_COLUMNOID, paramsColumnoid, MESH_OPTION_RENDER_SOFT8 | lightingOptions, cloudTex8);
+	softObj[2] = initMeshObject(MESH_CUBE, paramsCube, MESH_OPTION_RENDER_SOFT16 | lightingOptions, cloudTex16);
+	softObj[3] = initMeshObject(MESH_SQUARE_COLUMNOID, paramsColumnoid, MESH_OPTION_RENDER_SOFT16 | lightingOptions, cloudTex16);
 
-	softMesh8 = initGenMesh(meshType, params, MESH_OPTION_RENDER_SOFT8 | MESH_OPTION_ENABLE_LIGHTING | MESH_OPTION_ENABLE_ENVMAP, cloudTex8);
-	softMesh16 = initGenMesh(meshType, params, MESH_OPTION_RENDER_SOFT16 | MESH_OPTION_ENABLE_LIGHTING | MESH_OPTION_ENABLE_ENVMAP, cloudTex16);
-
-	softObj = initObject3D(softMesh8);
-
-	destroyPoint2Darray(ptArray);
-
-
-	//setBackgroundColor(0x01020102);
-
-	draculTex = loadTexture("data/draculin64.cel");
-	draculMesh = initGenMesh(MESH_CUBE, DEFAULT_MESHGEN_PARAMS(192), MESH_OPTIONS_DEFAULT | MESH_OPTION_ENABLE_LIGHTING, draculTex);
-	draculObj = initObject3D(draculMesh);
-}
-
-static void renderHardObj(int posX, int posZ, int t)
-{
-	setObject3Dpos(draculObj, posX, 0, zoom + posZ);
-	setObject3Drot(draculObj, t, t<<1, t>>1);
-	renderObject3D(draculObj);
+	setRenderSoftMethod(renderSoftMethodIndex);
 }
 
 static void renderSoftObj(int posX, int posZ, int t)
 {
-	setObject3Dpos(softObj, -posX, 0, zoom + -posZ);
-	setObject3Drot(softObj, t<<1, t>>1, t);
-	renderObject3Dsoft(softObj);
+	setObject3Dpos(softObj[selectedSoftObj], -posX, 0, zoom + -posZ);
+	if (autoRot) {
+		setObject3Drot(softObj[selectedSoftObj], t<<1, t>>1, t);
+	} else {
+		setObject3Drot(softObj[selectedSoftObj], rotX, rotY, rotZ);
+	}
+	renderObject3Dsoft(softObj[selectedSoftObj]);
 }
 
 void effectMeshSoftRun()
-{int i;
+{
 	const int t = getTicks() >> 5;
-	int posX = SinF16(t<<16) >> 8;
-	int posZ = CosF16(t<<16) >> 8;
-
-	renderSoftObj(0, 256, t);
-
-	/*if (posZ < 0) {
-		renderSoftObj(posX, posZ, t);
-		renderHardObj(posX, posZ, t);
-	} else {
-		renderHardObj(posX, posZ, t);
-		renderSoftObj(posX, posZ, t);
-	}*/
 
 	inputScript();
+
+	if ((softObj[selectedSoftObj]->mesh->renderType & MESH_OPTION_RENDER_SOFT8) && renderSoftMethodIndex==RENDER_SOFT_METHOD_WIREFRAME) {
+		renderSoftMethodIndex = RENDER_SOFT_METHOD_GOURAUD;
+		setRenderSoftMethod(renderSoftMethodIndex);
+	}
+
+	renderSoftObj(0, 256, t);
 
 	//displayDebugNums(true);
 }

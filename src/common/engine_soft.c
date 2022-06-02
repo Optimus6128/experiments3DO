@@ -181,7 +181,7 @@ static void drawAntialiasedLine(ScreenElement *e1, ScreenElement *e2)
     if (x2 < 0) outcode2 |= 0x0100;
         else if (x2 > screenWidth-1) outcode2 |= 0x1000;
 
-    if ((outcode1 & outcode2)!=0) return;
+    //if ((outcode1 & outcode2)!=0) return;
 
     //if ((outcode1 | outcode2)!=0) return; // normally, should check for possible clip
 	//I will do lame method now
@@ -274,7 +274,7 @@ static void prepareEdgeListGouraud(ScreenElement *e0, ScreenElement *e1)
         const int x0 = e0->x; int y0 = e0->y; int c0 = e0->c;
         const int x1 = e1->x; int y1 = e1->y; int c1 = e1->c;
 
-        int dy = y1 - y0 + 1;
+        int dy = y1 - y0;
 		const int repDiv = divTab[dy + DIV_TAB_SIZE / 2];
         const int dx = ((x1 - x0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
 		const int dc = ((c1 - c0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
@@ -282,7 +282,7 @@ static void prepareEdgeListGouraud(ScreenElement *e0, ScreenElement *e1)
         int fx = INT_TO_FIXED(x0, FP_BASE);
 		int fc = INT_TO_FIXED(c0, FP_BASE);
 
-		if (y0 < 0) {
+		/*if (y0 < 0) {
 			fx += -y0 * dx;
 			fc += -y0 * dc;
 			dy += y0;
@@ -290,18 +290,17 @@ static void prepareEdgeListGouraud(ScreenElement *e0, ScreenElement *e1)
 		}
 		if (y1 > SCREEN_HEIGHT-1) {
 			dy -= (y1 - SCREEN_HEIGHT-1);
-		}
+		}*/
 
         edgeListToWrite = &edgeListToWrite[y0];
-        do {
+        while(dy-- > 0) {
 			int x = FIXED_TO_INT(fx, FP_BASE);
-			//CLAMP(x, 0, SCREEN_WIDTH-1)
 			edgeListToWrite->x = x;
 			edgeListToWrite->c = fc;
             ++edgeListToWrite;
             fx += dx;
 			fc += dc;
-		} while(--dy > 0);
+		};
     }
 }
 
@@ -328,7 +327,7 @@ static void prepareEdgeListEnvmap(ScreenElement *e0, ScreenElement *e1)
         const int x0 = e0->x; int y0 = e0->y; int u0 = e0->u; int v0 = e0->v;
         const int x1 = e1->x; int y1 = e1->y; int u1 = e1->u; int v1 = e1->v;
 
-        int dy = y1 - y0 + 1;
+        int dy = y1 - y0;
 		const int repDiv = divTab[dy + DIV_TAB_SIZE / 2];
         const int dx = ((x1 - x0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
 		const int du = ((u1 - u0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
@@ -338,7 +337,7 @@ static void prepareEdgeListEnvmap(ScreenElement *e0, ScreenElement *e1)
 		int fu = INT_TO_FIXED(u0, FP_BASE);
 		int fv = INT_TO_FIXED(v0, FP_BASE);
 
-		if (y0 < 0) {
+		/*if (y0 < 0) {
 			fx += -y0 * dx;
 			fu += -y0 * du;
 			fv += -y0 * dv;
@@ -347,12 +346,11 @@ static void prepareEdgeListEnvmap(ScreenElement *e0, ScreenElement *e1)
 		}
 		if (y1 > SCREEN_HEIGHT-1) {
 			dy -= (y1 - SCREEN_HEIGHT-1);
-		}
+		}*/
 
         edgeListToWrite = &edgeListToWrite[y0];
-        do {
+        while(dy-- > 0) {
 			int x = FIXED_TO_INT(fx, FP_BASE);
-			//CLAMP(x, 0, SCREEN_WIDTH-1)
 			edgeListToWrite->x = x;
 			edgeListToWrite->u = fu;
 			edgeListToWrite->v = fv;
@@ -360,7 +358,7 @@ static void prepareEdgeListEnvmap(ScreenElement *e0, ScreenElement *e1)
             fx += dx;
 			fu += du;
 			fv += dv;
-		} while(--dy > 0);
+		};
     }
 }
 
@@ -387,7 +385,7 @@ static void prepareEdgeListGouraudEnvmap(ScreenElement *e0, ScreenElement *e1)
         const int x0 = e0->x; int y0 = e0->y; int c0 = e0->c; int u0 = e0->u; int v0 = e0->v;
         const int x1 = e1->x; int y1 = e1->y; int c1 = e1->c; int u1 = e1->u; int v1 = e1->v;
 
-        int dy = y1 - y0 + 1;
+        int dy = y1 - y0;
 		const int repDiv = divTab[dy + DIV_TAB_SIZE / 2];
         const int dx = ((x1 - x0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
 		const int dc = ((c1 - c0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
@@ -399,7 +397,7 @@ static void prepareEdgeListGouraudEnvmap(ScreenElement *e0, ScreenElement *e1)
 		int fu = INT_TO_FIXED(u0, FP_BASE);
 		int fv = INT_TO_FIXED(v0, FP_BASE);
 
-		if (y0 < 0) {
+		/*if (y0 < 0) {
 			fx += -y0 * dx;
 			fc += -y0 * dc;
 			fu += -y0 * du;
@@ -409,10 +407,10 @@ static void prepareEdgeListGouraudEnvmap(ScreenElement *e0, ScreenElement *e1)
 		}
 		if (y1 > SCREEN_HEIGHT-1) {
 			dy -= (y1 - SCREEN_HEIGHT-1);
-		}
+		}*/
 
         edgeListToWrite = &edgeListToWrite[y0];
-        do {
+        while(dy-- > 0) {
 			int x = FIXED_TO_INT(fx, FP_BASE);
 			//CLAMP(x, 0, SCREEN_WIDTH-1)
 			edgeListToWrite->x = x;
@@ -424,7 +422,7 @@ static void prepareEdgeListGouraudEnvmap(ScreenElement *e0, ScreenElement *e1)
 			fc += dc;
 			fu += du;
 			fv += dv;
-		} while(--dy > 0);
+		};
     }
 }
 
@@ -994,10 +992,8 @@ static void drawTriangle(ScreenElement *e0, ScreenElement *e1, ScreenElement *e2
 	if (e1->y < y0) y0 = e1->y; if (e1->y > y1) y1 = e1->y;
 	if (e2->y < y0) y0 = e2->y; if (e2->y > y1) y1 = e2->y;
 
-	if (y0 < 0) y0 = 0;
-	if (y1 > SCREEN_HEIGHT-1) y1 = SCREEN_HEIGHT-1;
-
-	fillEdges(y0, y1);
+if (y0 < y1)
+	fillEdges(y0, y1-1);
 }
 
 static void updateSoftBufferVariables(int posX, int posY, int width, int height, Mesh *ms)
