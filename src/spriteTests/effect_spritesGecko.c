@@ -14,25 +14,17 @@
 uint16 *geckoCelStorage;
 
 CCB *geckoCel;
-CCB **microGex;
+CCB *microGexCels;
 int mg_width, mg_height;
 
 static void loadAndInitGeckoCels()
 {
-	int i;
-	int celsNum;
-
 	geckoCel = LoadCel("data/gecko2.cel", MEMTYPE_CEL);	// original CEL image is 192x160, split this in 48x40 regions of size 4x4 (SPR_W * SPR_H)
 
 	mg_width = geckoCel->ccb_Width / SPR_W;
 	mg_height = geckoCel->ccb_Height / SPR_H;
 
-	celsNum = mg_width * mg_height;
-	microGex = (CCB**)AllocMem(sizeof(CCB*) * celsNum, MEMTYPE_ANY);
-
-	for (i=0; i< celsNum; ++i) {
-		microGex[i] = createCel(SPR_W, SPR_H, 16, CEL_TYPE_UNCODED);
-	}
+	microGexCels = createCels(SPR_W, SPR_H, 16, CEL_TYPE_UNCODED, mg_width * mg_height);
 }
 
 static void copyGeckoCels()
@@ -45,10 +37,9 @@ static void copyGeckoCels()
 	for (y=0; y<geckoCel->ccb_Height; y+=SPR_H) {
 		for (x=0; x<geckoCel->ccb_Width; x+=SPR_W) {
 			uint16 *src = (uint16*)geckoCel->ccb_SourcePtr + y * geckoCel->ccb_Width + x;
-			for (j=0; j<SPR_H; j+=2) {
+			for (j=0; j<SPR_H; ++j) {
 				for (i=0; i<SPR_W; ++i) {
 					*dst++ = *(src + j * geckoCel->ccb_Width + i);
-					*dst++ = *(src + (j+1) * geckoCel->ccb_Width + i);
 				}
 			}
 		}
@@ -63,17 +54,14 @@ static void prepareGeckoCels()
 	for (y=0; y<geckoCel->ccb_Height; y+=SPR_H) {
 		for (x=0; x<geckoCel->ccb_Width; x+=SPR_W) {
 			uint16 *dstPtr = geckoCelStorage + i * SPR_W * SPR_H;
-			setupCelData(NULL, dstPtr, microGex[i]);
+			setupCelData(NULL, dstPtr, &microGexCels[i]);
 
-			microGex[i]->ccb_PRE0 = (microGex[i]->ccb_PRE0 & ~PRE0_VCNT_MASK) | ((SPR_H / 2 - PRE0_VCNT_PREFETCH) << PRE0_VCNT_SHIFT);
-			microGex[i]->ccb_PRE1 = (microGex[i]->ccb_PRE1 & ~PRE1_WOFFSET10_MASK) | PRE1_LRFORM | ((SPR_W - PRE1_WOFFSET_PREFETCH) << PRE1_WOFFSET10_SHIFT);// | (width-PRE1_TLHPCNT_PREFETCH);
-
-			microGex[i]->ccb_XPos = x << 16;
-			microGex[i]->ccb_YPos = y << 16;
+			microGexCels[i].ccb_XPos = x << 16;
+			microGexCels[i].ccb_YPos = y << 16;
 			if (i>0) {
-				linkCel(microGex[i-1], microGex[i]);
-				microGex[i]->ccb_Flags &= ~(CCB_LDSIZE | CCB_LDPRS | CCB_LDPPMP);
-				memcpy(&microGex[i]->ccb_HDX, &microGex[i]->ccb_PRE0, 8);
+				linkCel(&microGexCels[i-1], &microGexCels[i]);
+				microGexCels[i].ccb_Flags &= ~(CCB_LDSIZE | CCB_LDPRS | CCB_LDPPMP);
+				memcpy(&microGexCels[i].ccb_HDX, &microGexCels[i].ccb_PRE0, 8);
 			}
 			++i;
 		}
@@ -82,8 +70,8 @@ static void prepareGeckoCels()
 
 static void animateGeckoCels(Point2D *center, Point2D *zoom, int angle)	// 0-255 for 360 angle, zoom X1 = 256
 {
-	int x,y;
-	int i = 0;
+	//int x;
+	int y;
 
 	const int dx = SPR_W * CosF16(angle<<16);
 	const int dy = SPR_H * -SinF16(angle<<16);
@@ -99,22 +87,116 @@ static void animateGeckoCels(Point2D *center, Point2D *zoom, int angle)	// 0-255
 	int px = (center->x << 16) + chx * vvx - chy * vy;
 	int py = (center->y << 16) + chx * vvy + chy * vx;
 	
-	const int countX = mg_width;
+	//const int countX = mg_width;
 	const int countY = mg_height;
 
+	CCB *mgex = microGexCels;
 	for (y=0; y<countY; ++y) {
 		int ppx = px;
 		int ppy = py;
 
-		for (x=0; x<countX; ++x) {
-			microGex[i]->ccb_XPos = ppx;
-			microGex[i]->ccb_YPos = ppy;
+		//for (x=0; x<countX; ++x) {
+		// UNROLL 48 times
 
-			ppx += vvx;
-			ppy += vvy;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
 
-			++i;
-		}
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			ppx += vvx; ppy += vvy; mgex++;
+			mgex->ccb_XPos = ppx; mgex->ccb_YPos = ppy;
+			/*ppx += vvx; ppy += vvy;*/ mgex++;
+		//}
 		px -= vy;
 		py += vx;
 	}
@@ -148,5 +230,5 @@ void effectSpritesGeckoRun()
 {
 	scriptGeckoCels();
 
-	drawCels(microGex[0]);
+	drawCels(microGexCels);
 }

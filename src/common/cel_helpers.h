@@ -14,6 +14,7 @@ enum {
 
 void initCel(int width, int height, int bpp, int type, CCB *cel);
 CCB *createCel(int width, int height, int bpp, int type);
+CCB *createCels(int width, int height, int bpp, int type, int num);
 void setupCelData(uint16 *pal, void *bitmap, CCB *cel);
 
 int getCelWidth(CCB *cel);

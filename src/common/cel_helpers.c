@@ -185,6 +185,19 @@ CCB *createCel(int width, int height, int bpp, int type)
 	return cel;
 }
 
+CCB *createCels(int width, int height, int bpp, int type, int num)
+{
+	int i;
+
+	CCB *cels = (CCB*)AllocMem(num * sizeof(CCB), MEMTYPE_ANY);
+
+	for (i=0; i<num; ++i) {
+		initCel(width, height, bpp, type, &cels[i]);
+	}
+
+	return cels;
+}
+
 void setupCelData(uint16 *pal, void *bitmap, CCB *cel)
 {
 	setCelPalette(pal, cel);
