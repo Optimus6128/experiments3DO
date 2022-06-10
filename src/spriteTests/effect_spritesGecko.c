@@ -52,6 +52,63 @@ static void prepareGeckoCels()
 	}
 }
 
+static void animateGeckoCels(Point2D *center, Point2D *zoom, int angle)	// 0-255 for 360 angle, zoom X1 = 256
+{
+	int x,y;
+	int i = 0;
+
+	const int dx = SPR_W * CosF16(angle<<16);
+	const int dy = SPR_H * -SinF16(angle<<16);
+
+	const int vvx = (dx * zoom->x) >> 8;
+	const int vvy = (dy * zoom->x) >> 8;
+	const int vx = (dx * zoom->y) >> 8;
+	const int vy = (dy * zoom->y) >> 8;
+	
+	const int chx = -mg_width / 2;
+	const int chy = -mg_height / 2;
+
+	int px = (center->x << 16) + chx * vvx - chy * vy;
+	int py = (center->y << 16) + chx * vvy + chy * vx;
+	
+	const int countX = mg_width;
+	const int countY = mg_height;
+
+	for (y=0; y<countY; ++y) {
+		int ppx = px;
+		int ppy = py;
+
+		for (x=0; x<countX; ++x) {
+			microGex[i]->ccb_XPos = ppx;
+			microGex[i]->ccb_YPos = ppy;
+
+			ppx += vvx;
+			ppy += vvy;
+
+			++i;
+		}
+		px -= vy;
+		py += vx;
+	}
+}
+
+static void scriptGeckoCels()
+{
+	const int t = getTicks();
+
+	Point2D center;
+	Point2D zoom;
+
+	const int angle = SinF16(t<<10) >> 8;
+
+	center.x = SCREEN_WIDTH / 2 - SPR_W / 2;
+	center.y = SCREEN_HEIGHT / 2 - SPR_H / 2;
+	zoom.x = 256 + (SinF16(t<<11) >> 9);
+	zoom.y = 384 + (SinF16(t<<12) >> 8);
+
+	animateGeckoCels(&center, &zoom, angle);
+}
+
 void effectSpritesGeckoInit()
 {
 	loadAndInitGeckoCels();
@@ -60,5 +117,7 @@ void effectSpritesGeckoInit()
 
 void effectSpritesGeckoRun()
 {
+	scriptGeckoCels();
+
 	drawCels(microGex[0]);
 }
