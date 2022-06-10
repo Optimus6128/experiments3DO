@@ -11,6 +11,8 @@
 #define SPR_W 4
 #define SPR_H 4
 
+uint16 *geckoCelStorage;
+
 CCB *geckoCel;
 CCB **microGex;
 int mg_width, mg_height;
@@ -33,6 +35,25 @@ static void loadAndInitGeckoCels()
 	}
 }
 
+static void copyGeckoCels()
+{
+	int x,y;
+	int i,j;
+
+	uint16 *dst = geckoCelStorage = (uint16*)AllocMem(mg_width * mg_height * SPR_W * SPR_H * 2, MEMTYPE_ANY);
+
+	for (y=0; y<geckoCel->ccb_Height; y+=SPR_H) {
+		for (x=0; x<geckoCel->ccb_Width; x+=SPR_W) {
+			uint16 *src = (uint16*)geckoCel->ccb_SourcePtr + y * geckoCel->ccb_Width + x;
+			for (j=0; j<SPR_H; ++j) {
+				for (i=0; i<SPR_W; ++i) {
+					*dst++ = *(src + j * geckoCel->ccb_Width + i);
+				}
+			}
+		}
+	}
+}
+
 static void prepareGeckoCels()
 {
 	int x,y;
@@ -40,13 +61,16 @@ static void prepareGeckoCels()
 
 	for (y=0; y<geckoCel->ccb_Height; y+=SPR_H) {
 		for (x=0; x<geckoCel->ccb_Width; x+=SPR_W) {
-			uint16 *dstPtr = (uint16*)geckoCel->ccb_SourcePtr + y * geckoCel->ccb_Width + x;
+			uint16 *dstPtr = geckoCelStorage + i * SPR_W * SPR_H;
 			setupCelData(NULL, dstPtr, microGex[i]);
 
-			microGex[i]->ccb_PRE1 = (microGex[i]->ccb_PRE1 & ~PRE1_WOFFSET10_MASK) | (((geckoCel->ccb_Width >> 1) - 2) << 16);
 			microGex[i]->ccb_XPos = x << 16;
 			microGex[i]->ccb_YPos = y << 16;
-			if (i>0) linkCel(microGex[i-1], microGex[i]);
+			if (i>0) {
+				linkCel(microGex[i-1], microGex[i]);
+				microGex[i]->ccb_Flags &= ~(CCB_LDSIZE | CCB_LDPRS | CCB_LDPPMP);
+				memcpy(&microGex[i]->ccb_HDX, &microGex[i]->ccb_PRE0, 8);
+			}
 			++i;
 		}
 	}
@@ -112,6 +136,7 @@ static void scriptGeckoCels()
 void effectSpritesGeckoInit()
 {
 	loadAndInitGeckoCels();
+	copyGeckoCels();
 	prepareGeckoCels();
 }
 
