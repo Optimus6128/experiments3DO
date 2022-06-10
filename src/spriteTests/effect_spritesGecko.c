@@ -45,9 +45,10 @@ static void copyGeckoCels()
 	for (y=0; y<geckoCel->ccb_Height; y+=SPR_H) {
 		for (x=0; x<geckoCel->ccb_Width; x+=SPR_W) {
 			uint16 *src = (uint16*)geckoCel->ccb_SourcePtr + y * geckoCel->ccb_Width + x;
-			for (j=0; j<SPR_H; ++j) {
+			for (j=0; j<SPR_H; j+=2) {
 				for (i=0; i<SPR_W; ++i) {
 					*dst++ = *(src + j * geckoCel->ccb_Width + i);
+					*dst++ = *(src + (j+1) * geckoCel->ccb_Width + i);
 				}
 			}
 		}
@@ -63,6 +64,9 @@ static void prepareGeckoCels()
 		for (x=0; x<geckoCel->ccb_Width; x+=SPR_W) {
 			uint16 *dstPtr = geckoCelStorage + i * SPR_W * SPR_H;
 			setupCelData(NULL, dstPtr, microGex[i]);
+
+			microGex[i]->ccb_PRE0 = (microGex[i]->ccb_PRE0 & ~PRE0_VCNT_MASK) | ((SPR_H / 2 - PRE0_VCNT_PREFETCH) << PRE0_VCNT_SHIFT);
+			microGex[i]->ccb_PRE1 = (microGex[i]->ccb_PRE1 & ~PRE1_WOFFSET10_MASK) | PRE1_LRFORM | ((SPR_W - PRE1_WOFFSET_PREFETCH) << PRE1_WOFFSET10_SHIFT);// | (width-PRE1_TLHPCNT_PREFETCH);
 
 			microGex[i]->ccb_XPos = x << 16;
 			microGex[i]->ccb_YPos = y << 16;
