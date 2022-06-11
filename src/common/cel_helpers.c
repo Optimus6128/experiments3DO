@@ -143,7 +143,7 @@ void setCelType(int type, CCB *cel)
 	cel->ccb_PRE0 &= ~PRE0_LINEAR;
 	cel->ccb_Flags &= ~CCB_PACKED;
 
-	if (type & CEL_TYPE_UNCODED) cel->ccb_PRE0 |= PRE0_LINEAR;
+	if (type & CEL_TYPE_UNCODED) { cel->ccb_PRE0 |= PRE0_LINEAR; cel->ccb_Flags &= ~CCB_LDPLUT; }
 	if (type & CEL_TYPE_PACKED) cel->ccb_Flags |= CCB_PACKED;
 }
 

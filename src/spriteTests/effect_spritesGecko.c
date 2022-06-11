@@ -58,6 +58,7 @@ static void prepareGeckoCels()
 
 			microGexCels[i].ccb_XPos = x << 16;
 			microGexCels[i].ccb_YPos = y << 16;
+			microGexCels[i].ccb_Flags |= CCB_BGND;
 			if (i>0) {
 				linkCel(&microGexCels[i-1], &microGexCels[i]);
 				microGexCels[i].ccb_Flags &= ~(CCB_LDSIZE | CCB_LDPRS | CCB_LDPPMP);
