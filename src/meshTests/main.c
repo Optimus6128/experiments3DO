@@ -16,6 +16,6 @@ int main()
 	//const int effectIndex = runEffectSelector(effectName, EFFECTS_NUM);
 	const int effectIndex = EFFECT_MESH_SOFT;
 
-	coreInit(effectInitFunc[effectIndex], CORE_NO_VSYNC | CORE_SHOW_FPS | CORE_VRAM_MAXBUFFERS);	// max buffersto not flicker when vsync off and clear screen on
+	coreInit(effectInitFunc[effectIndex], CORE_NO_VSYNC | CORE_SHOW_FPS | CORE_VRAM_MAXBUFFERS | CORE_INIT_3D_ENGINE_SOFT);	// max buffersto not flicker when vsync off and clear screen on
 	coreRun(effectRunFunc[effectIndex]);
 }

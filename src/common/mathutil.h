@@ -44,13 +44,21 @@ typedef struct Point2Darray
 	int pointsNum;
 }Point2Darray;
 
+
+#define NUM_REC_Z 16384
+#define REC_FPSHR 20
+
 extern int shr[257];
+extern int icos[256];
+extern int isin[256];
+extern uint32 recZ[NUM_REC_Z];
+
 
 int isqrt(int x);
 
 int getRand(int from, int to);
 int getShr(int n);
-void initMathUtil(void);
+void initEngineLUTs(void);
 
 void setVector3D(Vector3D *v, int x, int y, int z);
 void setVector3DfromVertices(Vector3D *v, Vertex *v0, Vertex *v1);

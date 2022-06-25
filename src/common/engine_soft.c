@@ -14,7 +14,7 @@
 #include "tools.h"
 
 
-#define SOFT_BUFF_MAX_SIZE (4 * SCREEN_WIDTH * SCREEN_HEIGHT)
+#define SOFT_BUFF_MAX_SIZE (2 * SCREEN_WIDTH * SCREEN_HEIGHT)
 
 #define DIV_TAB_SIZE 4096
 #define DIV_TAB_SHIFT 16

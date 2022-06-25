@@ -45,14 +45,18 @@ static void initGraphicsOptions(uint32 flags)
 
 void coreInit(void(*initFunc)(), uint32 flags)
 {
+	bool mustInitEngine3D = (flags & CORE_INIT_3D_ENGINE) != 0;
+	bool mustInitEngine3D_soft = (flags & CORE_INIT_3D_ENGINE_SOFT) != 0;
+	
 	initSystem();
 	initGraphicsOptions(flags);
 	initInput();
 	initTools();
 	initMenu();
 
-	initMathUtil();
-	initEngine();
+	if (mustInitEngine3D || mustInitEngine3D_soft) {
+		initEngine(mustInitEngine3D_soft);
+	}
 
 	if (initFunc) initFunc();
 

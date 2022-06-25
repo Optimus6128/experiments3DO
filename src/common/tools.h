@@ -20,8 +20,6 @@
 
 #include "graphics.h"
 
-extern int sinF16[256], cosF16[256];
-
 
 void initTools(void);
 

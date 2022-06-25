@@ -17,9 +17,6 @@ static Vertex screenVertices[MAX_VERTEX_ELEMENTS_NUM];
 static ScreenElement screenElements[MAX_VERTEX_ELEMENTS_NUM];
 static Vector3D rotatedNormals[MAX_VERTEX_ELEMENTS_NUM];
 
-static int icos[256], isin[256];
-static uint32 recZ[NUM_REC_Z];
-
 static int screenOffsetX = 0;
 static int screenOffsetY = 0;
 static int screenWidth = SCREEN_WIDTH;
@@ -314,21 +311,12 @@ void useCPUtestPolygonOrder(bool enable)
 	polygonOrderTestCPU = enable;
 }
 
-void initEngine()
+void initEngine(bool usesSoftEngine)
 {
-	uint32 i;
-	for(i=0; i<256; i++)
-	{
-		isin[i] = SinF16(i << 16) >> 4;
-		icos[i] = CosF16(i << 16) >> 4;
-	}
-
-	for (i=1; i<NUM_REC_Z; ++i) {
-		recZ[i] = (1 << REC_FPSHR) / i;
-	}
+	initEngineLUTs();
 
 	useCPUtestPolygonOrder(false);
 	useMapCelFunctionFast(true);
 
-	initEngineSoft();
+	if (usesSoftEngine) initEngineSoft();
 }

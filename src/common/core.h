@@ -38,15 +38,21 @@
 
 #include "cel_helpers.h"
 
-#define CORE_EMPTY			0
-#define CORE_SHOW_FPS		(1 << 1)
-#define CORE_SHOW_MEM		(1 << 2)
-#define CORE_SHOW_BUFFERS	(1 << 3)
-#define CORE_DEFAULT_INPUT	(1 << 4)
-#define CORE_MENU			(1 << 5)
-#define CORE_NO_VSYNC		(1 << 6)
-#define CORE_NO_CLEAR_FRAME		(1 << 7)
-#define CORE_DEBUG			(1 << 31)
+#define CORE_EMPTY					0
+#define CORE_SHOW_FPS				(1 << 1)
+#define CORE_SHOW_MEM				(1 << 2)
+#define CORE_SHOW_BUFFERS			(1 << 3)
+#define CORE_DEFAULT_INPUT			(1 << 4)
+#define CORE_MENU					(1 << 5)
+#define CORE_NO_VSYNC				(1 << 6)
+#define CORE_NO_CLEAR_FRAME			(1 << 7)
+
+// 8-15 -> vram_buffers, back_buffers and antialias bits
+
+#define CORE_INIT_3D_ENGINE			(1 << 16)
+#define CORE_INIT_3D_ENGINE_SOFT	(1 << 17)
+
+#define CORE_DEBUG					(1 << 31)
 
 
 #define VRAM_NUMBUFFERS_BITS_START 8

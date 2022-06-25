@@ -6,8 +6,6 @@
 #define MAX_VERTEX_ELEMENTS_NUM 256
 
 #define PROJ_SHR 8
-#define REC_FPSHR 20
-#define NUM_REC_Z 32768
 
 typedef struct ScreenElement
 {
@@ -24,7 +22,7 @@ typedef struct Object3D
 	int rotX, rotY, rotZ;
 }Object3D;
 
-void initEngine(void);
+void initEngine(bool usesSoftEngine);
 
 Object3D* initObject3D(Mesh *ms);
 
