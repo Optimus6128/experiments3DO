@@ -27,10 +27,7 @@ static bool polygonOrderTestCPU = true;
 static void(*mapcelFunc)(CCB*, Point*);
 
 
-#define SHADE_TABLE_SHR 4
-#define SHADE_TABLE_SIZE (1 << SHADE_TABLE_SHR)
-
-static int shadeTable[SHADE_TABLE_SIZE] = {
+int shadeTable[SHADE_TABLE_SIZE] = {
  0x03010301,0x07010701,0x0B010B01,0x0F010F01,0x13011301,0x17011701,0x1B011B01,0x1F011F01,
  0x03C103C1,0x07C107C1,0x0BC10BC1,0x0FC10FC1,0x13C113C1,0x17C117C1,0x1BC11B01,0x1FC11FC1
 };
@@ -145,24 +142,31 @@ static void prepareTransformedMeshCELs(Mesh *ms)
 	Point qpt[4];
 	CCB *cel = ms->cel;
 
-	int n = 1;
 	for (i=0; i<ms->polysNum; ++i) {
-		qpt[0].pt_X = screenElements[*index].x; qpt[0].pt_Y = screenElements[*index].y; ++index;
-		qpt[1].pt_X = screenElements[*index].x; qpt[1].pt_Y = screenElements[*index].y; ++index;
-		qpt[2].pt_X = screenElements[*index].x; qpt[2].pt_Y = screenElements[*index].y; ++index;
+		bool allOut;
+		int n = 1;
+		const int zt = 128;
+		int z0, z1, z2, z3 = -1;
+		qpt[0].pt_X = screenElements[*index].x; qpt[0].pt_Y = screenElements[*index].y; z0 = screenElements[*index].z; ++index;
+		qpt[1].pt_X = screenElements[*index].x; qpt[1].pt_Y = screenElements[*index].y; z1 = screenElements[*index].z; ++index;
+		qpt[2].pt_X = screenElements[*index].x; qpt[2].pt_Y = screenElements[*index].y; z2 = screenElements[*index].z; ++index;
 
 		// Handling quads or triangles for now.
 		if (ms->poly[i].numPoints == 4) {
-			qpt[3].pt_X = screenElements[*index].x; qpt[3].pt_Y = screenElements[*index].y; ++index;
+			qpt[3].pt_X = screenElements[*index].x; qpt[3].pt_Y = screenElements[*index].y; z3 = screenElements[*index].z; ++index;
 		} else {
 			qpt[3].pt_X = qpt[2].pt_X; qpt[3].pt_Y = qpt[2].pt_Y;
 		}
+		
+		allOut = (z0 < zt && z1 < zt && z2 < zt && z3 < zt);
 
-		if (polygonOrderTestCPU) {
+		if (!allOut && polygonOrderTestCPU) {
 			n = (qpt[0].pt_X - qpt[1].pt_X) * (qpt[2].pt_Y - qpt[1].pt_Y) - (qpt[2].pt_X - qpt[1].pt_X) * (qpt[0].pt_Y - qpt[1].pt_Y);
 		}
 
-		if (!polygonOrderTestCPU || n > 0) {
+		if (allOut || n <= 0) {
+			cel->ccb_Flags |= CCB_SKIP;
+		} else {
 			cel->ccb_Flags &= ~CCB_SKIP;
 
 			if (ms->renderType & MESH_OPTION_ENABLE_LIGHTING) {
@@ -172,8 +176,6 @@ static void prepareTransformedMeshCELs(Mesh *ms)
 			}
 
 			mapcelFunc(cel, qpt);
-		} else {
-			cel->ccb_Flags |= CCB_SKIP;
 		}
 		++cel;
 	}
@@ -236,8 +238,10 @@ static void transformMesh(Object3D *obj, bool soft)
 
 static void renderTransformedMesh(Object3D *obj)
 {
-	useMapCelFunctionFast(false);	// Should deduce it or maybe mark the polygons if textures are power of two. Using the slower option for now.
-	useCPUtestPolygonOrder(true);	// the CEL clockwise clipping sucks anyway. In the future we my add this option as a state or per object maybe..
+	//useMapCelFunctionFast(false);	// Should deduce it or maybe mark the polygons if textures are power of two. Using the slower option for now.
+	useMapCelFunctionFast(true);	// Will now see what it breaks...
+	useCPUtestPolygonOrder(false);	// False for now for the grid effect..
+	//useCPUtestPolygonOrder(true);	// the CEL clockwise clipping sucks anyway. In the future we my add this option as a state or per object maybe..
 
 	prepareTransformedMeshCELs(obj->mesh);
 	drawCels(obj->mesh->cel);

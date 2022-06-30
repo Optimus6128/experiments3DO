@@ -257,7 +257,7 @@ static void genTexture(int texgenId, void *params, Texture *tex)
 				yc = y - (height >> 1);
 				for (x=0; x<width; x++) {
 					xc = x - (width >> 1);
-					c = (xc * xc * xc * xc + yc * yc * yc * yc) >> 3;
+					c = (xc * xc * xc * xc + yc * yc * yc * yc) >> 8;
 					if (c > 31) c = 31;
 					*dst++ = c;
 				}

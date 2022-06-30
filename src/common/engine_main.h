@@ -3,9 +3,15 @@
 
 #include "engine_mesh.h"
 
-#define MAX_VERTEX_ELEMENTS_NUM 256
+#define MAX_VERTEX_ELEMENTS_NUM 2048
 
 #define PROJ_SHR 8
+
+#define SHADE_TABLE_SHR 4
+#define SHADE_TABLE_SIZE (1 << SHADE_TABLE_SHR)
+
+extern int shadeTable[SHADE_TABLE_SIZE];
+
 
 typedef struct ScreenElement
 {
