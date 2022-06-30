@@ -95,6 +95,17 @@ static void hackQuarterTex()
 	}
 }
 
+static void darkenAllCels()
+{
+	int count = gridMesh->polysNum;
+	CCB *cel = gridMesh->cel;
+
+	do {
+		cel->ccb_PIXC = shadeTable[0];
+		++cel;
+	}while(--count > 0);
+}
+
 void effectMeshGridInit()
 {
 	MeshgenParams params = makeMeshgenGridParams(1024, WATER_SIZE);
@@ -102,18 +113,20 @@ void effectMeshGridInit()
 	setPalGradient(0,31, 1,1,3, 27,29,31, waterPal);
 	waterTex = initGenTexture(WATER_SIZE, WATER_SIZE, 8, waterPal, 1, TEXGEN_EMPTY, false, NULL);
 
-	setPalGradient(0,31, 1,5,3, 23,27,31, floorPal);
-	//cloudTex = initGenTexture(16,16, 8, waterPal, 1, TEXGEN_GRID, false, NULL);
-	cloudTex = initGenTexture(32,32, 8, floorPal, 1, TEXGEN_CLOUDS, false, NULL);
-	hackQuarterTex();
+	setPalGradient(0,31, 1,3,7, 15,23,31, floorPal);
+	cloudTex = initGenTexture(16,16, 8, floorPal, 1, TEXGEN_GRID, false, NULL);
+	//cloudTex = initGenTexture(32,32, 8, floorPal, 1, TEXGEN_CLOUDS, false, NULL);
+	//hackQuarterTex();
 
 	waterSpr = newSprite(WATER_SIZE, WATER_SIZE, 8, CEL_TYPE_CODED, waterPal, waterTex->bitmap);
 
 	setSpritePositionZoom(waterSpr, 296, 24, 256);
 
 	gridMesh = initGenMesh(MESH_GRID, params, MESH_OPTIONS_DEFAULT, cloudTex);
-	//setMeshTranslucency(gridMesh, true);
+	setMeshTranslucency(gridMesh, true);
 	gridObj = initObject3D(gridMesh);
+
+	darkenAllCels();
 }
 
 static void waterRun()
@@ -124,22 +137,22 @@ static void waterRun()
 	int t = getTicks();
 
 
-    //*(b1 + getRand(1, WATER_SIZE-2) + getRand(2, WATER_SIZE-3) * WATER_SIZE) = 4096;
+    *(b1 + getRand(1, WATER_SIZE-2) + getRand(2, WATER_SIZE-3) * WATER_SIZE) = 4096;
 
- 	tx = WATER_SIZE/2 + (int)(sin((float)t/170.0f) * (WATER_SIZE/3-1));
- 	ty = WATER_SIZE/2 + (int)(sin((float)t/280.0f) * (WATER_SIZE/3-1));
-    *(b1 + tx + ty * WATER_SIZE) = 1024;
+ 	//tx = WATER_SIZE/2 + (int)(sin((float)t/170.0f) * (WATER_SIZE/3-1));
+ 	//ty = WATER_SIZE/2 + (int)(sin((float)t/280.0f) * (WATER_SIZE/3-1));
+    //*(b1 + tx + ty * WATER_SIZE) = 1024;
 
- 	tx = WATER_SIZE/2 + sin((float)t/350.0f) * (WATER_SIZE/3-1) - 1;
- 	ty = WATER_SIZE/2 + sin((float)t/260.0f) * (WATER_SIZE/3-1) - 1;
-    *(b1 + tx + ty * WATER_SIZE) = 512;
+ 	//tx = WATER_SIZE/2 + sin((float)t/350.0f) * (WATER_SIZE/3-1) - 1;
+ 	//ty = WATER_SIZE/2 + sin((float)t/260.0f) * (WATER_SIZE/3-1) - 1;
+    //*(b1 + tx + ty * WATER_SIZE) = 512;
 
 	bc=wb2; wb2=wb1; wb1=bc;
 
 	for (y=1; y<WATER_SIZE-1; ++y) {
 		for (x=1; x<WATER_SIZE-1; ++x) {
-			c = (( *(b1-1) + *(b1+1) + *(b1-WATER_SIZE) + *(b1+WATER_SIZE))>>1) - *b2;
-			// c = (( *(b1-1) + *(b1+1) + *(b1-WATER_SIZE) + *(b1+WATER_SIZE) + *(b1-1-WATER_SIZE) + *(b1-1+WATER_SIZE) + *(b1+1-WATER_SIZE) + *(b1+1+WATER_SIZE))>>2) - *b2;
+			//c = (( *(b1-1) + *(b1+1) + *(b1-WATER_SIZE) + *(b1+WATER_SIZE))>>1) - *b2;
+			c = (( *(b1-1) + *(b1+1) + *(b1-WATER_SIZE) + *(b1+WATER_SIZE) + *(b1-1-WATER_SIZE) + *(b1-1+WATER_SIZE) + *(b1+1-WATER_SIZE) + *(b1+1+WATER_SIZE))>>2) - *b2;
 
 			if (c < 0) c = -c;
 			if (c>255) c=255;
@@ -192,6 +205,8 @@ static void applyWaterBufferToGrid()
 
 void effectMeshGridRun()
 {
+	//static int lele=0;
+
 	inputScript();
 
 	//setObject3Dpos(gridObj, getMousePosition().x, -getMousePosition().y, zoom);
@@ -200,7 +215,9 @@ void effectMeshGridRun()
 
 	renderObject3D(gridObj);
 
-	waterRun();
+//	if (lele++ & 1)
+		waterRun();
+
 	applyWaterBufferToGrid();
 	drawSprite(waterSpr);
 
