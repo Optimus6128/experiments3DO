@@ -14,9 +14,13 @@ static char *effectName[EFFECTS_NUM] = { "mesh pyramids test", "mesh grid", "sof
 
 int main()
 {
+	int extraOpts = 0;
+
 	//const int effectIndex = runEffectSelector(effectName, EFFECTS_NUM);
 	const int effectIndex = EFFECT_MESH_GRID;
 
-	coreInit(effectInitFunc[effectIndex], CORE_DEFAULT_INPUT | CORE_SHOW_FPS | CORE_VRAM_MAXBUFFERS | CORE_INIT_3D_ENGINE_SOFT);	// max buffersto not flicker when vsync off and clear screen on
+	if (effectIndex == EFFECT_MESH_SOFT) extraOpts = CORE_VRAM_MAXBUFFERS | CORE_INIT_3D_ENGINE_SOFT;
+
+	coreInit(effectInitFunc[effectIndex], CORE_DEFAULT | CORE_SHOW_FPS | CORE_INIT_3D_ENGINE | extraOpts);
 	coreRun(effectRunFunc[effectIndex]);
 }

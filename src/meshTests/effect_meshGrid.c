@@ -23,6 +23,7 @@ static Object3D *gridObj;
 
 static Texture *waterTex;
 static Texture *cloudTex;
+static Texture *gridTex;
 static Sprite *waterSpr;
 static uint16 waterPal[32];
 static uint16 floorPal[32];
@@ -40,43 +41,10 @@ static int zoom=1024;
 static const int rotVel = 2;
 static const int zoomVel = 8;
 
+static bool gridTextureOn = true;
 
-static void inputScript()
-{
-	if (isJoyButtonPressed(JOY_BUTTON_LEFT)) {
-		rotX += rotVel;
-	}
 
-	if (isJoyButtonPressed(JOY_BUTTON_RIGHT)) {
-		rotX -= rotVel;
-	}
-
-	if (isJoyButtonPressed(JOY_BUTTON_UP)) {
-		rotY += rotVel;
-	}
-
-	if (isJoyButtonPressed(JOY_BUTTON_DOWN)) {
-		rotY -= rotVel;
-	}
-
-	if (isJoyButtonPressed(JOY_BUTTON_A)) {
-		rotZ += rotVel;
-	}
-
-	if (isJoyButtonPressed(JOY_BUTTON_B)) {
-		rotZ -= rotVel;
-	}
-
-	if (isJoyButtonPressed(JOY_BUTTON_LPAD)) {
-		zoom += zoomVel;
-	}
-
-	if (isJoyButtonPressed(JOY_BUTTON_RPAD)) {
-		zoom -= zoomVel;
-	}
-}
-
-static void hackQuarterTex()
+/*static void hackQuarterTex()
 {
 	int x,y;
 	const int texWidth = cloudTex->width;
@@ -91,6 +59,34 @@ static void hackQuarterTex()
 			*(bmp + y*texWidth + texWidth-1-x) = c;
 			*(bmp + (texHeight-1-y)*texWidth + x) = c;
 			*(bmp + (texHeight-1-y)*texWidth + texWidth-1-x) = c;
+		}
+	}
+}*/
+
+static void switchGridTexture()
+{
+	int x,y;
+
+	uint8 *cloudTexBmp = (uint8*)cloudTex->bitmap;
+	int dx = cloudTex->width / WATER_SIZE;
+	int dy = cloudTex->height / WATER_SIZE;
+
+	CCB *cel = gridMesh->cel;
+
+	for (y=0; y<WATER_SIZE; ++y) {
+		for (x=0; x<WATER_SIZE; ++x) {
+			if (gridTextureOn) {
+				cel->ccb_SourcePtr = (CelData*)gridTex->bitmap;
+				setCelStride(gridTex->width, cel);
+				setCelWidth(gridTex->width, cel);
+				setCelHeight(gridTex->height, cel);
+			} else {
+				cel->ccb_SourcePtr = (CelData*)(cloudTexBmp + ((WATER_SIZE-y-1) * dy) * cloudTex->width + x * dx);
+				setCelStride(cloudTex->width, cel);
+				setCelWidth(dx, cel);
+				setCelHeight(dy, cel);
+			}
+			++cel;
 		}
 	}
 }
@@ -114,15 +110,15 @@ void effectMeshGridInit()
 	waterTex = initGenTexture(WATER_SIZE, WATER_SIZE, 8, waterPal, 1, TEXGEN_EMPTY, false, NULL);
 
 	setPalGradient(0,31, 1,3,7, 15,23,31, floorPal);
-	cloudTex = initGenTexture(16,16, 8, floorPal, 1, TEXGEN_GRID, false, NULL);
-	//cloudTex = initGenTexture(32,32, 8, floorPal, 1, TEXGEN_CLOUDS, false, NULL);
+	gridTex = initGenTexture(16,16, 8, floorPal, 1, TEXGEN_GRID, false, NULL);
+	cloudTex = initGenTexture(256,256, 8, floorPal, 1, TEXGEN_CLOUDS, false, NULL);
 	//hackQuarterTex();
 
 	waterSpr = newSprite(WATER_SIZE, WATER_SIZE, 8, CEL_TYPE_CODED, waterPal, waterTex->bitmap);
 
 	setSpritePositionZoom(waterSpr, 296, 24, 256);
 
-	gridMesh = initGenMesh(MESH_GRID, params, MESH_OPTIONS_DEFAULT, cloudTex);
+	gridMesh = initGenMesh(MESH_GRID, params, MESH_OPTIONS_DEFAULT, gridTex);
 	setMeshTranslucency(gridMesh, true);
 	gridObj = initObject3D(gridMesh);
 
@@ -131,11 +127,12 @@ void effectMeshGridInit()
 
 static void waterRun()
 {
-	int x,y,c,tx,ty;
+	int x,y,c;
 	int *b1=wb1,*b2=wb2,*bc;
 	uint8 *dst = (uint8*)waterTex->bitmap + WATER_SIZE + 1;
-	int t = getTicks();
 
+	//int t = getTicks();
+	//int tx,ty;
 
     *(b1 + getRand(1, WATER_SIZE-2) + getRand(2, WATER_SIZE-3) * WATER_SIZE) = 4096;
 
@@ -183,7 +180,7 @@ static void applyWaterBufferToGrid()
 			const int c = (c0 + c1 + c2 + c3) >> 2;
 
 			dstVertex->y = c0;
-			cel->ccb_PIXC = shadeTable[c >> 1];
+			cel->ccb_PIXC = shadeTable[4 + (c >> 2)];
 			++src;
 			++cel;
 			++dstVertex;
@@ -202,6 +199,46 @@ static void applyWaterBufferToGrid()
 	drawNumber(8,216, rotY);
 	drawNumber(8,224, rotZ);
 }*/
+
+static void inputScript()
+{
+	if (isJoyButtonPressed(JOY_BUTTON_LEFT)) {
+		rotX += rotVel;
+	}
+
+	if (isJoyButtonPressed(JOY_BUTTON_RIGHT)) {
+		rotX -= rotVel;
+	}
+
+	if (isJoyButtonPressed(JOY_BUTTON_UP)) {
+		rotY += rotVel;
+	}
+
+	if (isJoyButtonPressed(JOY_BUTTON_DOWN)) {
+		rotY -= rotVel;
+	}
+
+	if (isJoyButtonPressed(JOY_BUTTON_A)) {
+		rotZ += rotVel;
+	}
+
+	if (isJoyButtonPressed(JOY_BUTTON_B)) {
+		rotZ -= rotVel;
+	}
+
+	if (isJoyButtonPressedOnce(JOY_BUTTON_C)) {
+		gridTextureOn = !gridTextureOn;
+		switchGridTexture();
+	}
+
+	if (isJoyButtonPressed(JOY_BUTTON_LPAD)) {
+		zoom += zoomVel;
+	}
+
+	if (isJoyButtonPressed(JOY_BUTTON_RPAD)) {
+		zoom -= zoomVel;
+	}
+}
 
 void effectMeshGridRun()
 {
