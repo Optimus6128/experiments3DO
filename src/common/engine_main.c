@@ -24,7 +24,7 @@ static int screenHeight = SCREEN_HEIGHT;
 
 static bool polygonOrderTestCPU = true;
 
-static void(*mapcelFunc)(CCB*, Point*);
+static void(*mapcelFunc)(CCB*, Point*, uint8);
 
 
 int shadeTable[SHADE_TABLE_SIZE] = {
@@ -32,10 +32,15 @@ int shadeTable[SHADE_TABLE_SIZE] = {
  0x03C103C1,0x07C107C1,0x0BC10BC1,0x0FC10FC1,0x13C113C1,0x17C117C1,0x1BC11B01,0x1FC11FC1
 };
 
-static void fasterMapCel(CCB *c, Point *q)
+static void slowMapCel(CCB *c, Point *q, uint8 texShifts)
 {
-	const int shrWidth = shr[getCelWidth(c)];
-	const int shrHeight = shr[getCelHeight(c)];
+	MapCel(c, q);
+}
+
+static void fasterMapCel(CCB *c, Point *q, uint8 texShifts)
+{
+	const int shrWidth = (int)(texShifts >> 4);
+	const int shrHeight = (int)(texShifts & 15);
 
 	const int q0x = q[0].pt_X;
 	const int q0y = q[0].pt_Y;
@@ -72,9 +77,9 @@ static void fasterMapCel(CCB *c, Point *q)
 
 void createRotationMatrixValues(int rotX, int rotY, int rotZ, int *rotVecs)
 {
-	const int cosxr = icos[rotX & 255];
-	const int cosyr = icos[rotY & 255];
-	const int coszr = icos[rotZ & 255];
+	const int cosxr = isin[(rotX + 64) & 255];
+	const int cosyr = isin[(rotY + 64) & 255];
+	const int coszr = isin[(rotZ + 64) & 255];
 	const int sinxr = isin[rotX & 255];
 	const int sinyr = isin[rotY & 255];
 	const int sinzr = isin[rotZ & 255];
@@ -175,7 +180,7 @@ static void prepareTransformedMeshCELs(Mesh *ms)
 				cel->ccb_PIXC = shadeTable[normZ >> (NORMAL_SHIFT-SHADE_TABLE_SHR)];
 			}
 
-			mapcelFunc(cel, qpt);
+			mapcelFunc(cel, qpt, ms->poly[i].texShifts);
 		}
 		++cel;
 	}
@@ -226,7 +231,7 @@ static void useMapCelFunctionFast(bool enable)
 	if (enable) {
 		mapcelFunc = fasterMapCel;
 	} else {
-		mapcelFunc = MapCel;
+		mapcelFunc = slowMapCel;
 	}
 }
 

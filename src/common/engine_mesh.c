@@ -25,11 +25,14 @@ void updateMeshCELs(Mesh *ms)
 		int i;
 		for (i=0; i<ms->polysNum; i++) {
 			Texture *tex = &ms->tex[ms->poly[i].textureId];
-
 			if (tex->type & TEXTURE_TYPE_DYNAMIC) {
 				int woffset;
 				int vcnt;
 				CCB *cel = ms->cel;
+
+				const int texShrX = getShr(tex->width);
+				const int texShrY = getShr(tex->height);
+				ms->poly[i].texShifts = (texShrX << 4) | texShrY;
 
 				// In the future, also take account of offscreen buffer position too
 				if (tex->type & TEXTURE_TYPE_FEEDBACK) {
@@ -62,11 +65,15 @@ void prepareCelList(Mesh *ms)
 		for (i=0; i<ms->polysNum; i++)
 		{
 			Texture *tex = &ms->tex[ms->poly[i].textureId];
+			const int texShrX = getShr(tex->width);
+			const int texShrY = getShr(tex->height);
 			CCB *cel = &ms->cel[i];
 
 			int celType = CEL_TYPE_UNCODED;
 			if (tex->type & TEXTURE_TYPE_PALLETIZED)
 				celType = CEL_TYPE_CODED;
+
+			ms->poly[i].texShifts = (texShrX << 4) | texShrY;
 
 			initCel(tex->width, tex->height, tex->bpp, celType, cel);
 			setupCelData((uint16*)&tex->pal[ms->poly[i].palId << getPaletteColorsNum(tex->bpp)], tex->bitmap, cel);

@@ -15,8 +15,8 @@ void setupTexture(int width, int height, int bpp, int type, ubyte *bmp, uint16 *
 
 	tex->width = width;
 	tex->height = height;
-	tex->wShift = shr[width];
-	tex->hShift = shr[height];
+	tex->wShift = getShr(width);
+	tex->hShift = getShr(height);
 	tex->bpp = bpp;
 	tex->type = type;
 

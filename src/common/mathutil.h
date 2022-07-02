@@ -48,8 +48,6 @@ typedef struct Point2Darray
 #define NUM_REC_Z 16384
 #define REC_FPSHR 20
 
-extern int shr[257];
-extern int icos[256];
 extern int isin[256];
 extern uint32 recZ[NUM_REC_Z];
 

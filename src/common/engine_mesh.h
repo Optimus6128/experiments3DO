@@ -18,7 +18,7 @@ typedef struct PolyData
 	ubyte numPoints;
 	ubyte textureId;
 	ubyte palId;
-	ubyte dummy;	// dummy to keep it 32bit aligned (could use it for more poly info in the future)
+	ubyte texShifts;	// Width/Height bits, WWWWHHHH
 }PolyData;
 
 typedef struct TexCoords

@@ -42,6 +42,8 @@ static const int rotVel = 2;
 static const int zoomVel = 8;
 
 static bool gridTextureOn = true;
+static bool halfInterp = false;
+static bool plasmaInsteadOfWater = false;
 
 
 /*static void hackQuarterTex()
@@ -62,6 +64,21 @@ static bool gridTextureOn = true;
 		}
 	}
 }*/
+
+static void updatePolyDataTextureShifts(int newWidth, int newHeight)
+{
+	const int texShrX = getShr(newWidth);
+	const int texShrY = getShr(newHeight);
+	const uint8 texShifts = (texShrX << 4) | texShrY;
+
+	PolyData *dstPoly = gridMesh->poly;
+	int count = gridMesh->polysNum;
+
+	do {
+		dstPoly->texShifts = texShifts;
+		++dstPoly;
+	}while(--count > 0);
+}
 
 static void switchGridTexture()
 {
@@ -89,6 +106,12 @@ static void switchGridTexture()
 			++cel;
 		}
 	}
+
+	if (gridTextureOn) {
+		updatePolyDataTextureShifts(gridTex->width, gridTex->height);
+	} else {
+		updatePolyDataTextureShifts(dx, dy);
+	}
 }
 
 static void darkenAllCels()
@@ -111,7 +134,7 @@ void effectMeshGridInit()
 
 	setPalGradient(0,31, 1,3,7, 15,23,31, floorPal);
 	gridTex = initGenTexture(16,16, 8, floorPal, 1, TEXGEN_GRID, false, NULL);
-	cloudTex = initGenTexture(256,256, 8, floorPal, 1, TEXGEN_CLOUDS, false, NULL);
+	cloudTex = initGenTexture(128,128, 8, floorPal, 1, TEXGEN_CLOUDS, false, NULL);
 	//hackQuarterTex();
 
 	waterSpr = newSprite(WATER_SIZE, WATER_SIZE, 8, CEL_TYPE_CODED, waterPal, waterTex->bitmap);
@@ -119,7 +142,7 @@ void effectMeshGridInit()
 	setSpritePositionZoom(waterSpr, 296, 24, 256);
 
 	gridMesh = initGenMesh(MESH_GRID, params, MESH_OPTIONS_DEFAULT, gridTex);
-	setMeshTranslucency(gridMesh, true);
+	//setMeshTranslucency(gridMesh, true);
 	gridObj = initObject3D(gridMesh);
 
 	darkenAllCels();
@@ -164,6 +187,26 @@ static void waterRun()
 	}
 }
 
+static void plasmaRun()
+{
+	int x,y,c;
+	uint8 *dst = (uint8*)waterTex->bitmap + WATER_SIZE + 1;
+	int t = getTicks()>>5;
+
+	for (y=1; y<WATER_SIZE-1; ++y) {
+		int yy = 2*(y-t) + 2*isin[(5*y-3*t)&255] - 24*t;
+		for (x=1; x<WATER_SIZE-1; ++x) {
+
+			c = (isin[(5*x + 3*y) & 255] >> 3) + (yy >> 4) + 16*t;
+
+			c &= 511;
+			if (c > 255) c = 511-c;
+			*dst++ = c >> 3;
+		}
+		dst += 2;
+	}
+}
+
 static void applyWaterBufferToGrid()
 {
 	int x,y;
@@ -179,7 +222,12 @@ static void applyWaterBufferToGrid()
 			const int c3 = *(src+WATER_SIZE+1);
 			const int c = (c0 + c1 + c2 + c3) >> 2;
 
-			dstVertex->y = c0;
+			if (halfInterp) {
+				dstVertex->y = (dstVertex->y + c0) >> 1;
+			} else {
+				dstVertex->y = c0;
+			}
+
 			cel->ccb_PIXC = shadeTable[4 + (c >> 2)];
 			++src;
 			++cel;
@@ -231,6 +279,14 @@ static void inputScript()
 		switchGridTexture();
 	}
 
+	if (isJoyButtonPressedOnce(JOY_BUTTON_SELECT)) {
+		plasmaInsteadOfWater = !plasmaInsteadOfWater;
+	}
+
+	if (isJoyButtonPressedOnce(JOY_BUTTON_START)) {
+		halfInterp = !halfInterp;
+	}
+
 	if (isJoyButtonPressed(JOY_BUTTON_LPAD)) {
 		zoom += zoomVel;
 	}
@@ -242,7 +298,7 @@ static void inputScript()
 
 void effectMeshGridRun()
 {
-	//static int lele=0;
+	static int lele=0;
 
 	inputScript();
 
@@ -252,8 +308,13 @@ void effectMeshGridRun()
 
 	renderObject3D(gridObj);
 
-//	if (lele++ & 1)
-		waterRun();
+	if (!halfInterp || ((lele++ & 1)==0)) {
+		if (plasmaInsteadOfWater) {
+			plasmaRun();
+		} else {
+			waterRun();
+		}
+	}
 
 	applyWaterBufferToGrid();
 	drawSprite(waterSpr);

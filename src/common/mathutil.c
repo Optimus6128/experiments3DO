@@ -5,9 +5,6 @@
 #include "core.h"
 
 
-int shr[257]; // ugly way to get precalced fast right shift for division with power of two numbers
-
-int icos[256];
 int isin[256];
 uint32 recZ[NUM_REC_Z];
 
@@ -51,13 +48,8 @@ int getShr(int n)
 void initEngineLUTs()
 {
 	int i;
-	for (i=1; i<=256; i++) {
-		shr[i] = getShr(i);
-	}
-
 	for(i=0; i<256; i++) {
 		isin[i] = SinF16(i << 16) >> 4;
-		icos[i] = CosF16(i << 16) >> 4;
 	}
 
 	for (i=1; i<NUM_REC_Z; ++i) {
