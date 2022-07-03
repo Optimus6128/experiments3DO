@@ -17,8 +17,8 @@ int main()
 {
 	int extraOpts = 0;//CORE_SHOW_MEM;
 
-	const int effectIndex = runEffectSelector(effectName, EFFECTS_NUM);
-	//const int effectIndex = EFFECT_MESH_WORLD;
+	//const int effectIndex = runEffectSelector(effectName, EFFECTS_NUM);
+	const int effectIndex = EFFECT_MESH_WORLD;
 
 	if (effectIndex == EFFECT_MESH_SOFT) extraOpts |= CORE_INIT_3D_ENGINE_SOFT;
 

@@ -32,15 +32,17 @@ static uint16 cubePal[32];
 static int camRotX = 0;
 static int camRotY = 0;
 static int camRotZ = 0;
-static int camZoom = 0;
+static int camPosX = 0;
+static int camPosY = 0;
+static int camPosZ = 0;
 
-static int camRotVel = 2;
-static int camZoomVel = 2;
+static int camRotVel = 1;
+static int camMoveVel = 4;
 
 void effectMeshWorldInit()
 {
 	MeshgenParams gridParams = makeMeshgenGridParams(1024, 16);
-	MeshgenParams cubeParams = DEFAULT_MESHGEN_PARAMS(128);
+	MeshgenParams cubeParams = DEFAULT_MESHGEN_PARAMS(256);
 
 	setPalGradient(0,31, 1,1,3, 27,29,31, gridPal);
 	setPalGradient(0,31, 15,7,3, 19,11,23, cubePal);
@@ -57,47 +59,64 @@ void effectMeshWorldInit()
 	camera = createCamera();
 }
 
+static void moveCamera(int forward, int right)
+{
+	static mat33f16 rotMat;
+	static vec3f16 move;
+
+	move[0] = right << FP_BASE;
+	move[1] = 0;
+	move[2] = forward << FP_BASE;
+
+	createRotationMatrixValues(camRotX, camRotY, camRotZ, (int*)rotMat);	// not correct when looking up/down yet
+	MulVec3Mat33_F16(move, move, rotMat);
+
+	camPosX += move[0] * camMoveVel;
+	camPosY += move[1] * camMoveVel;
+	camPosZ += move[2] * camMoveVel;
+}
+
 static void inputScript()
 {
 	if (isJoyButtonPressed(JOY_BUTTON_LEFT)) {
-		camRotX += camRotVel;
-	}
-
-	if (isJoyButtonPressed(JOY_BUTTON_RIGHT)) {
-		camRotX -= camRotVel;
-	}
-
-	if (isJoyButtonPressed(JOY_BUTTON_UP)) {
 		camRotY += camRotVel;
 	}
 
-	if (isJoyButtonPressed(JOY_BUTTON_DOWN)) {
+	if (isJoyButtonPressed(JOY_BUTTON_RIGHT)) {
 		camRotY -= camRotVel;
 	}
 
+	if (isJoyButtonPressed(JOY_BUTTON_UP)) {
+		moveCamera(1,0);
+	}
+
+	if (isJoyButtonPressed(JOY_BUTTON_DOWN)) {
+		moveCamera(-1,0);
+	}
+
 	if (isJoyButtonPressed(JOY_BUTTON_A)) {
-		camRotZ += camRotVel;
+		camRotX += camRotVel;
 	}
 
 	if (isJoyButtonPressed(JOY_BUTTON_B)) {
-		camRotZ -= camRotVel;
+		camRotX -= camRotVel;
 	}
 
 	if (isJoyButtonPressed(JOY_BUTTON_LPAD)) {
-		camZoom += camZoomVel;
+		moveCamera(0,-1);
 	}
 
 	if (isJoyButtonPressed(JOY_BUTTON_RPAD)) {
-		camZoom -= camZoomVel;
+		moveCamera(0,1);
 	}
 }
 
 static void setObjectsPosAndRot()
 {
-	setObject3Dpos(gridObj, 0, -64, 512);
+	setObject3Dpos(gridObj, 0, -64, 1024);
 	setObject3Drot(gridObj, 0, 0, 0);
 
-	setObject3Dpos(cubeObj, 0, 64, 512);
+	setObject3Dpos(cubeObj, 0, 64, 1024);
 	setObject3Drot(cubeObj, 0, 0, 0);
 }
 
@@ -107,7 +126,7 @@ void effectMeshWorldRun()
 
 	setObjectsPosAndRot();
 
-	setCameraPos(camera, 0,0,camZoom);
+	setCameraPos(camera, camPosX>>FP_BASE, 256 + (camPosY>>FP_BASE), camPosZ>>FP_BASE);
 	setCameraRot(camera, camRotX,camRotY,camRotZ);
 
 	renderObject3D(gridObj, camera);

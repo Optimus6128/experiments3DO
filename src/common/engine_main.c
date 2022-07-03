@@ -74,49 +74,18 @@ static void fasterMapCel(CCB *c, Point *q, uint8 texShifts)
 	c->ccb_HDDY = (hdy1 - hdy0) >> shrHeight;
 }
 
-void createRotationMatrixValues(int rotX, int rotY, int rotZ, int *rotVecs)
+static void useMapCelFunctionFast(bool enable)
 {
-	const int cosxr = isin[(rotX + 64) & 255];
-	const int cosyr = isin[(rotY + 64) & 255];
-	const int coszr = isin[(rotZ + 64) & 255];
-	const int sinxr = isin[rotX & 255];
-	const int sinyr = isin[rotY & 255];
-	const int sinzr = isin[rotZ & 255];
-
-	*rotVecs++ = (FIXED_MUL(cosyr, coszr, FP_BASE)) << FP_BASE_TO_CORE;
-	*rotVecs++ = (FIXED_MUL(FIXED_MUL(sinxr, sinyr, FP_BASE), coszr, FP_BASE) - FIXED_MUL(cosxr, sinzr, FP_BASE)) << FP_BASE_TO_CORE;
-	*rotVecs++ = (FIXED_MUL(FIXED_MUL(cosxr, sinyr, FP_BASE), coszr, FP_BASE) + FIXED_MUL(sinxr, sinzr, FP_BASE)) << FP_BASE_TO_CORE;
-	*rotVecs++ = (FIXED_MUL(cosyr, sinzr, FP_BASE)) << FP_BASE_TO_CORE;
-	*rotVecs++ = (FIXED_MUL(cosxr, coszr, FP_BASE) + FIXED_MUL(FIXED_MUL(sinxr, sinyr, FP_BASE), sinzr, FP_BASE)) << FP_BASE_TO_CORE;
-	*rotVecs++ = (FIXED_MUL(-sinxr, coszr, FP_BASE) + FIXED_MUL(FIXED_MUL(cosxr, sinyr, FP_BASE), sinzr, FP_BASE)) << FP_BASE_TO_CORE;
-	*rotVecs++ = (-sinyr) << FP_BASE_TO_CORE;
-	*rotVecs++ = (FIXED_MUL(sinxr, cosyr, FP_BASE)) << FP_BASE_TO_CORE;
-	*rotVecs = (FIXED_MUL(cosxr, cosyr, FP_BASE)) << FP_BASE_TO_CORE;
+	if (enable) {
+		mapcelFunc = fasterMapCel;
+	} else {
+		mapcelFunc = slowMapCel;
+	}
 }
 
-static void translateAndProjectVertices(Object3D *obj, Camera *cam)
+void useCPUtestPolygonOrder(bool enable)
 {
-	int i;
-
-	const int posX = obj->pos.x;
-	const int posY = obj->pos.y;
-	const int posZ = obj->pos.z;
-
-	const int lvNum = obj->mesh->verticesNum;
-
-	const int offsetX = screenOffsetX + (screenWidth >> 1);
-	const int offsetY = screenOffsetY + (screenHeight >> 1);
-
-	for (i=0; i<lvNum; i++)
-	{
-		const int vz = screenVertices[i].z + posZ;
-		if (vz > 0) {
-			const int recDivZ = recZ[vz];
-			screenElements[i].x = offsetX + ((((screenVertices[i].x + posX) << PROJ_SHR) * recDivZ) >> REC_FPSHR);
-			screenElements[i].y = offsetY - ((((screenVertices[i].y + posY) << PROJ_SHR) * recDivZ) >> REC_FPSHR);
-		}
-		screenElements[i].z = vz;
-	}
+	polygonOrderTestCPU = enable;
 }
 
 static void prepareTransformedMeshCELs(Mesh *ms)
@@ -205,12 +174,66 @@ static void calculateVertexEnvmapTC(Mesh *mesh)
 	}
 }
 
-static void useMapCelFunctionFast(bool enable)
+static void transposeMat3(mat33f16 mat)
 {
-	if (enable) {
-		mapcelFunc = fasterMapCel;
-	} else {
-		mapcelFunc = slowMapCel;
+	int temp;
+	int *matVal = (int*)mat;
+
+	temp = matVal[1]; matVal[1] = matVal[3]; matVal[3] = temp;
+	temp = matVal[2]; matVal[2] = matVal[6]; matVal[6] = temp;
+	temp = matVal[5]; matVal[5] = matVal[7]; matVal[7] = temp;
+}
+
+void createRotationMatrixValues(int rotX, int rotY, int rotZ, int *rotVecs)
+{
+	const int cosxr = isin[(rotX + 64) & 255];
+	const int cosyr = isin[(rotY + 64) & 255];
+	const int coszr = isin[(rotZ + 64) & 255];
+	const int sinxr = isin[rotX & 255];
+	const int sinyr = isin[rotY & 255];
+	const int sinzr = isin[rotZ & 255];
+
+	*rotVecs++ = (FIXED_MUL(cosyr, coszr, FP_BASE)) << FP_BASE_TO_CORE;
+	*rotVecs++ = (FIXED_MUL(FIXED_MUL(sinxr, sinyr, FP_BASE), coszr, FP_BASE) - FIXED_MUL(cosxr, sinzr, FP_BASE)) << FP_BASE_TO_CORE;
+	*rotVecs++ = (FIXED_MUL(FIXED_MUL(cosxr, sinyr, FP_BASE), coszr, FP_BASE) + FIXED_MUL(sinxr, sinzr, FP_BASE)) << FP_BASE_TO_CORE;
+	*rotVecs++ = (FIXED_MUL(cosyr, sinzr, FP_BASE)) << FP_BASE_TO_CORE;
+	*rotVecs++ = (FIXED_MUL(cosxr, coszr, FP_BASE) + FIXED_MUL(FIXED_MUL(sinxr, sinyr, FP_BASE), sinzr, FP_BASE)) << FP_BASE_TO_CORE;
+	*rotVecs++ = (FIXED_MUL(-sinxr, coszr, FP_BASE) + FIXED_MUL(FIXED_MUL(cosxr, sinyr, FP_BASE), sinzr, FP_BASE)) << FP_BASE_TO_CORE;
+	*rotVecs++ = (-sinyr) << FP_BASE_TO_CORE;
+	*rotVecs++ = (FIXED_MUL(sinxr, cosyr, FP_BASE)) << FP_BASE_TO_CORE;
+	*rotVecs = (FIXED_MUL(cosxr, cosyr, FP_BASE)) << FP_BASE_TO_CORE;
+}
+
+static void translateAndProjectVertices(Object3D *obj, Camera *cam)
+{
+	static mat33f16 inverseRotMat;
+	static vec3f16 posFromCam;
+
+	int i;
+
+	const int lvNum = obj->mesh->verticesNum;
+
+	const int offsetX = screenOffsetX + (screenWidth >> 1);
+	const int offsetY = screenOffsetY + (screenHeight >> 1);
+
+
+	posFromCam[0] = obj->pos.x - cam->pos.x;
+	posFromCam[1] = obj->pos.y - cam->pos.y;
+	posFromCam[2] = obj->pos.z - cam->pos.z;
+
+	createRotationMatrixValues(-cam->rot.x, -cam->rot.y, -cam->rot.z, (int*)inverseRotMat);
+
+	MulVec3Mat33_F16(posFromCam, posFromCam, inverseRotMat);
+
+	for (i=0; i<lvNum; i++)
+	{
+		const int vz = screenVertices[i].z + posFromCam[2];
+		if (vz > 0) {
+			const int recDivZ = recZ[vz];
+			screenElements[i].x = offsetX + ((((screenVertices[i].x + posFromCam[0]) << PROJ_SHR) * recDivZ) >> REC_FPSHR);
+			screenElements[i].y = offsetY - ((((screenVertices[i].y + posFromCam[1]) << PROJ_SHR) * recDivZ) >> REC_FPSHR);
+		}
+		screenElements[i].z = vz;
 	}
 }
 
@@ -219,7 +242,7 @@ static void transformMesh(Object3D *obj, Camera *cam)
 	static mat33f16 rotMat;
 	Mesh *mesh = obj->mesh;
 
-	createRotationMatrixValues(obj->rot.x, obj->rot.y, obj->rot.z, (int*)rotMat);
+	createRotationMatrixValues(obj->rot.x - cam->rot.x, obj->rot.y - cam->rot.y, obj->rot.z - cam->rot.z, (int*)rotMat);
 
 	// Rotate Mesh Vertices
 	MulManyVec3Mat33_F16((vec3f16*)screenVertices, (vec3f16*)mesh->vertex, rotMat, mesh->verticesNum);
@@ -330,13 +353,10 @@ Camera *createCamera()
 
 	setCameraPos(cam, 0,0,0);
 	setCameraRot(cam, 0,0,0);
+
+	return cam;
 }
 
-
-void useCPUtestPolygonOrder(bool enable)
-{
-	polygonOrderTestCPU = enable;
-}
 
 void initEngine(bool usesSoftEngine)
 {
