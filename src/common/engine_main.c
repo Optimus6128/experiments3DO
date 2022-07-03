@@ -115,8 +115,8 @@ static void translateAndProjectVertices(Object3D *obj)
 			const int recDivZ = recZ[vz];
 			screenElements[i].x = offsetX + ((((screenVertices[i].x + posX) << PROJ_SHR) * recDivZ) >> REC_FPSHR);
 			screenElements[i].y = offsetY - ((((screenVertices[i].y + posY) << PROJ_SHR) * recDivZ) >> REC_FPSHR);
-			screenElements[i].z = vz;
 		}
+		screenElements[i].z = vz;
 	}
 }
 
