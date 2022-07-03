@@ -17,6 +17,7 @@
 
 #include "sprite_engine.h"
 
+static Camera *camera;
 
 static Mesh *gridMesh;
 static Mesh *cubeMesh;
@@ -28,11 +29,13 @@ static Texture *cubeTex;
 static uint16 gridPal[32];
 static uint16 cubePal[32];
 
-static int rotX=8, rotY=62, rotZ=0;
-static int zoom=320;
+static int camRotX = 0;
+static int camRotY = 0;
+static int camRotZ = 0;
+static int camZoom = 0;
 
-static int rotVel = 2;
-static int zoomVel = 2;
+static int camRotVel = 2;
+static int camZoomVel = 2;
 
 void effectMeshWorldInit()
 {
@@ -50,58 +53,63 @@ void effectMeshWorldInit()
 
 	cubeMesh = initGenMesh(MESH_CUBE, cubeParams, MESH_OPTIONS_DEFAULT, cubeTex);
 	cubeObj = initObject3D(cubeMesh);
+
+	camera = createCamera();
 }
 
 static void inputScript()
 {
 	if (isJoyButtonPressed(JOY_BUTTON_LEFT)) {
-		rotX += rotVel;
+		camRotX += camRotVel;
 	}
 
 	if (isJoyButtonPressed(JOY_BUTTON_RIGHT)) {
-		rotX -= rotVel;
+		camRotX -= camRotVel;
 	}
 
 	if (isJoyButtonPressed(JOY_BUTTON_UP)) {
-		rotY += rotVel;
+		camRotY += camRotVel;
 	}
 
 	if (isJoyButtonPressed(JOY_BUTTON_DOWN)) {
-		rotY -= rotVel;
+		camRotY -= camRotVel;
 	}
 
 	if (isJoyButtonPressed(JOY_BUTTON_A)) {
-		rotZ += rotVel;
+		camRotZ += camRotVel;
 	}
 
 	if (isJoyButtonPressed(JOY_BUTTON_B)) {
-		rotZ -= rotVel;
+		camRotZ -= camRotVel;
 	}
 
 	if (isJoyButtonPressed(JOY_BUTTON_LPAD)) {
-		zoom += zoomVel;
+		camZoom += camZoomVel;
 	}
 
 	if (isJoyButtonPressed(JOY_BUTTON_RPAD)) {
-		zoom -= zoomVel;
+		camZoom -= camZoomVel;
 	}
+}
+
+static void setObjectsPosAndRot()
+{
+	setObject3Dpos(gridObj, 0, -64, 512);
+	setObject3Drot(gridObj, 0, 0, 0);
+
+	setObject3Dpos(cubeObj, 0, 64, 512);
+	setObject3Drot(cubeObj, 0, 0, 0);
 }
 
 void effectMeshWorldRun()
 {
 	inputScript();
 
-	setObject3Dpos(gridObj, 0, -64, zoom);
-	setObject3Drot(gridObj, rotX, rotY, rotZ);
+	setObjectsPosAndRot();
 
-	setObject3Dpos(cubeObj, 0, 64, zoom);
-	setObject3Drot(cubeObj, rotX, rotY, rotZ);
+	setCameraPos(camera, 0,0,camZoom);
+	setCameraRot(camera, camRotX,camRotY,camRotZ);
 
-	renderObject3D(gridObj);
-	renderObject3D(cubeObj);
-
-	drawNumber(8,192, rotX);
-	drawNumber(8,200, rotY);
-	drawNumber(8,208, rotZ);
-	drawNumber(8,216, zoom);
+	renderObject3D(gridObj, camera);
+	renderObject3D(cubeObj, camera);
 }

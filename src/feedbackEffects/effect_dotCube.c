@@ -31,13 +31,15 @@ static int fbo_fx = FBO_FX_DOTCUBE2;
 static Mesh *cubeMesh;
 static Object3D *cubeObj;
 
+static Camera *camera;
+
 static Texture *flatTex;
 static Sprite *feedbackSpr;
 
 uint16 flatPal[12] = { 0, MakeRGB15(31,23,23), 0, MakeRGB15(23,31,23), 0, MakeRGB15(23,23,31), 0, MakeRGB15(31,23,31), 0, MakeRGB15(31,31,23), 0, MakeRGB15(31,31,31) };
 
 
-void effectDotcubeInit()
+static void setupDotcubeFx()
 {
 	switch(fbo_fx){
 		case FBO_FX_DOTCUBE1:
@@ -67,10 +69,17 @@ void effectDotcubeInit()
 	}
 }
 
+void effectDotcubeInit()
+{
+	setupDotcubeFx();
+
+	camera = createCamera();
+}
+
 static void partChanged()
 {
 	if (!fboFxInit[fbo_fx]) {
-		effectDotcubeInit();
+		setupDotcubeFx();
 		fboFxInit[fbo_fx] = true;
 	}
 	setMeshDottedDisplay(cubeMesh, (fbo_fx==FBO_FX_DOTCUBE1));
@@ -95,7 +104,7 @@ static void renderFlatCube(int t, int z)
 {
 	setObject3Dpos(cubeObj, 0, 0, z);
 	setObject3Drot(cubeObj, t, t<<1, t>>1);
-	renderObject3D(cubeObj);
+	renderObject3D(cubeObj, camera);
 }
 
 void effectDotcubeRun()

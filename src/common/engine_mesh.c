@@ -21,7 +21,7 @@ static int getPaletteColorsNum(int bpp)
 
 void updateMeshCELs(Mesh *ms)
 {
-	if (ms->renderType & MESH_OPTION_RENDER_HARD) {
+	if (!(ms->renderType & MESH_OPTION_RENDER_SOFT)) {
 		int i;
 		for (i=0; i<ms->polysNum; i++) {
 			Texture *tex = &ms->tex[ms->poly[i].textureId];
@@ -60,7 +60,7 @@ void updateMeshCELs(Mesh *ms)
 
 void prepareCelList(Mesh *ms)
 {
-	if (ms->renderType & MESH_OPTION_RENDER_HARD) {
+	if (!(ms->renderType & MESH_OPTION_RENDER_SOFT)) {
 		int i;
 		for (i=0; i<ms->polysNum; i++)
 		{
@@ -94,7 +94,7 @@ void prepareCelList(Mesh *ms)
 
 static void setMeshCELflags(Mesh *ms, uint32 flags, bool enable)
 {
-	if (ms->renderType & MESH_OPTION_RENDER_HARD) {
+	if (!(ms->renderType & MESH_OPTION_RENDER_SOFT)) {
 		CCB *cel = ms->cel;
 		int i;
 		for (i=0; i<ms->polysNum; i++) {
@@ -110,7 +110,7 @@ static void setMeshCELflags(Mesh *ms, uint32 flags, bool enable)
 
 void setMeshPolygonOrder(Mesh *ms, bool cw, bool ccw)
 {
-	if (ms->renderType & MESH_OPTION_RENDER_HARD) {
+	if (!(ms->renderType & MESH_OPTION_RENDER_SOFT)) {
 		if (cw) {
 			setMeshCELflags(ms, CCB_ACW, true);
 		} else {
@@ -127,7 +127,7 @@ void setMeshPolygonOrder(Mesh *ms, bool cw, bool ccw)
 
 void setMeshTranslucency(Mesh *ms, bool enable)
 {
-	if (ms->renderType & MESH_OPTION_RENDER_HARD) {
+	if (!(ms->renderType & MESH_OPTION_RENDER_SOFT)) {
 		CCB *cel = ms->cel;
 		int i;
 		for (i=0; i<ms->polysNum; i++) {
@@ -143,14 +143,14 @@ void setMeshTranslucency(Mesh *ms, bool enable)
 
 void setMeshTransparency(Mesh *ms, bool enable)
 {
-	if (ms->renderType & MESH_OPTION_RENDER_HARD) {
+	if (!(ms->renderType & MESH_OPTION_RENDER_SOFT)) {
 		setMeshCELflags(ms, CCB_BGND, !enable);
 	}
 }
 
 void setMeshDottedDisplay(Mesh *ms, bool enable)
 {
-	if (ms->renderType & MESH_OPTION_RENDER_HARD) {
+	if (!(ms->renderType & MESH_OPTION_RENDER_SOFT)) {
 		setMeshCELflags(ms, CCB_MARIA, enable);
 	}
 }
@@ -170,13 +170,12 @@ Mesh* initMesh(int verticesNum, int polysNum, int indicesNum, int linesNum, int 
 	ms->lineIndex = (int*)AllocMem(linesNum * 2 * sizeof(int), MEMTYPE_ANY);
 	ms->polyNormal = (Vector3D*)AllocMem(ms->polysNum * sizeof(Vector3D), MEMTYPE_ANY);
 
-	if (renderType & MESH_OPTION_RENDER_HARD) {
-		ms->cel = (CCB*)AllocMem(polysNum * sizeof(CCB), MEMTYPE_ANY);
-	}
 	if (renderType & MESH_OPTION_RENDER_SOFT) {
 		ms->vertexNormal = (Vector3D*)AllocMem(ms->verticesNum * sizeof(Vector3D), MEMTYPE_ANY);
 		ms->vertexCol = (int*)AllocMem(ms->verticesNum * sizeof(int), MEMTYPE_ANY);
 		ms->vertexTC = (TexCoords*)AllocMem(ms->verticesNum * sizeof(TexCoords), MEMTYPE_ANY);
+	} else {
+		ms->cel = (CCB*)AllocMem(polysNum * sizeof(CCB), MEMTYPE_ANY);
 	}
 	ms->renderType = renderType;
 

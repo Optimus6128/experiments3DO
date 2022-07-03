@@ -27,6 +27,8 @@ static Sprite *feedbackSpr2;
 CCB *starryBack;
 uint32 *origBackSourcePtr;
 
+static Camera *camera;
+
 
 void effectMosaikInit()
 {
@@ -40,13 +42,15 @@ void effectMosaikInit()
 
 	feedbackSpr1 = newFeedbackSprite(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
 	feedbackSpr2 = newFeedbackSprite(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 1);
+
+	camera = createCamera();
 }
 
 static void renderDraculCube(int t)
 {
 	setObject3Dpos(draculObj, 0, 0, 512);
 	setObject3Drot(draculObj, t, t<<1, t>>1);
-	renderObject3D(draculObj);
+	renderObject3D(draculObj, camera);
 }
 
 static void renderScrollBackground()

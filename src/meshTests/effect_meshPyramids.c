@@ -45,6 +45,9 @@ static Sprite *scanlinesSpr;
 static ubyte scanlinesBmp[(SCANLINES_SPR_WIDTH * SCANLINES_SPR_HEIGHT) / 8];
 static uint16 scanlinesPal[2];
 
+Camera *camera;
+
+
 static void inputScript()
 {
 	if (isJoyButtonPressed(JOY_BUTTON_LEFT)) {
@@ -169,6 +172,8 @@ void effectMeshPyramidsInit()
 	initScanlinesSprite();
 
 	setClearFrame(!testBlurIdea);
+
+	camera = createCamera();
 }
 
 
@@ -211,7 +216,7 @@ void effectMeshPyramidsRun()
 	setObject3Dpos(obj, getMousePosition().x, -getMousePosition().y, zoom);
 	setObject3Drot(obj, rotX, rotY, rotZ);
 
-	renderObject3D(obj);
+	renderObject3D(obj, camera);
 
 	if (testBlurIdea) {
 		drawSprite(scanlinesSpr);

@@ -45,25 +45,8 @@ static bool gridTextureOn = true;
 static bool halfInterp = false;
 static bool plasmaInsteadOfWater = false;
 
+Camera *camera;
 
-/*static void hackQuarterTex()
-{
-	int x,y;
-	const int texWidth = cloudTex->width;
-	const int texHeight = cloudTex->height;
-	const int texWidthHalf = texWidth/2;
-	const int texHeightHalf = texHeight/2;
-
-	uint8 *bmp = cloudTex->bitmap;
-	for (y=0; y<texHeightHalf; ++y) {
-		for (x=0; x<texWidthHalf; ++x) {
-			uint8 c = *(bmp + y*texWidth + x);
-			*(bmp + y*texWidth + texWidth-1-x) = c;
-			*(bmp + (texHeight-1-y)*texWidth + x) = c;
-			*(bmp + (texHeight-1-y)*texWidth + texWidth-1-x) = c;
-		}
-	}
-}*/
 
 static void updatePolyDataTextureShifts(int newWidth, int newHeight)
 {
@@ -135,7 +118,6 @@ void effectMeshGridInit()
 	setPalGradient(0,31, 1,3,7, 15,23,31, floorPal);
 	gridTex = initGenTexture(16,16, 8, floorPal, 1, TEXGEN_GRID, false, NULL);
 	cloudTex = initGenTexture(128,128, 8, floorPal, 1, TEXGEN_CLOUDS, false, NULL);
-	//hackQuarterTex();
 
 	waterSpr = newSprite(WATER_SIZE, WATER_SIZE, 8, CEL_TYPE_CODED, waterPal, waterTex->bitmap);
 
@@ -146,6 +128,8 @@ void effectMeshGridInit()
 	gridObj = initObject3D(gridMesh);
 
 	darkenAllCels();
+
+	camera = createCamera();
 }
 
 static void waterRun()
@@ -306,7 +290,7 @@ void effectMeshGridRun()
 	setObject3Dpos(gridObj, 0, -64, zoom);
 	setObject3Drot(gridObj, rotX, rotY, rotZ);
 
-	renderObject3D(gridObj);
+	renderObject3D(gridObj, camera);
 
 	if (!halfInterp || ((lele++ & 1)==0)) {
 		if (plasmaInsteadOfWater) {

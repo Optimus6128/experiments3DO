@@ -33,7 +33,7 @@ static Object3D *draculObj;
 static Texture *draculTex;
 static Sprite **feedbackLineSpr;
 
-CCB *eraseCel;
+static CCB *eraseCel;
 
 const int spriteLines = (SCREEN_HEIGHT / FRAME_SUB_Y) / 2;
 const int screenRegionsNum = FRAME_SUB_X * FRAME_SUB_Y;
@@ -41,6 +41,9 @@ const int screenRegionsNum = FRAME_SUB_X * FRAME_SUB_Y;
 static int regIter = 0;
 static int totalRegions;
 static int linesZoom = 1;
+
+static Camera *camera;
+
 
 static void scaleLineSprites(int zoom)
 {
@@ -83,6 +86,8 @@ void effectSlimecubeInit()
 
 	eraseCel = CreateBackdropCel(SCREEN_WIDTH / FRAME_SUB_X, SCREEN_HEIGHT / FRAME_SUB_Y, 0, 100);
 	eraseCel->ccb_Flags |= CCB_BGND;
+
+	camera = createCamera();
 }
 
 static void renderDraculCube(int t)
@@ -90,7 +95,7 @@ static void renderDraculCube(int t)
 	setObject3Dpos(draculObj, 0, 0, 1408);	//4x3
 	//setObject3Dpos(draculObj, 0, 0, 960);	// 2x2
 	setObject3Drot(draculObj, t, t<<1, t>>1);
-	renderObject3D(draculObj);
+	renderObject3D(draculObj, camera);
 }
 
 static BufferRegionInfo *getBufferRegionInfoFromNum(int num)

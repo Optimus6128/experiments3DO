@@ -25,6 +25,8 @@ static int zoom=512;
 static const int rotVel = 2;
 static const int zoomVel = 2;
 
+static Camera *camera;
+
 static Object3D *softObj[4];
 
 static int renderSoftMethodIndex = RENDER_SOFT_METHOD_GOURAUD;
@@ -147,6 +149,8 @@ void effectMeshSoftInit()
 	softObj[3] = initMeshObject(MESH_SQUARE_COLUMNOID, paramsColumnoid, MESH_OPTION_RENDER_SOFT16 | lightingOptions, cloudTex16);
 
 	setRenderSoftMethod(renderSoftMethodIndex);
+
+	camera = createCamera();
 }
 
 static void renderSoftObj(int posX, int posZ, int t)
@@ -157,7 +161,7 @@ static void renderSoftObj(int posX, int posZ, int t)
 	} else {
 		setObject3Drot(softObj[selectedSoftObj], rotX, rotY, rotZ);
 	}
-	renderObject3Dsoft(softObj[selectedSoftObj]);
+	renderObject3D(softObj[selectedSoftObj], camera);
 }
 
 void effectMeshSoftRun()

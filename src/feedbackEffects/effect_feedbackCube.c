@@ -40,6 +40,8 @@ static bool translucency = false;
 static int cubeOffsetX = 0;
 static int cubeOffsetY = 0;
 
+static Camera *camera;
+
 
 static void genBackgroundTex()
 {
@@ -149,8 +151,8 @@ void effectFeedbackCubeInit()
 	softFeedbackTex = initTexture(FB_WIDTH, FB_HEIGHT, 16, TEXTURE_TYPE_STATIC, NULL, NULL, 0);
 	draculTex = loadTexture("data/draculin.cel");
 
-	cubeMesh = initGenMesh(MESH_CUBE, params, MESH_OPTIONS_DEFAULT, feedbackTex0);
-	cubeMeshBack = initGenMesh(MESH_CUBE, params, MESH_OPTIONS_DEFAULT, draculTex);
+	cubeMesh = initGenMesh(MESH_CUBE, params, MESH_OPTION_CPU_POLYTEST, feedbackTex0);
+	cubeMeshBack = initGenMesh(MESH_CUBE, params, MESH_OPTION_CPU_POLYTEST | MESH_OPTIONS_DEFAULT, draculTex);
 	cubeObj = initObject3D(cubeMesh);
 	cubeBackObj = initObject3D(cubeMeshBack);
 
@@ -158,6 +160,8 @@ void effectFeedbackCubeInit()
 	genBackgroundTex();
 
 	switchFeedback(hwFeedback);
+
+	camera = createCamera();
 }
 
 void effectFeedbackCubeRun()
@@ -174,7 +178,7 @@ void effectFeedbackCubeRun()
 		setScreenRegion(0, 0, FB_WIDTH, FB_HEIGHT);
 
 			drawSprite(bgndSpr);
-			renderObject3D(cubeBackObj);
+			renderObject3D(cubeBackObj, camera);
 
 		switchRenderToBuffer(false);
 		setScreenRegion(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -187,7 +191,7 @@ void effectFeedbackCubeRun()
 	setObject3Dpos(cubeObj, cubeOffsetX, cubeOffsetY, 512);
 	setObject3Drot(cubeObj, 0, time, 0);
 
-	renderObject3D(cubeObj);
+	renderObject3D(cubeObj, camera);
 
 	if (hwFeedback)
 		drawText(320-32, 0, "HARD");

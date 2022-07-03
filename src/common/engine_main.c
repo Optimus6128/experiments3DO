@@ -11,7 +11,6 @@
 
 #include "system_graphics.h"
 
-#include "mathutil.h"
 
 static Vertex screenVertices[MAX_VERTEX_ELEMENTS_NUM];
 static ScreenElement screenElements[MAX_VERTEX_ELEMENTS_NUM];
@@ -95,13 +94,13 @@ void createRotationMatrixValues(int rotX, int rotY, int rotZ, int *rotVecs)
 	*rotVecs = (FIXED_MUL(cosxr, cosyr, FP_BASE)) << FP_BASE_TO_CORE;
 }
 
-static void translateAndProjectVertices(Object3D *obj)
+static void translateAndProjectVertices(Object3D *obj, Camera *cam)
 {
 	int i;
 
-	const int posX = obj->posX;
-	const int posY = obj->posY;
-	const int posZ = obj->posZ;
+	const int posX = obj->pos.x;
+	const int posY = obj->pos.y;
+	const int posZ = obj->pos.z;
 
 	const int lvNum = obj->mesh->verticesNum;
 
@@ -117,26 +116,6 @@ static void translateAndProjectVertices(Object3D *obj)
 			screenElements[i].y = offsetY - ((((screenVertices[i].y + posY) << PROJ_SHR) * recDivZ) >> REC_FPSHR);
 		}
 		screenElements[i].z = vz;
-	}
-}
-
-static void rotateVerticesHw(Object3D *obj, bool rotatePolyNormals, bool rotateVertexNormals)
-{
-	mat33f16 rotMat;
-
-	createRotationMatrixValues(obj->rotX, obj->rotY, obj->rotZ, (int*)rotMat);
-
-	MulManyVec3Mat33_F16((vec3f16*)screenVertices, (vec3f16*)obj->mesh->vertex, rotMat, obj->mesh->verticesNum);
-
-	if (obj->mesh->renderType & MESH_OPTION_ENABLE_LIGHTING) {
-		// in the future, we might not need to rotate the normals but rather the light against the normals
-		// so we won't need the normals container, as we will test light vector against original mesh normals
-		if (rotatePolyNormals) {
-			MulManyVec3Mat33_F16((vec3f16*)rotatedNormals, (vec3f16*)obj->mesh->polyNormal, rotMat, obj->mesh->polysNum); 
-		}
-		if (rotateVertexNormals) {
-			MulManyVec3Mat33_F16((vec3f16*)rotatedNormals, (vec3f16*)obj->mesh->vertexNormal, rotMat, obj->mesh->verticesNum);
-		}
 	}
 }
 
@@ -186,10 +165,10 @@ static void prepareTransformedMeshCELs(Mesh *ms)
 	}
 }
 
-static void calculateVertexLighting(Object3D *obj)
+static void calculateVertexLighting(Mesh *mesh)
 {
 	int i, c;
-	const int verticesNum = obj->mesh->verticesNum;
+	const int verticesNum = mesh->verticesNum;
 
 	for (i=0; i<verticesNum; ++i) {
 		int normZ = -rotatedNormals[i].z;
@@ -200,11 +179,11 @@ static void calculateVertexLighting(Object3D *obj)
 	}
 }
 
-static void calculateVertexEnvmapTC(Object3D *obj)
+static void calculateVertexEnvmapTC(Mesh *mesh)
 {
 	int i;
-	const int verticesNum = obj->mesh->verticesNum;
-	Texture *tex = &obj->mesh->tex[0];
+	const int verticesNum = mesh->verticesNum;
+	Texture *tex = &mesh->tex[0];
 
 	const int texWidthHalf = tex->width >> 1;
 	const int texHeightHalf = tex->height >> 1;
@@ -235,40 +214,55 @@ static void useMapCelFunctionFast(bool enable)
 	}
 }
 
-static void transformMesh(Object3D *obj, bool soft)
+static void transformMesh(Object3D *obj, Camera *cam)
 {
-	rotateVerticesHw(obj, !soft, soft);
-	translateAndProjectVertices(obj);
-}
+	static mat33f16 rotMat;
+	Mesh *mesh = obj->mesh;
 
-static void renderTransformedMesh(Object3D *obj)
-{
-	//useMapCelFunctionFast(false);	// Should deduce it or maybe mark the polygons if textures are power of two. Using the slower option for now.
-	useMapCelFunctionFast(true);	// Will now see what it breaks...
-	useCPUtestPolygonOrder(false);	// False for now for the grid effect..
-	//useCPUtestPolygonOrder(true);	// the CEL clockwise clipping sucks anyway. In the future we my add this option as a state or per object maybe..
+	createRotationMatrixValues(obj->rot.x, obj->rot.y, obj->rot.z, (int*)rotMat);
 
-	prepareTransformedMeshCELs(obj->mesh);
-	drawCels(obj->mesh->cel);
-}
+	// Rotate Mesh Vertices
+	MulManyVec3Mat33_F16((vec3f16*)screenVertices, (vec3f16*)mesh->vertex, rotMat, mesh->verticesNum);
 
-void renderObject3D(Object3D *obj)
-{
-	transformMesh(obj, false);
-	renderTransformedMesh(obj);
-}
+	translateAndProjectVertices(obj, cam);
 
-void renderObject3Dsoft(Object3D *obj)
-{
-	transformMesh(obj, true);
-
-	if (obj->mesh->renderType & MESH_OPTION_ENABLE_LIGHTING) {
-		calculateVertexLighting(obj);
+	if (mesh->renderType & MESH_OPTION_ENABLE_LIGHTING) {
+		// in the future, we might not need to rotate the normals but rather the light against the normals
+		// so we won't need the normals container, as we will test light vector against original mesh normals
+		if (mesh->renderType & MESH_OPTION_RENDER_SOFT) {
+			MulManyVec3Mat33_F16((vec3f16*)rotatedNormals, (vec3f16*)mesh->vertexNormal, rotMat, mesh->verticesNum);
+		} else {
+			MulManyVec3Mat33_F16((vec3f16*)rotatedNormals, (vec3f16*)mesh->polyNormal, rotMat, mesh->polysNum);
+		}
 	}
-	if (obj->mesh->renderType & MESH_OPTION_ENABLE_ENVMAP) {
-		calculateVertexEnvmapTC(obj);
+}
+
+static void renderTransformedMesh(Mesh *mesh)
+{
+	useMapCelFunctionFast(mesh->renderType & MESH_OPTION_FAST_MAPCEL);
+	useCPUtestPolygonOrder(mesh->renderType & MESH_OPTION_CPU_POLYTEST);
+
+	prepareTransformedMeshCELs(mesh);
+	drawCels(mesh->cel);
+}
+
+void renderObject3D(Object3D *obj, Camera *cam)
+{
+	Mesh *mesh = obj->mesh;
+
+	transformMesh(obj, cam);
+
+	if (mesh->renderType & MESH_OPTION_RENDER_SOFT) {
+		if (mesh->renderType & MESH_OPTION_ENABLE_LIGHTING) {
+			calculateVertexLighting(mesh);
+		}
+		if (mesh->renderType & MESH_OPTION_ENABLE_ENVMAP) {
+			calculateVertexEnvmapTC(mesh);
+		}
+		renderTransformedMeshSoft(mesh, screenElements);
+	} else {
+		renderTransformedMesh(mesh);
 	}
-	renderTransformedMeshSoft(obj->mesh, screenElements);
 }
 
 void setScreenRegion(int posX, int posY, int width, int height)
@@ -290,30 +284,54 @@ Object3D* initObject3D(Mesh *ms)
 
 	obj->mesh = ms;
 	
-	obj->posX = obj->posY = obj->posZ = 0;
-	obj->rotX = obj->rotY = obj->rotZ = 0;
+	obj->pos.x = obj->pos.y = obj->pos.z = 0;
+	obj->rot.x = obj->rot.y = obj->rot.z = 0;
 
 	return obj;
 }
 
 void setObject3Dpos(Object3D *obj, int px, int py, int pz)
 {
-	obj->posX = px;
-	obj->posY = py;
-	obj->posZ = pz;
+	obj->pos.x = px;
+	obj->pos.y = py;
+	obj->pos.z = pz;
 }
 
 void setObject3Drot(Object3D *obj, int rx, int ry, int rz)
 {
-	obj->rotX = rx;
-	obj->rotY = ry;
-	obj->rotZ = rz;
+	obj->rot.x = rx;
+	obj->rot.y = ry;
+	obj->rot.z = rz;
 }
 
 void setObject3Dmesh(Object3D *obj, Mesh *ms)
 {
 	obj->mesh = ms;
 }
+
+
+void setCameraPos(Camera *cam, int px, int py, int pz)
+{
+	cam->pos.x = px;
+	cam->pos.y = py;
+	cam->pos.z = pz;
+}
+
+void setCameraRot(Camera *cam, int rx, int ry, int rz)
+{
+	cam->rot.x = rx;
+	cam->rot.y = ry;
+	cam->rot.z = rz;
+}
+
+Camera *createCamera()
+{
+	Camera *cam = (Camera*)AllocMem(sizeof(Camera), MEMTYPE_ANY);
+
+	setCameraPos(cam, 0,0,0);
+	setCameraRot(cam, 0,0,0);
+}
+
 
 void useCPUtestPolygonOrder(bool enable)
 {

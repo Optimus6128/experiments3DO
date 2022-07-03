@@ -2,8 +2,9 @@
 #define ENGINE_MAIN_H
 
 #include "engine_mesh.h"
+#include "mathutil.h"
 
-#define MAX_VERTEX_ELEMENTS_NUM (4096+256)
+#define MAX_VERTEX_ELEMENTS_NUM 2048
 
 #define PROJ_SHR 8
 
@@ -23,10 +24,13 @@ typedef struct ScreenElement
 typedef struct Object3D
 {
 	Mesh *mesh;
-
-	int posX, posY, posZ;
-	int rotX, rotY, rotZ;
+	Vector3D pos, rot;
 }Object3D;
+
+typedef struct Camera
+{
+	Vector3D pos, rot;
+}Camera;
 
 void initEngine(bool usesSoftEngine);
 
@@ -36,8 +40,11 @@ void setObject3Dpos(Object3D *obj, int px, int py, int pz);
 void setObject3Drot(Object3D *obj, int rx, int ry, int rz);
 void setObject3Dmesh(Object3D *obj, Mesh *ms);
 
-void renderObject3D(Object3D *obj);
-void renderObject3Dsoft(Object3D *obj);
+void renderObject3D(Object3D *obj, Camera *cam);
+
+Camera *createCamera(void);
+void setCameraPos(Camera *cam, int px, int py, int pz);
+void setCameraRot(Camera *cam, int rx, int ry, int rz);
 
 void createRotationMatrixValues(int rotX, int rotY, int rotZ, int *rotVecs);	// I will hide this again after I fix the volume
 

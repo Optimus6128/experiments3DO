@@ -68,6 +68,7 @@ static int rotXtrans;
 static int rotYtrans;
 static int rotZtrans;
 
+Camera *camera;
 
 #define RANDTAB_SIZE 1024
 
@@ -367,6 +368,8 @@ void effectInit()
 
 	updateBlending();
 	updateMaria();
+
+	camera = createCamera();
 }
 
 
@@ -486,15 +489,10 @@ static void renderMariaQuads(bool backToFront)
 
 static void renderTorch()
 {
-	torchObj->posX = posXtrans;
-	torchObj->posY = -posYtrans - 256;
-	torchObj->posZ = posZtrans;
+	setObject3Dpos(torchObj, posXtrans, -posYtrans - 256, posZtrans);
+	setObject3Drot(torchObj, rotXtrans, rotYtrans, rotZtrans);
 
-	torchObj->rotX = rotXtrans;
-	torchObj->rotY = rotYtrans;
-	torchObj->rotZ = rotZtrans;
-
-	renderObject3D(torchObj);
+	renderObject3D(torchObj, camera);
 }
 
 static void render()
