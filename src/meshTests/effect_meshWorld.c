@@ -21,7 +21,7 @@
 static Camera *camera;
 static int camHeight = 96;
 
-#define GRID_SIZE 24
+#define GRID_SIZE 16
 
 static Mesh *gridMesh;
 static Mesh *cubeMesh;
@@ -44,10 +44,8 @@ static int camPosY = 0;
 static int camPosZ = -512 << FP_CORE;
 
 static int camRotVel = 2;
-static int camMoveVel = 8;
-static int camFlyVel = 4;
-
-static int prevTicks = 0;
+static int camMoveVel = 6;
+static int camFlyVel = 3;
 
 static int renderSoftMethodIndex = RENDER_SOFT_METHOD_GOURAUD;
 
@@ -116,7 +114,7 @@ static MeshgenParams initMeshObjectParams(int meshgenId)
 
 void effectMeshWorldInit()
 {
-	MeshgenParams gridParams = makeMeshgenGridParams(2048, GRID_SIZE);
+	MeshgenParams gridParams = makeMeshgenGridParams(1024, GRID_SIZE);
 	MeshgenParams cubeParams = DEFAULT_MESHGEN_PARAMS(128);
 
 	//MeshgenParams softParams = initMeshObjectParams(MESH_CUBE);
@@ -248,6 +246,7 @@ static void setObjectsPosAndRot(int dt)
 
 void effectMeshWorldRun()
 {
+	static int prevTicks = 0;
 	int currTicks = getTicks();
 	int dt = currTicks - prevTicks;
 	prevTicks = currTicks;

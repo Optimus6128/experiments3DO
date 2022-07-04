@@ -372,6 +372,30 @@ Camera *createCamera()
 	return cam;
 }
 
+void setLightPos(Light *light, int px, int py, int pz)
+{
+	light->pos.x = px;
+	light->pos.y = py;
+	light->pos.z = pz;
+}
+
+void setLightDir(Light *light, int vx, int vy, int vz)
+{
+	light->dir.x = vx;
+	light->dir.y = vy;
+	light->dir.z = vz;
+}
+
+Light *createLight(bool isDirectional)
+{
+	Light *light = (Light*)AllocMem(sizeof(Light), MEMTYPE_ANY);
+
+	setLightPos(light, 0,1024,0);
+	setLightDir(light, 0,-(1 << NORMAL_SHIFT), 0);
+
+	return light;
+}
+
 
 void initEngine(bool usesSoftEngine)
 {
@@ -380,7 +404,7 @@ void initEngine(bool usesSoftEngine)
 	useCPUtestPolygonOrder(false);
 	useMapCelFunctionFast(true);
 
-	setVector3D(&globalLight, 2<<NORMAL_SHIFT,-3<<NORMAL_SHIFT,1<<NORMAL_SHIFT);
+	setVector3D(&globalLight, 1,-3,2);
 	normalizeVector3D(&globalLight);
 
 	if (usesSoftEngine) initEngineSoft();

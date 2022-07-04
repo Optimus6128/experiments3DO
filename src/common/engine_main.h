@@ -29,8 +29,15 @@ typedef struct Object3D
 
 typedef struct Camera
 {
-	Vector3D pos, rot;
+	Vector3D pos, rot;	// should rather use a dir instead of a rot, but need to get rot angles back from vector dir
 }Camera;
+
+typedef struct Light
+{
+	Vector3D pos;
+	Vector3D dir;
+	bool isDirectional;
+}Light;
 
 void initEngine(bool usesSoftEngine);
 
@@ -41,6 +48,10 @@ void setObject3Drot(Object3D *obj, int rx, int ry, int rz);
 void setObject3Dmesh(Object3D *obj, Mesh *ms);
 
 void renderObject3D(Object3D *obj, Camera *cam);
+
+Light *createLight(bool isDirectional);
+void setLightPos(Light *light, int px, int py, int pz);
+void setLightDir(Light *light, int vx, int vy, int vz);
 
 Camera *createCamera(void);
 void setCameraPos(Camera *cam, int px, int py, int pz);
