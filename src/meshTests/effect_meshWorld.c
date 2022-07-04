@@ -1,6 +1,7 @@
 #include "core.h"
 
 #include "effect_meshWorld.h"
+#include "engine_soft.h"
 
 #include "system_graphics.h"
 #include "tools.h"
@@ -18,11 +19,17 @@
 #include "sprite_engine.h"
 
 static Camera *camera;
+static int camHeight = 96;
+
+#define GRID_SIZE 24
 
 static Mesh *gridMesh;
 static Mesh *cubeMesh;
 static Object3D *gridObj;
 static Object3D *cubeObj;
+
+static Object3D *softObj;
+static Texture *cloudTex16;
 
 static Texture *gridTex;
 static Texture *cubeTex;
@@ -34,15 +41,86 @@ static int camRotY = 0;
 static int camRotZ = 0;
 static int camPosX = 0;
 static int camPosY = 0;
-static int camPosZ = 0;
+static int camPosZ = -512 << FP_CORE;
 
-static int camRotVel = 1;
-static int camMoveVel = 4;
+static int camRotVel = 2;
+static int camMoveVel = 8;
+static int camFlyVel = 4;
+
+static int prevTicks = 0;
+
+static int renderSoftMethodIndex = RENDER_SOFT_METHOD_GOURAUD;
+
+
+static void shadeGrid()
+{
+	int x,y;
+	//Vertex *dstVertex = gridMesh->vertex;
+	CCB *cel = gridMesh->cel;
+
+	for (y=0; y<GRID_SIZE; ++y) {
+		const int yc = y - GRID_SIZE / 2;
+		for (x=0; x<GRID_SIZE; ++x) {
+			const int xc = x - GRID_SIZE / 2;
+			int r = (isqrt(xc*xc + yc*yc) * 16) / (GRID_SIZE / 2);
+			CLAMP(r,0,15)
+			cel->ccb_PIXC = shadeTable[15-r];
+			++cel;
+		}
+	}
+}
+
+static Object3D *initMeshObjectSoft(int meshgenId, const MeshgenParams params, int optionsFlags, Texture *tex)
+{
+	Object3D *meshObj;
+
+	Mesh *softMesh = initGenMesh(meshgenId, params, optionsFlags, tex);
+	meshObj = initObject3D(softMesh);
+	setObject3Dmesh(meshObj, softMesh);
+
+	return meshObj;
+}
+
+static MeshgenParams initMeshObjectParams(int meshgenId)
+{
+	MeshgenParams params;
+
+	switch(meshgenId) {
+		case MESH_CUBE:
+		{
+			params = makeDefaultMeshgenParams(64);
+		}
+		break;
+
+		case MESH_SQUARE_COLUMNOID:
+		{
+			int i;
+			const int numPoints = 8;
+			const int size = 40;
+			Point2Darray *ptArray = initPoint2Darray(numPoints);
+
+			for (i=0; i<numPoints; ++i) {
+				const int y = (size/4) * (numPoints/2 - i);
+				const int r = ((SinF16((i*20) << 16) * (size / 2)) >> 16) + size / 2;
+				addPoint2D(ptArray, r,y);
+			}
+			params = makeMeshgenSquareColumnoidParams(size, ptArray->points, numPoints, true, true);
+
+			//destroyPoint2Darray(ptArray); //why it crashes now?
+		}
+		break;
+	}
+
+	return params;
+}
 
 void effectMeshWorldInit()
 {
-	MeshgenParams gridParams = makeMeshgenGridParams(1024, 16);
-	MeshgenParams cubeParams = DEFAULT_MESHGEN_PARAMS(256);
+	MeshgenParams gridParams = makeMeshgenGridParams(2048, GRID_SIZE);
+	MeshgenParams cubeParams = DEFAULT_MESHGEN_PARAMS(128);
+
+	//MeshgenParams softParams = initMeshObjectParams(MESH_CUBE);
+	MeshgenParams softParams = initMeshObjectParams(MESH_SQUARE_COLUMNOID);
 
 	setPalGradient(0,31, 1,1,3, 27,29,31, gridPal);
 	setPalGradient(0,31, 15,7,3, 19,11,23, cubePal);
@@ -53,30 +131,60 @@ void effectMeshWorldInit()
 	gridMesh = initGenMesh(MESH_GRID, gridParams, MESH_OPTIONS_DEFAULT, gridTex);
 	gridObj = initObject3D(gridMesh);
 
-	cubeMesh = initGenMesh(MESH_CUBE, cubeParams, MESH_OPTIONS_DEFAULT, cubeTex);
+	cubeMesh = initGenMesh(MESH_CUBE, cubeParams, MESH_OPTIONS_DEFAULT | MESH_OPTION_ENABLE_LIGHTING, cubeTex);
 	cubeObj = initObject3D(cubeMesh);
+
+	cloudTex16 = initGenTexture(64, 64, 16, NULL, 1, TEXGEN_CLOUDS, false, NULL);
+	//softObj = initMeshObjectSoft(MESH_CUBE, softParams, MESH_OPTION_RENDER_SOFT16 | MESH_OPTION_ENABLE_LIGHTING | MESH_OPTION_ENABLE_ENVMAP, cloudTex16);
+	softObj = initMeshObjectSoft(MESH_SQUARE_COLUMNOID, softParams, MESH_OPTION_RENDER_SOFT16 | MESH_OPTION_ENABLE_LIGHTING | MESH_OPTION_ENABLE_ENVMAP, cloudTex16);
+
+
+	shadeGrid();
 
 	camera = createCamera();
 }
 
-static void moveCamera(int forward, int right)
+static bool tryCollideMoveStep(bool x, bool y, vec3f16 move, int speed)
+{
+	const int off = 192 << FP_CORE;
+
+	int prevCamPosX = camPosX;
+	int prevCamPosZ = camPosZ;
+
+	if (x) camPosX += move[0] * speed;
+	if (y) camPosZ += move[2] * speed;
+
+	if (camPosX>-off && camPosX<off && camPosZ>-off && camPosZ<off) {
+		camPosX = prevCamPosX;
+		camPosZ = prevCamPosZ;
+		return true;
+	}
+	return false;
+}
+
+static void moveCamera(int forward, int right, int up, int dt)
 {
 	static mat33f16 rotMat;
 	static vec3f16 move;
 
-	move[0] = right << FP_BASE;
-	move[1] = 0;
+	move[0] = (right << FP_BASE) >> 1;
+	move[1] = up << FP_BASE;
 	move[2] = forward << FP_BASE;
 
 	createRotationMatrixValues(camRotX, camRotY, camRotZ, (int*)rotMat);	// not correct when looking up/down yet
 	MulVec3Mat33_F16(move, move, rotMat);
 
-	camPosX += move[0] * camMoveVel;
-	camPosY += move[1] * camMoveVel;
-	camPosZ += move[2] * camMoveVel;
+	if (tryCollideMoveStep(true, true, move, camMoveVel * dt)) {
+		if(tryCollideMoveStep(true, false, move, camMoveVel * dt)) {
+			tryCollideMoveStep(false, true, move, camMoveVel * dt);
+		}
+	}
+
+	camPosY += move[1] * camFlyVel * dt;
+	if (camPosY <0) camPosY = 0;
 }
 
-static void inputScript()
+static void inputScript(int dt)
 {
 	if (isJoyButtonPressed(JOY_BUTTON_LEFT)) {
 		camRotY += camRotVel;
@@ -87,48 +195,77 @@ static void inputScript()
 	}
 
 	if (isJoyButtonPressed(JOY_BUTTON_UP)) {
-		moveCamera(1,0);
+		moveCamera(1,0,0,dt);
 	}
 
 	if (isJoyButtonPressed(JOY_BUTTON_DOWN)) {
-		moveCamera(-1,0);
+		moveCamera(-1,0,0,dt);
 	}
 
 	if (isJoyButtonPressed(JOY_BUTTON_A)) {
-		camRotX += camRotVel;
+		moveCamera(0,0,1,dt);
+		//camRotX += camRotVel;
 	}
 
 	if (isJoyButtonPressed(JOY_BUTTON_B)) {
-		camRotX -= camRotVel;
+		moveCamera(0,0,-1,dt);
+		//camRotX -= camRotVel;
+	}
+
+	if (isJoyButtonPressedOnce(JOY_BUTTON_C)) {
+		if (++renderSoftMethodIndex == RENDER_SOFT_METHOD_NUM) renderSoftMethodIndex = 0;
+		setRenderSoftMethod(renderSoftMethodIndex);
 	}
 
 	if (isJoyButtonPressed(JOY_BUTTON_LPAD)) {
-		moveCamera(0,-1);
+		moveCamera(0,-1,0,dt);
 	}
 
 	if (isJoyButtonPressed(JOY_BUTTON_RPAD)) {
-		moveCamera(0,1);
+		moveCamera(0,1,0,dt);
 	}
 }
 
-static void setObjectsPosAndRot()
+static void setObjectsPosAndRot(int dt)
 {
-	setObject3Dpos(gridObj, 0, -64, 1024);
+	static int softRotX = 16;
+	static int softRotY = 32;
+	static int softRotZ = 48;
+
+	setObject3Dpos(gridObj, 0, 0, 0);
 	setObject3Drot(gridObj, 0, 0, 0);
 
-	setObject3Dpos(cubeObj, 0, 64, 1024);
+	setObject3Dpos(cubeObj, 0, 64, 0);
 	setObject3Drot(cubeObj, 0, 0, 0);
+
+	setObject3Dpos(softObj, 0, 192 + (SinF16(getTicks() << 14) >> 13), 0);
+	setObject3Drot(softObj, softRotX, softRotY, softRotZ);
+
+	softRotX += 1;
+	softRotY += 2;
+	softRotZ -= 1;
 }
 
 void effectMeshWorldRun()
 {
-	inputScript();
+	int currTicks = getTicks();
+	int dt = currTicks - prevTicks;
+	prevTicks = currTicks;
 
-	setObjectsPosAndRot();
+	inputScript(dt);
 
-	setCameraPos(camera, camPosX>>FP_BASE, 256 + (camPosY>>FP_BASE), camPosZ>>FP_BASE);
+	setObjectsPosAndRot(dt);
+
+	setCameraPos(camera, camPosX>>FP_CORE, camHeight + (camPosY>>FP_CORE), camPosZ>>FP_CORE);
 	setCameraRot(camera, camRotX,camRotY,camRotZ);
 
 	renderObject3D(gridObj, camera);
-	renderObject3D(cubeObj, camera);
+
+	if ((camPosY >> FP_CORE) <= 32) {
+		renderObject3D(softObj, camera);
+		renderObject3D(cubeObj, camera);
+	} else {
+		renderObject3D(cubeObj, camera);
+		renderObject3D(softObj, camera);
+	}
 }

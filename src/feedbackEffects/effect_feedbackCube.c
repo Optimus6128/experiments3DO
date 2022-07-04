@@ -152,7 +152,7 @@ void effectFeedbackCubeInit()
 	draculTex = loadTexture("data/draculin.cel");
 
 	cubeMesh = initGenMesh(MESH_CUBE, params, MESH_OPTION_CPU_POLYTEST, feedbackTex0);
-	cubeMeshBack = initGenMesh(MESH_CUBE, params, MESH_OPTION_CPU_POLYTEST | MESH_OPTIONS_DEFAULT, draculTex);
+	cubeMeshBack = initGenMesh(MESH_CUBE, params, MESH_OPTIONS_DEFAULT, draculTex);
 	cubeObj = initObject3D(cubeMesh);
 	cubeBackObj = initObject3D(cubeMeshBack);
 

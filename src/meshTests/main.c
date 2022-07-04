@@ -20,7 +20,7 @@ int main()
 	//const int effectIndex = runEffectSelector(effectName, EFFECTS_NUM);
 	const int effectIndex = EFFECT_MESH_WORLD;
 
-	if (effectIndex == EFFECT_MESH_SOFT) extraOpts |= CORE_INIT_3D_ENGINE_SOFT;
+	if (effectIndex == EFFECT_MESH_SOFT || effectIndex == EFFECT_MESH_WORLD) extraOpts |= CORE_INIT_3D_ENGINE_SOFT;
 
 	coreInit(effectInitFunc[effectIndex], CORE_SHOW_FPS | CORE_INIT_3D_ENGINE | CORE_VRAM_MAXBUFFERS | extraOpts);
 	coreRun(effectRunFunc[effectIndex]);

@@ -16,6 +16,8 @@ static Vertex screenVertices[MAX_VERTEX_ELEMENTS_NUM];
 static ScreenElement screenElements[MAX_VERTEX_ELEMENTS_NUM];
 static Vector3D rotatedNormals[MAX_VERTEX_ELEMENTS_NUM];
 
+static Vector3D globalLight, rotatedGlobalLight;
+
 static int screenOffsetX = 0;
 static int screenOffsetY = 0;
 static int screenWidth = SCREEN_WIDTH;
@@ -24,6 +26,9 @@ static int screenHeight = SCREEN_HEIGHT;
 static bool polygonOrderTestCPU = true;
 
 static void(*mapcelFunc)(CCB*, Point*, uint8);
+
+static int fovNear = 16;
+static int fovFar = NUM_REC_Z-1;
 
 
 int shadeTable[SHADE_TABLE_SIZE] = {
@@ -88,63 +93,70 @@ void useCPUtestPolygonOrder(bool enable)
 	polygonOrderTestCPU = enable;
 }
 
-static void prepareTransformedMeshCELs(Mesh *ms)
+static void prepareTransformedMeshCELs(Mesh *mesh)
 {
 	int i;
-	int *index = ms->index;
+	int *index = mesh->index;
 	Point qpt[4];
-	CCB *cel = ms->cel;
+	CCB *cel = mesh->cel;
+	Vector3D *normal = mesh->polyNormal;
 
-	for (i=0; i<ms->polysNum; ++i) {
-		bool allOut;
+	for (i=0; i<mesh->polysNum; ++i) {
+		bool discardPoly;
 		int n = 1;
-		const int zt = 128;
-		int z0, z1, z2, z3 = -1;
-		qpt[0].pt_X = screenElements[*index].x; qpt[0].pt_Y = screenElements[*index].y; z0 = screenElements[*index].z; ++index;
-		qpt[1].pt_X = screenElements[*index].x; qpt[1].pt_Y = screenElements[*index].y; z1 = screenElements[*index].z; ++index;
-		qpt[2].pt_X = screenElements[*index].x; qpt[2].pt_Y = screenElements[*index].y; z2 = screenElements[*index].z; ++index;
+		const int dt = 1024;
+		int d0,d1,d2,d3;
+		qpt[0].pt_X = screenElements[*index].x; qpt[0].pt_Y = screenElements[*index].y; ++index;
+		qpt[1].pt_X = screenElements[*index].x; qpt[1].pt_Y = screenElements[*index].y; ++index;
+		qpt[2].pt_X = screenElements[*index].x; qpt[2].pt_Y = screenElements[*index].y; ++index;
 
 		// Handling quads or triangles for now.
-		if (ms->poly[i].numPoints == 4) {
-			qpt[3].pt_X = screenElements[*index].x; qpt[3].pt_Y = screenElements[*index].y; z3 = screenElements[*index].z; ++index;
+		if (mesh->poly[i].numPoints == 4) {
+			qpt[3].pt_X = screenElements[*index].x; qpt[3].pt_Y = screenElements[*index].y; ++index;
 		} else {
 			qpt[3].pt_X = qpt[2].pt_X; qpt[3].pt_Y = qpt[2].pt_Y;
 		}
 		
-		allOut = (z0 < zt && z1 < zt && z2 < zt && z3 < zt);
+		d0 = qpt[1].pt_X - qpt[0].pt_X;
+		d1 = qpt[1].pt_Y - qpt[0].pt_Y;
+		d2 = qpt[3].pt_X - qpt[0].pt_X;
+		d3 = qpt[3].pt_Y - qpt[0].pt_Y;
 
-		if (!allOut && polygonOrderTestCPU) {
+		discardPoly = d0 > dt || d1 > dt || d2 > dt || d3 > dt;
+
+		if (!discardPoly && polygonOrderTestCPU) {
 			n = (qpt[0].pt_X - qpt[1].pt_X) * (qpt[2].pt_Y - qpt[1].pt_Y) - (qpt[2].pt_X - qpt[1].pt_X) * (qpt[0].pt_Y - qpt[1].pt_Y);
 		}
 
-		if (allOut || n <= 0) {
+		if (discardPoly || n <= 0) {
 			cel->ccb_Flags |= CCB_SKIP;
 		} else {
 			cel->ccb_Flags &= ~CCB_SKIP;
 
-			if (ms->renderType & MESH_OPTION_ENABLE_LIGHTING) {
-				int normZ = -rotatedNormals[i].z;
-				CLAMP(normZ,0,((1<<NORMAL_SHIFT)-1))
-				cel->ccb_PIXC = shadeTable[normZ >> (NORMAL_SHIFT-SHADE_TABLE_SHR)];
+			if (mesh->renderType & MESH_OPTION_ENABLE_LIGHTING) {
+				int shade = -(getVector3Ddot(normal, &rotatedGlobalLight) >> NORMAL_SHIFT);
+				CLAMP(shade,0,((1<<NORMAL_SHIFT)-1))
+				cel->ccb_PIXC = shadeTable[shade >> (NORMAL_SHIFT-SHADE_TABLE_SHR)];
 			}
-
-			mapcelFunc(cel, qpt, ms->poly[i].texShifts);
+			mapcelFunc(cel, qpt, mesh->poly[i].texShifts);
 		}
 		++cel;
+		++normal;
 	}
 }
 
 static void calculateVertexLighting(Mesh *mesh)
 {
-	int i, c;
+	int i;
 	const int verticesNum = mesh->verticesNum;
+	Vector3D *normal = mesh->vertexNormal;
 
 	for (i=0; i<verticesNum; ++i) {
-		int normZ = -rotatedNormals[i].z;
-		CLAMP(normZ,0,((1<<NORMAL_SHIFT)-1))
-		c = normZ >> (NORMAL_SHIFT-COLOR_GRADIENTS_SHR);
+		const int light = -(getVector3Ddot(normal, &rotatedGlobalLight) >> NORMAL_SHIFT);
+		int c = light >> (NORMAL_SHIFT-COLOR_GRADIENTS_SHR);
 		CLAMP(c,1,COLOR_GRADIENTS_SIZE-2)
 		screenElements[i].c = c;
+		++normal;
 	}
 }
 
@@ -227,12 +239,13 @@ static void translateAndProjectVertices(Object3D *obj, Camera *cam)
 
 	for (i=0; i<lvNum; i++)
 	{
-		const int vz = screenVertices[i].z + posFromCam[2];
-		if (vz > 0) {
-			const int recDivZ = recZ[vz];
-			screenElements[i].x = offsetX + ((((screenVertices[i].x + posFromCam[0]) << PROJ_SHR) * recDivZ) >> REC_FPSHR);
-			screenElements[i].y = offsetY - ((((screenVertices[i].y + posFromCam[1]) << PROJ_SHR) * recDivZ) >> REC_FPSHR);
-		}
+		int vz = screenVertices[i].z + posFromCam[2];
+		CLAMP(vz, fovNear, fovFar)
+
+		//screenElements[i].x = offsetX + ((((screenVertices[i].x + posFromCam[0]) << PROJ_SHR) * recZ[vz]) >> REC_FPSHR);
+		//screenElements[i].y = offsetY - ((((screenVertices[i].y + posFromCam[1]) << PROJ_SHR) * recZ[vz]) >> REC_FPSHR);
+		screenElements[i].x = offsetX + ((screenVertices[i].x + posFromCam[0]) << PROJ_SHR) / vz;
+		screenElements[i].y = offsetY - ((screenVertices[i].y + posFromCam[1]) << PROJ_SHR) / vz;
 		screenElements[i].z = vz;
 	}
 }
@@ -240,23 +253,25 @@ static void translateAndProjectVertices(Object3D *obj, Camera *cam)
 static void transformMesh(Object3D *obj, Camera *cam)
 {
 	static mat33f16 rotMat;
+	static mat33f16 rotViewMat;
 	Mesh *mesh = obj->mesh;
 
-	createRotationMatrixValues(obj->rot.x - cam->rot.x, obj->rot.y - cam->rot.y, obj->rot.z - cam->rot.z, (int*)rotMat);
+	createRotationMatrixValues(obj->rot.x, obj->rot.y, obj->rot.z, (int*)rotMat);
+	createRotationMatrixValues(obj->rot.x - cam->rot.x, obj->rot.y - cam->rot.y, obj->rot.z - cam->rot.z, (int*)rotViewMat);
 
 	// Rotate Mesh Vertices
-	MulManyVec3Mat33_F16((vec3f16*)screenVertices, (vec3f16*)mesh->vertex, rotMat, mesh->verticesNum);
+	MulManyVec3Mat33_F16((vec3f16*)screenVertices, (vec3f16*)mesh->vertex, rotViewMat, mesh->verticesNum);
 
 	translateAndProjectVertices(obj, cam);
 
-	if (mesh->renderType & MESH_OPTION_ENABLE_LIGHTING) {
-		// in the future, we might not need to rotate the normals but rather the light against the normals
-		// so we won't need the normals container, as we will test light vector against original mesh normals
-		if (mesh->renderType & MESH_OPTION_RENDER_SOFT) {
-			MulManyVec3Mat33_F16((vec3f16*)rotatedNormals, (vec3f16*)mesh->vertexNormal, rotMat, mesh->verticesNum);
-		} else {
-			MulManyVec3Mat33_F16((vec3f16*)rotatedNormals, (vec3f16*)mesh->polyNormal, rotMat, mesh->polysNum);
+	if (mesh->renderType & MESH_OPTION_RENDER_SOFT) {
+		if (mesh->renderType & MESH_OPTION_ENABLE_ENVMAP) {
+			MulManyVec3Mat33_F16((vec3f16*)rotatedNormals, (vec3f16*)mesh->vertexNormal, rotViewMat, mesh->verticesNum);
 		}
+	}
+	if (mesh->renderType & MESH_OPTION_ENABLE_LIGHTING) {
+		transposeMat3(rotMat);
+		MulManyVec3Mat33_F16((vec3f16*)&rotatedGlobalLight, (vec3f16*)&globalLight, rotMat, 1);
 	}
 }
 
@@ -364,6 +379,9 @@ void initEngine(bool usesSoftEngine)
 
 	useCPUtestPolygonOrder(false);
 	useMapCelFunctionFast(true);
+
+	setVector3D(&globalLight, 2<<NORMAL_SHIFT,-3<<NORMAL_SHIFT,1<<NORMAL_SHIFT);
+	normalizeVector3D(&globalLight);
 
 	if (usesSoftEngine) initEngineSoft();
 }

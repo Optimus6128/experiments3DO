@@ -78,6 +78,11 @@ void calcVector3Dcross(Vector3D *vRes, Vector3D *v0, Vector3D *v1)
 	vRes->z = v0->x * v1->y - v0->y * v1->x;
 }
 
+int getVector3Ddot(Vector3D *v0, Vector3D *v1)
+{
+	return v0->x*v1->x + v0->y*v1->y + v0->z*v1->z;
+}
+
 void normalizeVector3D(Vector3D *v)
 {
 	int length = isqrt(v->x * v->x + v->y * v->y + v->z * v->z);

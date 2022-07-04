@@ -29,7 +29,7 @@ static CCB **currentScanlineCel8 = scanlineCel8;
 #define GRADIENT_GROUP_SIZE (GRADIENT_SHADES * GRADIENT_LENGTH)
 static uint8 gourGrads[GRADIENT_SHADES * GRADIENT_GROUP_SIZE];
 
-static bool fastGouraud = false;
+static bool fastGouraud = true;
 
 typedef struct Edge
 {
