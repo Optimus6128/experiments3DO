@@ -95,7 +95,7 @@ static void renderDraculCube(int t)
 	setObject3Dpos(draculObj, 0, 0, 1408);	//4x3
 	//setObject3Dpos(draculObj, 0, 0, 960);	// 2x2
 	setObject3Drot(draculObj, t, t<<1, t>>1);
-	renderObject3D(draculObj, camera);
+	renderObject3D(draculObj, camera, NULL, 0);
 }
 
 static BufferRegionInfo *getBufferRegionInfoFromNum(int num)

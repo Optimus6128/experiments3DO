@@ -492,7 +492,7 @@ static void renderTorch()
 	setObject3Dpos(torchObj, posXtrans, -posYtrans - 256, posZtrans);
 	setObject3Drot(torchObj, rotXtrans, rotYtrans, rotZtrans);
 
-	renderObject3D(torchObj, camera);
+	renderObject3D(torchObj, camera, NULL, 0);
 }
 
 static void render()

@@ -10,7 +10,7 @@ void setActiveCamera(World *world, int camIndex)
 void resetWorldCameras(World *world)
 {
 	int i;
-	for (i=0; i<world->nextCamera; ++i) {
+	for (i=0; i<world->maxCameras; ++i) {
 		world->cameras[i] = NULL;
 	}
 	world->nextCamera = 0;
@@ -19,7 +19,7 @@ void resetWorldCameras(World *world)
 void resetWorldLights(World *world)
 {
 	int i;
-	for (i=0; i<world->nextLight; ++i) {
+	for (i=0; i<world->maxLights; ++i) {
 		world->lights[i] = NULL;
 	}
 	world->nextLight = 0;
@@ -28,7 +28,7 @@ void resetWorldLights(World *world)
 void resetWorld(World *world, bool resetCameras, bool resetLights)
 {
 	int i;
-	for (i=0; i<world->nextObject; ++i) {
+	for (i=0; i<world->maxObjects; ++i) {
 		world->objects[i] = NULL;
 	}
 	world->nextObject = 0;
@@ -92,6 +92,6 @@ void renderWorld(World *world)
 	Camera *camera = world->cameras[world->activeCamera];
 
 	for (i=0; i<world->nextObject; ++i) {
-		renderObject3D(world->objects[i], camera);
+		renderObject3D(world->objects[i], camera, NULL, 0);
 	}
 }

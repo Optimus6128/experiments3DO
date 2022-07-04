@@ -16,7 +16,8 @@ static Vertex screenVertices[MAX_VERTEX_ELEMENTS_NUM];
 static ScreenElement screenElements[MAX_VERTEX_ELEMENTS_NUM];
 static Vector3D rotatedNormals[MAX_VERTEX_ELEMENTS_NUM];
 
-static Vector3D globalLight, rotatedGlobalLight;
+static Light *globalLight = NULL;
+static Vector3D rotatedGlobalLightVec;
 
 static int screenOffsetX = 0;
 static int screenOffsetY = 0;
@@ -134,8 +135,8 @@ static void prepareTransformedMeshCELs(Mesh *mesh)
 			cel->ccb_Flags &= ~CCB_SKIP;
 
 			if (mesh->renderType & MESH_OPTION_ENABLE_LIGHTING) {
-				int shade = -(getVector3Ddot(normal, &rotatedGlobalLight) >> NORMAL_SHIFT);
-				CLAMP(shade,0,((1<<NORMAL_SHIFT)-1))
+				int shade = -(getVector3Ddot(normal, &rotatedGlobalLightVec) >> NORMAL_SHIFT);
+				CLAMP(shade,(1<<(NORMAL_SHIFT-4)),((1<<NORMAL_SHIFT)-1))
 				cel->ccb_PIXC = shadeTable[shade >> (NORMAL_SHIFT-SHADE_TABLE_SHR)];
 			}
 			mapcelFunc(cel, qpt, mesh->poly[i].texShifts);
@@ -152,7 +153,7 @@ static void calculateVertexLighting(Mesh *mesh)
 	Vector3D *normal = mesh->vertexNormal;
 
 	for (i=0; i<verticesNum; ++i) {
-		const int light = -(getVector3Ddot(normal, &rotatedGlobalLight) >> NORMAL_SHIFT);
+		const int light = -(getVector3Ddot(normal, &rotatedGlobalLightVec) >> NORMAL_SHIFT);
 		int c = light >> (NORMAL_SHIFT-COLOR_GRADIENTS_SHR);
 		CLAMP(c,1,COLOR_GRADIENTS_SIZE-2)
 		screenElements[i].c = c;
@@ -271,7 +272,8 @@ static void transformMesh(Object3D *obj, Camera *cam)
 	}
 	if (mesh->renderType & MESH_OPTION_ENABLE_LIGHTING) {
 		transposeMat3(rotMat);
-		MulManyVec3Mat33_F16((vec3f16*)&rotatedGlobalLight, (vec3f16*)&globalLight, rotMat, 1);
+		normalizeVector3D(&globalLight->dir);
+		MulManyVec3Mat33_F16((vec3f16*)&rotatedGlobalLightVec, (vec3f16*)&globalLight->dir, rotMat, 1);
 	}
 }
 
@@ -284,7 +286,8 @@ static void renderTransformedMesh(Mesh *mesh)
 	drawCels(mesh->cel);
 }
 
-void renderObject3D(Object3D *obj, Camera *cam)
+// Multiple lights not implemented yet, just add stub arguments
+void renderObject3D(Object3D *obj, Camera *cam, Light **lights, int lightsNum)
 {
 	Mesh *mesh = obj->mesh;
 
@@ -396,6 +399,10 @@ Light *createLight(bool isDirectional)
 	return light;
 }
 
+void setGlobalLight(Light *light)
+{
+	globalLight = light;
+}
 
 void initEngine(bool usesSoftEngine)
 {
@@ -404,8 +411,8 @@ void initEngine(bool usesSoftEngine)
 	useCPUtestPolygonOrder(false);
 	useMapCelFunctionFast(true);
 
-	setVector3D(&globalLight, 1,-3,2);
-	normalizeVector3D(&globalLight);
+	globalLight = createLight(true);
+	setLightDir(globalLight, 1,3,2);
 
 	if (usesSoftEngine) initEngineSoft();
 }

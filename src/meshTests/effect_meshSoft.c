@@ -161,7 +161,7 @@ static void renderSoftObj(int posX, int posZ, int t)
 	} else {
 		setObject3Drot(softObj[selectedSoftObj], rotX, rotY, rotZ);
 	}
-	renderObject3D(softObj[selectedSoftObj], camera);
+	renderObject3D(softObj[selectedSoftObj], camera, NULL, 0);
 }
 
 void effectMeshSoftRun()

@@ -216,7 +216,7 @@ void effectMeshPyramidsRun()
 	setObject3Dpos(obj, getMousePosition().x, -getMousePosition().y, zoom);
 	setObject3Drot(obj, rotX, rotY, rotZ);
 
-	renderObject3D(obj, camera);
+	renderObject3D(obj, camera, NULL, 0);
 
 	if (testBlurIdea) {
 		drawSprite(scanlinesSpr);

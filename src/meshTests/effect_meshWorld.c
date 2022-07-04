@@ -1,7 +1,6 @@
 #include "core.h"
 
 #include "effect_meshWorld.h"
-#include "engine_soft.h"
 
 #include "system_graphics.h"
 #include "tools.h"
@@ -12,13 +11,15 @@
 #include "engine_main.h"
 #include "engine_mesh.h"
 #include "engine_texture.h"
+#include "engine_soft.h"
+#include "engine_world.h"
 
 #include "procgen_mesh.h"
 #include "procgen_texture.h"
 
-#include "sprite_engine.h"
 
 static Camera *camera;
+static Light *light;
 static int camHeight = 96;
 
 #define GRID_SIZE 16
@@ -26,7 +27,7 @@ static int camHeight = 96;
 static Mesh *gridMesh;
 static Mesh *cubeMesh;
 static Object3D *gridObj;
-static Object3D *cubeObj;
+static Object3D *cubeObj[4];
 
 static Object3D *softObj;
 static Texture *cloudTex16;
@@ -46,6 +47,8 @@ static int camPosZ = -512 << FP_CORE;
 static int camRotVel = 2;
 static int camMoveVel = 6;
 static int camFlyVel = 3;
+
+static World *world;
 
 static int renderSoftMethodIndex = RENDER_SOFT_METHOD_GOURAUD;
 
@@ -112,8 +115,30 @@ static MeshgenParams initMeshObjectParams(int meshgenId)
 	return params;
 }
 
+static void initMyWorld()
+{
+	world = initWorld(16, 1, 1);
+
+	camera = createCamera();
+	light = createLight(true);
+
+	addCameraToWorld(camera, world);
+	addLightToWorld(light, world);
+
+	addObjectToWorld(gridObj, world);
+
+	// Crappy test to look ok from one side. Need to sort objects for rendering next in the World
+	addObjectToWorld(cubeObj[0], world);
+	addObjectToWorld(softObj, world);
+	addObjectToWorld(cubeObj[1], world);
+	addObjectToWorld(cubeObj[2], world);
+	addObjectToWorld(cubeObj[3], world);
+}
+
 void effectMeshWorldInit()
 {
+	int i;
+
 	MeshgenParams gridParams = makeMeshgenGridParams(1024, GRID_SIZE);
 	MeshgenParams cubeParams = DEFAULT_MESHGEN_PARAMS(128);
 
@@ -130,16 +155,18 @@ void effectMeshWorldInit()
 	gridObj = initObject3D(gridMesh);
 
 	cubeMesh = initGenMesh(MESH_CUBE, cubeParams, MESH_OPTIONS_DEFAULT | MESH_OPTION_ENABLE_LIGHTING, cubeTex);
-	cubeObj = initObject3D(cubeMesh);
+
+	for (i=0; i<4; ++i) {
+		cubeObj[i] = initObject3D(cubeMesh);
+	}
 
 	cloudTex16 = initGenTexture(64, 64, 16, NULL, 1, TEXGEN_CLOUDS, false, NULL);
 	//softObj = initMeshObjectSoft(MESH_CUBE, softParams, MESH_OPTION_RENDER_SOFT16 | MESH_OPTION_ENABLE_LIGHTING | MESH_OPTION_ENABLE_ENVMAP, cloudTex16);
 	softObj = initMeshObjectSoft(MESH_SQUARE_COLUMNOID, softParams, MESH_OPTION_RENDER_SOFT16 | MESH_OPTION_ENABLE_LIGHTING | MESH_OPTION_ENABLE_ENVMAP, cloudTex16);
 
-
 	shadeGrid();
 
-	camera = createCamera();
+	initMyWorld();
 }
 
 static bool tryCollideMoveStep(bool x, bool y, vec3f16 move, int speed)
@@ -233,8 +260,14 @@ static void setObjectsPosAndRot(int dt)
 	setObject3Dpos(gridObj, 0, 0, 0);
 	setObject3Drot(gridObj, 0, 0, 0);
 
-	setObject3Dpos(cubeObj, 0, 64, 0);
-	setObject3Drot(cubeObj, 0, 0, 0);
+	setObject3Dpos(cubeObj[0], -128, 64+128, 0);
+	setObject3Drot(cubeObj[0], 0, 0, 0);
+	setObject3Dpos(cubeObj[1], 0, 64+2*128, 0);
+	setObject3Drot(cubeObj[1], 0, 0, 0);
+	setObject3Dpos(cubeObj[2], 0, 64, 0);
+	setObject3Drot(cubeObj[2], 0, 0, 0);
+	setObject3Dpos(cubeObj[3], 128, 64+128, 0);
+	setObject3Drot(cubeObj[3], 0, 0, 0);
 
 	setObject3Dpos(softObj, 0, 192 + (SinF16(getTicks() << 14) >> 13), 0);
 	setObject3Drot(softObj, softRotX, softRotY, softRotZ);
@@ -258,13 +291,5 @@ void effectMeshWorldRun()
 	setCameraPos(camera, camPosX>>FP_CORE, camHeight + (camPosY>>FP_CORE), camPosZ>>FP_CORE);
 	setCameraRot(camera, camRotX,camRotY,camRotZ);
 
-	renderObject3D(gridObj, camera);
-
-	if ((camPosY >> FP_CORE) <= 32) {
-		renderObject3D(softObj, camera);
-		renderObject3D(cubeObj, camera);
-	} else {
-		renderObject3D(cubeObj, camera);
-		renderObject3D(softObj, camera);
-	}
+	renderWorld(world);
 }

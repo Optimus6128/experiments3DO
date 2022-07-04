@@ -290,7 +290,7 @@ void effectMeshGridRun()
 	setObject3Dpos(gridObj, 0, -64, zoom);
 	setObject3Drot(gridObj, rotX, rotY, rotZ);
 
-	renderObject3D(gridObj, camera);
+	renderObject3D(gridObj, camera, NULL, 0);
 
 	if (!halfInterp || ((lele++ & 1)==0)) {
 		if (plasmaInsteadOfWater) {

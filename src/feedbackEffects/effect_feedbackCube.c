@@ -178,7 +178,7 @@ void effectFeedbackCubeRun()
 		setScreenRegion(0, 0, FB_WIDTH, FB_HEIGHT);
 
 			drawSprite(bgndSpr);
-			renderObject3D(cubeBackObj, camera);
+			renderObject3D(cubeBackObj, camera, NULL, 0);
 
 		switchRenderToBuffer(false);
 		setScreenRegion(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -191,7 +191,7 @@ void effectFeedbackCubeRun()
 	setObject3Dpos(cubeObj, cubeOffsetX, cubeOffsetY, 512);
 	setObject3Drot(cubeObj, 0, time, 0);
 
-	renderObject3D(cubeObj, camera);
+	renderObject3D(cubeObj, camera, NULL, 0);
 
 	if (hwFeedback)
 		drawText(320-32, 0, "HARD");

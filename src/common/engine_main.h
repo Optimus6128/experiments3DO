@@ -47,11 +47,13 @@ void setObject3Dpos(Object3D *obj, int px, int py, int pz);
 void setObject3Drot(Object3D *obj, int rx, int ry, int rz);
 void setObject3Dmesh(Object3D *obj, Mesh *ms);
 
-void renderObject3D(Object3D *obj, Camera *cam);
+void renderObject3D(Object3D *obj, Camera *cam, Light **lights, int lightsNum);
 
 Light *createLight(bool isDirectional);
 void setLightPos(Light *light, int px, int py, int pz);
 void setLightDir(Light *light, int vx, int vy, int vz);
+
+void setGlobalLight(Light *light);
 
 Camera *createCamera(void);
 void setCameraPos(Camera *cam, int px, int py, int pz);

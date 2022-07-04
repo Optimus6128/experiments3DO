@@ -104,7 +104,7 @@ static void renderFlatCube(int t, int z)
 {
 	setObject3Dpos(cubeObj, 0, 0, z);
 	setObject3Drot(cubeObj, t, t<<1, t>>1);
-	renderObject3D(cubeObj, camera);
+	renderObject3D(cubeObj, camera, NULL, 0);
 }
 
 void effectDotcubeRun()
