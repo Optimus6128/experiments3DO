@@ -187,7 +187,7 @@ static void calculateVertexEnvmapTC(Mesh *mesh)
 	}
 }
 
-static void transposeMat3(mat33f16 mat)
+/*static void transposeMat3(mat33f16 mat)
 {
 	int temp;
 	int *matVal = (int*)mat;
@@ -195,7 +195,7 @@ static void transposeMat3(mat33f16 mat)
 	temp = matVal[1]; matVal[1] = matVal[3]; matVal[3] = temp;
 	temp = matVal[2]; matVal[2] = matVal[6]; matVal[6] = temp;
 	temp = matVal[5]; matVal[5] = matVal[7]; matVal[7] = temp;
-}
+}*/
 
 void createRotationMatrixValues(int rotX, int rotY, int rotZ, int *rotVecs)
 {

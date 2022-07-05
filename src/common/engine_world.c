@@ -1,5 +1,8 @@
 #include "engine_world.h"
 
+int sortedObjectIndex[256];
+int sortedObjectsNum = 0;
+
 void setActiveCamera(World *world, int camIndex)
 {
 	if (camIndex > 0 && camIndex < world->maxCameras) {
@@ -129,10 +132,29 @@ int findCurrentPrioritySize(World *world, int currentIndex)
 
 static void updateObjectWorldBoundingBox(int objectIndex, World *world, Camera *camera)
 {
+	static vec3f16 centerFromCam;
+
 	BoundingBox *srcBbox = &world->objects[objectIndex]->bbox;
 	BoundingBox *dstBbox = &world->objectBbox[objectIndex];
 
 	copyVector3D(&srcBbox->halfSize, &dstBbox->halfSize);
+
+	centerFromCam[0] = srcBbox->center.x - camera->pos.x;
+	centerFromCam[1] = srcBbox->center.y - camera->pos.y;
+	centerFromCam[2] = srcBbox->center.z - camera->pos.z;
+
+	MulVec3Mat33_F16(centerFromCam, centerFromCam, camera->inverseRotMat);
+
+	dstBbox->center.x = centerFromCam[0];
+	dstBbox->center.y = centerFromCam[1];
+	dstBbox->center.z = centerFromCam[2];
+}
+
+static void sortObjectByBoundingBoxZ(int objectIndex, BoundingBox *bbox)
+{
+	// TODO: Implement sort
+	sortedObjectIndex[sortedObjectsNum] = objectIndex;
+	++sortedObjectsNum;
 }
 
 static void sortAndRenderObjects(int objectIndex, int num, World *world, Camera *camera)
@@ -140,12 +162,14 @@ static void sortAndRenderObjects(int objectIndex, int num, World *world, Camera 
 	int i;
 	const int nextIndex = objectIndex + num;
 
+	sortedObjectsNum = 0;
 	for (i=objectIndex; i<nextIndex; ++i) {
 		updateObjectWorldBoundingBox(i, world, camera);
+		sortObjectByBoundingBoxZ(i, world->objectBbox);
 	}
 
-	for (i=objectIndex; i<nextIndex; ++i) {
-		renderObject3D(world->objects[i], camera, NULL, 0);
+	for (i=0; i<sortedObjectsNum; ++i) {
+		renderObject3D(world->objects[sortedObjectIndex[i]], camera, NULL, 0);
 	}
 }
 

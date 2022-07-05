@@ -67,7 +67,7 @@ Camera *createCamera(void);
 void setCameraPos(Camera *cam, int px, int py, int pz);
 void setCameraRot(Camera *cam, int rx, int ry, int rz);
 
-void createRotationMatrixValues(int rotX, int rotY, int rotZ, int *rotVecs);	// I will hide this again after I fix the volume
+void createRotationMatrixValues(int rotX, int rotY, int rotZ, int *rotVecs);
 
 void setScreenRegion(int posX, int posY, int width, int height);
 
