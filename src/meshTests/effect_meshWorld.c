@@ -20,14 +20,14 @@
 
 static Camera *camera;
 static Light *light;
-static int camHeight = 96;
+static int camHeight = 128;
 
 #define GRID_SIZE 16
 
 static Mesh *gridMesh;
 static Mesh *cubeMesh;
 static Object3D *gridObj;
-static Object3D *cubeObj[4];
+static Object3D *cubeObj[8];
 
 static Object3D *softObj;
 static Texture *cloudTex16;
@@ -42,11 +42,13 @@ static int camRotY = 0;
 static int camRotZ = 0;
 static int camPosX = 0;
 static int camPosY = 0;
-static int camPosZ = -512 << FP_CORE;
+static int camPosZ = -768 << FP_CORE;
 
 static int camRotVel = 2;
-static int camMoveVel = 6;
-static int camFlyVel = 3;
+static int camMoveVel = 12;
+static int camFlyVel = 8;
+
+static bool autoRot = false;
 
 static World *world;
 
@@ -117,6 +119,8 @@ static MeshgenParams initMeshObjectParams(int meshgenId)
 
 static void initMyWorld()
 {
+	int i;
+
 	world = initWorld(16, 1, 1);
 
 	camera = createCamera();
@@ -127,12 +131,10 @@ static void initMyWorld()
 
 	addObjectToWorld(gridObj, 0, world);
 
-	// Crappy test to look ok from one side. Need to sort objects for rendering next in the World
-	addObjectToWorld(cubeObj[0], 1, world);
-	//addObjectToWorld(softObj, 2, world);
-	addObjectToWorld(cubeObj[1], 1, world);
-	addObjectToWorld(cubeObj[2], 1, world);
-	addObjectToWorld(cubeObj[3], 1, world);
+	for (i=0; i<8; ++i) {
+		addObjectToWorld(cubeObj[i], 1, world);
+	}
+	addObjectToWorld(softObj, 1, world);
 }
 
 void effectMeshWorldInit()
@@ -145,8 +147,8 @@ void effectMeshWorldInit()
 	//MeshgenParams softParams = initMeshObjectParams(MESH_CUBE);
 	MeshgenParams softParams = initMeshObjectParams(MESH_SQUARE_COLUMNOID);
 
-	setPalGradient(0,31, 1,1,3, 27,29,31, gridPal);
-	setPalGradient(0,31, 15,7,3, 19,11,23, cubePal);
+	setPalGradient(0,31, 1,3,7, 27,29,31, gridPal);
+	setPalGradient(0,31, 15,3,7, 7,31,15, cubePal);
 
 	gridTex = initGenTexture(16,16, 8, gridPal, 1, TEXGEN_GRID, false, NULL);
 	cubeTex = initGenTexture(64,64, 8, cubePal, 1, TEXGEN_CLOUDS, false, NULL);
@@ -156,7 +158,7 @@ void effectMeshWorldInit()
 
 	cubeMesh = initGenMesh(MESH_CUBE, cubeParams, MESH_OPTIONS_DEFAULT | MESH_OPTION_ENABLE_LIGHTING, cubeTex);
 
-	for (i=0; i<4; ++i) {
+	for (i=0; i<8; ++i) {
 		cubeObj[i] = initObject3D(cubeMesh);
 	}
 
@@ -242,6 +244,10 @@ static void inputScript(int dt)
 		setRenderSoftMethod(renderSoftMethodIndex);
 	}
 
+	if (isJoyButtonPressedOnce(JOY_BUTTON_START)) {
+		autoRot = !autoRot;
+	}
+
 	if (isJoyButtonPressed(JOY_BUTTON_LPAD)) {
 		moveCamera(0,-1,0,dt);
 	}
@@ -253,28 +259,33 @@ static void inputScript(int dt)
 
 static void setObjectsPosAndRot(int dt)
 {
-	static int softRotX = 16;
-	static int softRotY = 32;
-	static int softRotZ = 48;
+	int i,j,k,n=0;
+
+	static int softRotX = 0;
+	static int softRotY = 0;
+	static int softRotZ = 0;
 
 	setObject3Dpos(gridObj, 0, 0, 0);
 	setObject3Drot(gridObj, 0, 0, 0);
 
-	setObject3Dpos(cubeObj[0], -128, 64+128, 0);
-	setObject3Drot(cubeObj[0], 0, 0, 0);
-	setObject3Dpos(cubeObj[1], 0, 64+2*128, 0);
-	setObject3Drot(cubeObj[1], 0, 0, 0);
-	setObject3Dpos(cubeObj[2], 0, 64, 0);
-	setObject3Drot(cubeObj[2], 0, 0, 0);
-	setObject3Dpos(cubeObj[3], 128, 64+128, 0);
-	setObject3Drot(cubeObj[3], 0, 0, 0);
+	for (k=-1; k<=1; k+=2) {
+		for (j=-1; j<=1; j+=2) {
+			for (i=-1; i<=1; i+=2) {
+				setObject3Dpos(cubeObj[n], 128*i, 192 + 128*j, 128*k);
+				setObject3Drot(cubeObj[n], i*softRotX, j*softRotY, k*softRotZ);
+				++n;
+			}
+		}
+	}
 
 	setObject3Dpos(softObj, 0, 192 + (SinF16(getTicks() << 14) >> 13), 0);
 	setObject3Drot(softObj, softRotX, softRotY, softRotZ);
 
-	softRotX += 1;
-	softRotY += 2;
-	softRotZ -= 1;
+	if (autoRot) {
+		softRotX += 1;
+		softRotY += 2;
+		softRotZ -= 1;
+	}
 }
 
 void effectMeshWorldRun()
@@ -292,6 +303,4 @@ void effectMeshWorldRun()
 	setCameraRot(camera, camRotX,camRotY,camRotZ);
 
 	renderWorld(world);
-
-	variemai(world);
 }

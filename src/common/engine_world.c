@@ -186,16 +186,6 @@ static void sortAndRenderObjects(int objectIndex, int num, World *world, Camera 
 	};
 }
 
-void variemai(World *world)
-{
-	int i;
-	for (i=0; i<world->nextObject; ++i) {
-		drawNumber(16, 64+i*8, world->objectBbox[i].center.x);
-		drawNumber(96, 64+i*8, world->objectBbox[i].center.y);
-		drawNumber(192, 64+i*8, world->objectBbox[i].center.z);
-	}
-}
-
 void renderWorld(World *world)
 {
 	int currentIndex = 0;
