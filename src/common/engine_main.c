@@ -219,7 +219,6 @@ void createRotationMatrixValues(int rotX, int rotY, int rotZ, int *rotVecs)
 
 static void translateAndProjectVertices(Object3D *obj, Camera *cam)
 {
-	static mat33f16 inverseRotMat;
 	static vec3f16 posFromCam;
 
 	int i;
@@ -229,14 +228,11 @@ static void translateAndProjectVertices(Object3D *obj, Camera *cam)
 	const int offsetX = screenOffsetX + (screenWidth >> 1);
 	const int offsetY = screenOffsetY + (screenHeight >> 1);
 
-
 	posFromCam[0] = obj->pos.x - cam->pos.x;
 	posFromCam[1] = obj->pos.y - cam->pos.y;
 	posFromCam[2] = obj->pos.z - cam->pos.z;
 
-	createRotationMatrixValues(-cam->rot.x, -cam->rot.y, -cam->rot.z, (int*)inverseRotMat);
-
-	MulVec3Mat33_F16(posFromCam, posFromCam, inverseRotMat);
+	MulVec3Mat33_F16(posFromCam, posFromCam, cam->inverseRotMat);
 
 	for (i=0; i<lvNum; i++)
 	{
@@ -253,11 +249,11 @@ static void translateAndProjectVertices(Object3D *obj, Camera *cam)
 
 static void transformMesh(Object3D *obj, Camera *cam)
 {
-	static mat33f16 rotMat;
+	static mat33f16 inverseRotMat;
 	static mat33f16 rotViewMat;
+
 	Mesh *mesh = obj->mesh;
 
-	createRotationMatrixValues(obj->rot.x, obj->rot.y, obj->rot.z, (int*)rotMat);
 	createRotationMatrixValues(obj->rot.x - cam->rot.x, obj->rot.y - cam->rot.y, obj->rot.z - cam->rot.z, (int*)rotViewMat);
 
 	// Rotate Mesh Vertices
@@ -271,9 +267,9 @@ static void transformMesh(Object3D *obj, Camera *cam)
 		}
 	}
 	if (mesh->renderType & MESH_OPTION_ENABLE_LIGHTING) {
-		transposeMat3(rotMat);
+		createRotationMatrixValues(-obj->rot.x, -obj->rot.y, -obj->rot.z, (int*)inverseRotMat);
 		normalizeVector3D(&globalLight->dir);
-		MulManyVec3Mat33_F16((vec3f16*)&rotatedGlobalLightVec, (vec3f16*)&globalLight->dir, rotMat, 1);
+		MulManyVec3Mat33_F16((vec3f16*)&rotatedGlobalLightVec, (vec3f16*)&globalLight->dir, inverseRotMat, 1);
 	}
 }
 
@@ -319,6 +315,36 @@ void setScreenRegion(int posX, int posY, int width, int height)
 	screenHeight = height;
 }
 
+static void calculateBoundingBox(Object3D* obj)
+{
+	int i;
+	Vector3D min, max;
+	Mesh *mesh = obj->mesh;
+	BoundingBox *bbox = &obj->bbox;
+
+	for (i=0; i<mesh->verticesNum; ++i) {
+		Vertex *v = &mesh->vertex[i];
+		if (i==0) {
+			min.x = max.x = v->x;
+			min.y = max.y = v->y;
+			min.z = max.y = v->z;
+		} else {
+			if (v->x < min.x) min.x = v->x;
+			if (v->y < min.y) min.y = v->y;
+			if (v->z < min.z) min.z = v->z;
+			if (v->x > max.x) max.x = v->x;
+			if (v->y > max.y) max.y = v->y;
+			if (v->z > max.z) max.z = v->z;
+		}
+	}
+
+	addVector3D(&bbox->center, &min, &max);
+	divScalarVector3D(&bbox->center, 2);
+
+	subVector3D(&bbox->halfSize, &max, &min);
+	divScalarVector3D(&bbox->halfSize, 2);
+}
+
 Object3D* initObject3D(Mesh *ms)
 {
 	Object3D *obj = (Object3D*)AllocMem(sizeof(Object3D), MEMTYPE_ANY);
@@ -327,6 +353,8 @@ Object3D* initObject3D(Mesh *ms)
 	
 	obj->pos.x = obj->pos.y = obj->pos.z = 0;
 	obj->rot.x = obj->rot.y = obj->rot.z = 0;
+	
+	calculateBoundingBox(obj);
 
 	return obj;
 }
@@ -412,7 +440,7 @@ void initEngine(bool usesSoftEngine)
 	useMapCelFunctionFast(true);
 
 	globalLight = createLight(true);
-	setLightDir(globalLight, 1,3,2);
+	setLightDir(globalLight, -1,-1,1);
 
 	if (usesSoftEngine) initEngineSoft();
 }

@@ -125,14 +125,14 @@ static void initMyWorld()
 	addCameraToWorld(camera, world);
 	addLightToWorld(light, world);
 
-	addObjectToWorld(gridObj, world);
+	addObjectToWorld(gridObj, 0, world);
 
 	// Crappy test to look ok from one side. Need to sort objects for rendering next in the World
-	addObjectToWorld(cubeObj[0], world);
-	addObjectToWorld(softObj, world);
-	addObjectToWorld(cubeObj[1], world);
-	addObjectToWorld(cubeObj[2], world);
-	addObjectToWorld(cubeObj[3], world);
+	addObjectToWorld(cubeObj[0], 1, world);
+	//addObjectToWorld(softObj, 2, world);
+	addObjectToWorld(cubeObj[1], 1, world);
+	addObjectToWorld(cubeObj[2], 1, world);
+	addObjectToWorld(cubeObj[3], 1, world);
 }
 
 void effectMeshWorldInit()

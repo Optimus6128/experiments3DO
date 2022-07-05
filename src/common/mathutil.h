@@ -59,10 +59,16 @@ int getShr(int n);
 void initEngineLUTs(void);
 
 void setVector3D(Vector3D *v, int x, int y, int z);
+void copyVector3D(Vector3D *src, Vector3D *dst);
 void setVector3DfromVertices(Vector3D *v, Vertex *v0, Vertex *v1);
 void calcVector3Dcross(Vector3D *vRes, Vector3D *v0, Vector3D *v1);
 int getVector3Ddot(Vector3D *v0, Vector3D *v1);
 void normalizeVector3D(Vector3D *v);
+
+void addVector3D(Vector3D *dst, Vector3D *src1, Vector3D *src2);
+void subVector3D(Vector3D *dst, Vector3D *src1, Vector3D *src2);
+void mulScalarVector3D(Vector3D *vec, int m);
+void divScalarVector3D(Vector3D *vec, int d);
 
 Point2Darray *initPoint2Darray(int numPoints);
 void addPoint2D(Point2Darray *ptArray, int x, int y);

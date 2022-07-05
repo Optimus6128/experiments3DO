@@ -546,6 +546,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 				for (x=0; x<=divisions; x++)
 				{
 					addVertex(xp, 0, -yp);
+					//addVertex(xp, ((x*x)^(y*y)) & 15, -yp);
 					xp += dx;
 					i++;
 				}

@@ -64,11 +64,46 @@ void setVector3D(Vector3D *v, int x, int y, int z)
 	v->z = z;
 }
 
+void copyVector3D(Vector3D *src, Vector3D *dst)
+{
+	dst->x = src->x;
+	dst->y = src->y;
+	dst->z = src->z;
+}
+
 void setVector3DfromVertices(Vector3D *v, Vertex *v0, Vertex *v1)
 {
 	v->x = v1->x - v0->x;
 	v->y = v1->y - v0->y;
 	v->z = v1->z - v0->z;
+}
+
+void addVector3D(Vector3D *dst, Vector3D *src1, Vector3D *src2)
+{
+	dst->x = src1->x + src2->x;
+	dst->y = src1->y + src2->y;
+	dst->z = src1->z + src2->z;
+}
+
+void subVector3D(Vector3D *dst, Vector3D *src1, Vector3D *src2)
+{
+	dst->x = src1->x - src2->x;
+	dst->y = src1->y - src2->y;
+	dst->z = src1->z - src2->z;
+}
+
+void mulScalarVector3D(Vector3D *vec, int m)
+{
+	vec->x *= m;
+	vec->y *= m;
+	vec->z *= m;
+}
+
+void divScalarVector3D(Vector3D *vec, int d)
+{
+	vec->x /= d;
+	vec->y /= d;
+	vec->z /= d;
 }
 
 void calcVector3Dcross(Vector3D *vRes, Vector3D *v0, Vector3D *v1)

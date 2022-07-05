@@ -21,15 +21,23 @@ typedef struct ScreenElement
 	int u,v;
 }ScreenElement;
 
+typedef struct BoundingBox
+{
+	Vector3D center;
+	Vector3D halfSize;
+}BoundingBox;
+
 typedef struct Object3D
 {
 	Mesh *mesh;
 	Vector3D pos, rot;
+	BoundingBox bbox;
 }Object3D;
 
 typedef struct Camera
 {
 	Vector3D pos, rot;	// should rather use a dir instead of a rot, but need to get rot angles back from vector dir
+	mat33f16 inverseRotMat;
 }Camera;
 
 typedef struct Light
