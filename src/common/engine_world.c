@@ -134,14 +134,15 @@ static void updateObjectWorldBoundingBox(int objectIndex, World *world, Camera *
 {
 	static vec3f16 centerFromCam;
 
-	BoundingBox *srcBbox = &world->objects[objectIndex]->bbox;
+	Object3D *obj = world->objects[objectIndex];
+	BoundingBox *srcBbox = &obj->bbox;
 	BoundingBox *dstBbox = &world->objectBbox[objectIndex];
 
 	copyVector3D(&srcBbox->halfSize, &dstBbox->halfSize);
 
-	centerFromCam[0] = srcBbox->center.x - camera->pos.x;
-	centerFromCam[1] = srcBbox->center.y - camera->pos.y;
-	centerFromCam[2] = srcBbox->center.z - camera->pos.z;
+	centerFromCam[0] = obj->pos.x + srcBbox->center.x - camera->pos.x;
+	centerFromCam[1] = obj->pos.y + srcBbox->center.y - camera->pos.y;
+	centerFromCam[2] = obj->pos.z + srcBbox->center.z - camera->pos.z;
 
 	MulVec3Mat33_F16(centerFromCam, centerFromCam, camera->inverseRotMat);
 
@@ -152,9 +153,21 @@ static void updateObjectWorldBoundingBox(int objectIndex, World *world, Camera *
 
 static void sortObjectByBoundingBoxZ(int objectIndex, BoundingBox *bbox)
 {
-	// TODO: Implement sort
-	sortedObjectIndex[sortedObjectsNum] = objectIndex;
+	int n;
+	const int z = bbox[objectIndex].center.z;
+
+	// find insertion point
+	int i = sortedObjectsNum;
+	while(i > 0 && z < bbox[sortedObjectIndex[i-1]].center.z){--i;};
+
+	// move stuff up to make space
+	for (n=sortedObjectsNum; n>i; --n) {
+		sortedObjectIndex[n] = sortedObjectIndex[n-1];
+	}
 	++sortedObjectsNum;
+
+	// slot in index
+	sortedObjectIndex[i] = objectIndex;
 }
 
 static void sortAndRenderObjects(int objectIndex, int num, World *world, Camera *camera)
@@ -168,8 +181,18 @@ static void sortAndRenderObjects(int objectIndex, int num, World *world, Camera 
 		sortObjectByBoundingBoxZ(i, world->objectBbox);
 	}
 
-	for (i=0; i<sortedObjectsNum; ++i) {
-		renderObject3D(world->objects[sortedObjectIndex[i]], camera, NULL, 0);
+	while(--sortedObjectsNum >= 0) {
+		renderObject3D(world->objects[sortedObjectIndex[sortedObjectsNum]], camera, NULL, 0);
+	};
+}
+
+void variemai(World *world)
+{
+	int i;
+	for (i=0; i<world->nextObject; ++i) {
+		drawNumber(16, 64+i*8, world->objectBbox[i].center.x);
+		drawNumber(96, 64+i*8, world->objectBbox[i].center.y);
+		drawNumber(192, 64+i*8, world->objectBbox[i].center.z);
 	}
 }
 

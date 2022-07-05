@@ -292,4 +292,6 @@ void effectMeshWorldRun()
 	setCameraRot(camera, camRotX,camRotY,camRotZ);
 
 	renderWorld(world);
+
+	variemai(world);
 }

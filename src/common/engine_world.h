@@ -44,4 +44,6 @@ void setActiveCamera(World *world, int camIndex);
 
 void renderWorld(World *world);
 
+void variemai(World *world);
+
 #endif
