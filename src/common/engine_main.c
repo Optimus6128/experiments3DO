@@ -187,7 +187,7 @@ static void calculateVertexEnvmapTC(Mesh *mesh)
 	}
 }
 
-/*static void transposeMat3(mat33f16 mat)
+static void transposeMat3(mat33f16 mat)
 {
 	int temp;
 	int *matVal = (int*)mat;
@@ -195,7 +195,7 @@ static void calculateVertexEnvmapTC(Mesh *mesh)
 	temp = matVal[1]; matVal[1] = matVal[3]; matVal[3] = temp;
 	temp = matVal[2]; matVal[2] = matVal[6]; matVal[6] = temp;
 	temp = matVal[5]; matVal[5] = matVal[7]; matVal[7] = temp;
-}*/
+}
 
 void createRotationMatrixValues(int rotX, int rotY, int rotZ, int *rotVecs)
 {
@@ -249,12 +249,15 @@ static void translateAndProjectVertices(Object3D *obj, Camera *cam)
 
 static void transformMesh(Object3D *obj, Camera *cam)
 {
-	static mat33f16 inverseRotMat;
+	static mat33f16 rotMat;
 	static mat33f16 rotViewMat;
 
 	Mesh *mesh = obj->mesh;
 
-	createRotationMatrixValues(obj->rot.x - cam->rot.x, obj->rot.y - cam->rot.y, obj->rot.z - cam->rot.z, (int*)rotViewMat);
+	createRotationMatrixValues(obj->rot.x, obj->rot.y, obj->rot.z, (int*)rotMat);
+
+	MulMat33Mat33_F16(rotViewMat, rotMat, cam->inverseRotMat);
+
 
 	// Rotate Mesh Vertices
 	MulManyVec3Mat33_F16((vec3f16*)screenVertices, (vec3f16*)mesh->vertex, rotViewMat, mesh->verticesNum);
@@ -267,9 +270,9 @@ static void transformMesh(Object3D *obj, Camera *cam)
 		}
 	}
 	if (mesh->renderType & MESH_OPTION_ENABLE_LIGHTING) {
-		createRotationMatrixValues(-obj->rot.x, -obj->rot.y, -obj->rot.z, (int*)inverseRotMat);
+		transposeMat3(rotMat);
 		normalizeVector3D(&globalLight->dir);
-		MulManyVec3Mat33_F16((vec3f16*)&rotatedGlobalLightVec, (vec3f16*)&globalLight->dir, inverseRotMat, 1);
+		MulManyVec3Mat33_F16((vec3f16*)&rotatedGlobalLightVec, (vec3f16*)&globalLight->dir, rotMat, 1);
 	}
 }
 
