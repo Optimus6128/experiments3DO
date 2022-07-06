@@ -45,14 +45,13 @@ static int camPosY = 0;
 static int camPosZ = -1024 << FP_CORE;
 
 static int camRotVel = 2;
-static int camMoveVel = 12;
-static int camFlyVel = 8;
+static int camMoveVel = 2;
+static int camFlyVel = 1;
 
 static bool autoRot = false;
+static bool cameraLook = false;
 
 static World *world;
-
-static int renderSoftMethodIndex = RENDER_SOFT_METHOD_GOURAUD;
 
 
 static void shadeGrid()
@@ -175,18 +174,20 @@ static bool tryCollideMoveStep(bool x, bool y, vec3f16 move, int speed)
 {
 	const int off = 192 << FP_CORE;
 
-	int prevCamPosX = camPosX;
-	int prevCamPosZ = camPosZ;
+	//int prevCamPosX = camPosX;
+	//int prevCamPosZ = camPosZ;
 
-	if (x) camPosX += move[0] * speed;
-	if (y) camPosZ += move[2] * speed;
+	if (x) camPosX += (move[0] * speed) >> 2;
+	if (y) camPosZ += (move[2] * speed) >> 2;
 
-	if (camPosX>-off && camPosX<off && camPosZ>-off && camPosZ<off) {
+	return true;
+
+/*	if (camPosX>-off && camPosX<off && camPosZ>-off && camPosZ<off) {
 		camPosX = prevCamPosX;
 		camPosZ = prevCamPosZ;
 		return true;
 	}
-	return false;
+	return false;*/
 }
 
 static void moveCamera(int forward, int right, int up, int dt)
@@ -194,11 +195,11 @@ static void moveCamera(int forward, int right, int up, int dt)
 	static mat33f16 rotMat;
 	static vec3f16 move;
 
-	move[0] = (right << FP_BASE) >> 1;
-	move[1] = up << FP_BASE;
-	move[2] = forward << FP_BASE;
+	move[0] = (right << FP_CORE) >> 1;
+	move[1] = 0;
+	move[2] = forward << FP_CORE;
 
-	createRotationMatrixValues(camRotX, camRotY, camRotZ, (int*)rotMat);	// not correct when looking up/down yet
+	createRotationMatrixValues(0, camRotY, 0, (int*)rotMat);	// not correct when looking up/down yet
 	MulVec3Mat33_F16(move, move, rotMat);
 
 	if (tryCollideMoveStep(true, true, move, camMoveVel * dt)) {
@@ -207,12 +208,17 @@ static void moveCamera(int forward, int right, int up, int dt)
 		}
 	}
 
+	move[1] = up << FP_CORE;
 	camPosY += move[1] * camFlyVel * dt;
 	if (camPosY <0) camPosY = 0;
 }
 
 static void inputScript(int dt)
 {
+	const int camRotXedge = 56;
+
+	cameraLook = isJoyButtonPressed(JOY_BUTTON_C);
+
 	if (isJoyButtonPressed(JOY_BUTTON_LEFT)) {
 		camRotY += camRotVel;
 	}
@@ -230,18 +236,23 @@ static void inputScript(int dt)
 	}
 
 	if (isJoyButtonPressed(JOY_BUTTON_A)) {
-		moveCamera(0,0,1,dt);
-		//camRotX += camRotVel;
+		if (cameraLook) {
+			if (camRotX < camRotXedge) {
+				camRotX += camRotVel;
+			}
+		} else {
+			moveCamera(0,0,1,dt);
+		}
 	}
 
 	if (isJoyButtonPressed(JOY_BUTTON_B)) {
-		moveCamera(0,0,-1,dt);
-		//camRotX -= camRotVel;
-	}
-
-	if (isJoyButtonPressedOnce(JOY_BUTTON_C)) {
-		if (++renderSoftMethodIndex == RENDER_SOFT_METHOD_NUM) renderSoftMethodIndex = 0;
-		setRenderSoftMethod(renderSoftMethodIndex);
+		if (cameraLook) {
+			if (camRotX > -camRotXedge) {
+				camRotX -= camRotVel;
+			}
+		} else {
+			moveCamera(0,0,-1,dt);
+		}
 	}
 
 	if (isJoyButtonPressedOnce(JOY_BUTTON_START)) {
