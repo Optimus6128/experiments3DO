@@ -13,21 +13,22 @@
 #include "engine_texture.h"
 #include "engine_soft.h"
 #include "engine_world.h"
+#include "engine_view.h"
 
 #include "procgen_mesh.h"
 #include "procgen_texture.h"
 
 
-static Camera *camera;
+static Viewer *viewer;
 static Light *light;
-static int camHeight = 256;
+
 
 #define GRID_SIZE 16
 
 static Mesh *gridMesh;
-static Mesh *cubeMesh;
+static Mesh *cubeMesh[8];
 static Object3D *gridObj;
-static Object3D *cubeObj[27];
+static Object3D *cubeObj[54];
 
 static Object3D *softObj;
 static Texture *cloudTex16;
@@ -35,23 +36,15 @@ static Texture *cloudTex16;
 static Texture *gridTex;
 static Texture *cubeTex;
 static uint16 gridPal[32];
-static uint16 cubePal[32];
-
-static int camRotX = 0;
-static int camRotY = 0;
-static int camRotZ = 0;
-static int camPosX = 0;
-static int camPosY = 0;
-static int camPosZ = -1024 << FP_CORE;
-
-static int camRotVel = 2;
-static int camMoveVel = 2;
-static int camFlyVel = 1;
+static uint16 cubePal[32*8];
 
 static bool autoRot = false;
-static bool cameraLook = false;
 
-static World *world;
+
+#define WORLDS_NUM 4
+
+static World *myWorld[WORLDS_NUM];
+static int worldIndex = 0;
 
 
 static void shadeGrid()
@@ -98,7 +91,7 @@ static MeshgenParams initMeshObjectParams(int meshgenId)
 		{
 			int i;
 			const int numPoints = 8;
-			const int size = 40;
+			const int size = 64;
 			Point2Darray *ptArray = initPoint2Darray(numPoints);
 
 			for (i=0; i<numPoints; ++i) {
@@ -116,162 +109,117 @@ static MeshgenParams initMeshObjectParams(int meshgenId)
 	return params;
 }
 
-static void initMyWorld()
+static World *initMyWorld(int worldIndex, Camera *camera, Light *light)
 {
 	int i;
 
-	world = initWorld(256, 1, 1);
-
-	camera = createCamera();
-	light = createLight(true);
+	World *world = initWorld(256, 1, 1);
 
 	addCameraToWorld(camera, world);
 	addLightToWorld(light, world);
 
 	addObjectToWorld(gridObj, 0, world);
 
-	for (i=0; i<27; ++i) {
-		addObjectToWorld(cubeObj[i], 1, world);
+	switch(worldIndex) {
+		case 0:
+		{
+			for (i=0; i<8; ++i) {
+				addObjectToWorld(cubeObj[i], 1, world);
+			}
+			addObjectToWorld(softObj, 1, world);
+			setRenderSoftMethod(RENDER_SOFT_METHOD_ENVMAP);
+		}
+		break;
+
+		case 1:
+		{
+			for (i=0; i<54; ++i) {
+				addObjectToWorld(cubeObj[i], 1, world);
+			}
+		}
+		break;
+
+		case 2:
+		{
+		}
+		break;
+
+		case 3:
+		{
+
+		}
+		break;
 	}
-	//addObjectToWorld(softObj, 1, world);
+
+	return world;
 }
 
 void effectMeshWorldInit()
 {
-	int i;
+	int i,x,y,z;
 
 	MeshgenParams gridParams = makeMeshgenGridParams(2048, GRID_SIZE);
 	MeshgenParams cubeParams = DEFAULT_MESHGEN_PARAMS(128);
-
-	//MeshgenParams softParams = initMeshObjectParams(MESH_CUBE);
 	MeshgenParams softParams = initMeshObjectParams(MESH_SQUARE_COLUMNOID);
 
-	setPalGradient(0,31, 1,3,7, 27,29,31, gridPal);
-	setPalGradient(0,31, 3,7,21, 7,31,15, cubePal);
+	setPalGradient(0,31, 1,3,7, 31,27,23, gridPal);
+
+	i = 0;
+	for (z=0; z<=1; ++z) {
+		for (y=0; y<=1; ++y) {
+			for (x=0; x<=1; ++x) {
+				setPalGradient(0,31, (1-x)*15,(1-y)*7,(1-z)*3, x*24,y*27,z*31, &cubePal[32*i]);
+				++i;
+			}
+		}
+	}
 
 	gridTex = initGenTexture(16,16, 8, gridPal, 1, TEXGEN_GRID, false, NULL);
-	cubeTex = initGenTexture(64,64, 8, cubePal, 1, TEXGEN_CLOUDS, false, NULL);
+	cubeTex = initGenTexture(64,64, 8, cubePal, 8, TEXGEN_CLOUDS, false, NULL);
 
 	gridMesh = initGenMesh(MESH_GRID, gridParams, MESH_OPTIONS_DEFAULT, gridTex);
 	gridObj = initObject3D(gridMesh);
 
-	cubeMesh = initGenMesh(MESH_CUBE, cubeParams, MESH_OPTIONS_DEFAULT | MESH_OPTION_ENABLE_LIGHTING, cubeTex);
+	for (i=0; i<8; ++i) {
+		cubeMesh[i] = initGenMesh(MESH_CUBE, cubeParams, MESH_OPTIONS_DEFAULT | MESH_OPTION_ENABLE_LIGHTING, cubeTex);
+	}
 
-	for (i=0; i<27; ++i) {
-		cubeObj[i] = initObject3D(cubeMesh);
+	for (i=0; i<54; ++i) {
+		cubeObj[i] = initObject3D(cubeMesh[i&7]);
+		setMeshPaletteIndex(i & 7, cubeObj[i]->mesh);
 	}
 
 	cloudTex16 = initGenTexture(64, 64, 16, NULL, 1, TEXGEN_CLOUDS, false, NULL);
-	//softObj = initMeshObjectSoft(MESH_CUBE, softParams, MESH_OPTION_RENDER_SOFT16 | MESH_OPTION_ENABLE_LIGHTING | MESH_OPTION_ENABLE_ENVMAP, cloudTex16);
 	softObj = initMeshObjectSoft(MESH_SQUARE_COLUMNOID, softParams, MESH_OPTION_RENDER_SOFT16 | MESH_OPTION_ENABLE_LIGHTING | MESH_OPTION_ENABLE_ENVMAP, cloudTex16);
 
 	shadeGrid();
 
-	initMyWorld();
-}
+	viewer = createViewer(64,192,64, 176);
+	setViewerPos(viewer, 0,96,-1024);
 
-static bool tryCollideMoveStep(bool x, bool y, vec3f16 move, int speed)
-{
-	const int off = 192 << FP_CORE;
+	light = createLight(true);
 
-	//int prevCamPosX = camPosX;
-	//int prevCamPosZ = camPosZ;
-
-	if (x) camPosX += (move[0] * speed) >> 2;
-	if (y) camPosZ += (move[2] * speed) >> 2;
-
-	return true;
-
-/*	if (camPosX>-off && camPosX<off && camPosZ>-off && camPosZ<off) {
-		camPosX = prevCamPosX;
-		camPosZ = prevCamPosZ;
-		return true;
+	for (i=0; i<WORLDS_NUM; ++i) {
+		myWorld[i] = initMyWorld(i, viewer->camera, light);
 	}
-	return false;*/
-}
-
-static void moveCamera(int forward, int right, int up, int dt)
-{
-	static mat33f16 rotMat;
-	static vec3f16 move;
-
-	move[0] = (right << FP_CORE) >> 1;
-	move[1] = 0;
-	move[2] = forward << FP_CORE;
-
-	createRotationMatrixValues(0, camRotY, 0, (int*)rotMat);	// not correct when looking up/down yet
-	MulVec3Mat33_F16(move, move, rotMat);
-
-	if (tryCollideMoveStep(true, true, move, camMoveVel * dt)) {
-		if(tryCollideMoveStep(true, false, move, camMoveVel * dt)) {
-			tryCollideMoveStep(false, true, move, camMoveVel * dt);
-		}
-	}
-
-	move[1] = up << FP_CORE;
-	camPosY += move[1] * camFlyVel * dt;
-	if (camPosY <0) camPosY = 0;
 }
 
 static void inputScript(int dt)
 {
-	const int camRotXedge = 56;
-
-	cameraLook = isJoyButtonPressed(JOY_BUTTON_C);
-
-	if (isJoyButtonPressed(JOY_BUTTON_LEFT)) {
-		camRotY += camRotVel;
+	if (isJoyButtonPressedOnce(JOY_BUTTON_SELECT)) {
+		worldIndex++;
+		if (worldIndex==WORLDS_NUM) worldIndex = 0;
 	}
-
-	if (isJoyButtonPressed(JOY_BUTTON_RIGHT)) {
-		camRotY -= camRotVel;
-	}
-
-	if (isJoyButtonPressed(JOY_BUTTON_UP)) {
-		moveCamera(1,0,0,dt);
-	}
-
-	if (isJoyButtonPressed(JOY_BUTTON_DOWN)) {
-		moveCamera(-1,0,0,dt);
-	}
-
-	if (isJoyButtonPressed(JOY_BUTTON_A)) {
-		if (cameraLook) {
-			if (camRotX < camRotXedge) {
-				camRotX += camRotVel;
-			}
-		} else {
-			moveCamera(0,0,1,dt);
-		}
-	}
-
-	if (isJoyButtonPressed(JOY_BUTTON_B)) {
-		if (cameraLook) {
-			if (camRotX > -camRotXedge) {
-				camRotX -= camRotVel;
-			}
-		} else {
-			moveCamera(0,0,-1,dt);
-		}
-	}
-
 	if (isJoyButtonPressedOnce(JOY_BUTTON_START)) {
 		autoRot = !autoRot;
 	}
 
-	if (isJoyButtonPressed(JOY_BUTTON_LPAD)) {
-		moveCamera(0,-1,0,dt);
-	}
-
-	if (isJoyButtonPressed(JOY_BUTTON_RPAD)) {
-		moveCamera(0,1,0,dt);
-	}
+	viewerInputFPS(viewer, dt);
 }
 
-static void setObjectsPosAndRot(int dt)
+static void setObjectsPosAndRot(int worldI, int dt)
 {
 	int i,j,k,n=0;
-	const int dist = 256;
 
 	static int softRotX = 0;
 	static int softRotY = 0;
@@ -280,18 +228,46 @@ static void setObjectsPosAndRot(int dt)
 	setObject3Dpos(gridObj, 0, 0, 0);
 	setObject3Drot(gridObj, 0, 0, 0);
 
-	for (k=-1; k<=1; k+=1) {
-		for (j=-1; j<=1; j+=1) {
-			for (i=-1; i<=1; i+=1) {
-				setObject3Dpos(cubeObj[n], dist*i, dist + dist*j, dist*k);
-				setObject3Drot(cubeObj[n], 1*i*softRotX, 0*j*softRotY, 1*k*softRotZ);
-				++n;
+	switch(worldI) {
+		case 0:
+		{
+			const int dist = 128;
+			for (k=-1; k<=1; k+=2) {
+				for (j=0; j<=2; j+=2) {
+					for (i=-1; i<=1; i+=2) {
+						setObject3Dpos(cubeObj[n], dist*i, dist + dist*j, dist*k);
+						setObject3Drot(cubeObj[n], i*softRotX, ((j+1) & 3)*softRotY, k*softRotZ);
+						++n;
+					}
+				}
+			}
+
+			setObject3Dpos(softObj, 0, 2 * dist + (SinF16(getTicks() << 14) >> 13), 0);
+			setObject3Drot(softObj, softRotX, softRotY, softRotZ);
+		}
+
+		case 1:
+		{
+			const int dist = 256;
+			for (k=-1; k<=1; k+=1) {
+				for (j=0; j<6; j++) {
+					for (i=-1; i<=1; i+=1) {
+						setObject3Dpos(cubeObj[n], dist*i, dist + dist*j, dist*k);
+						setObject3Drot(cubeObj[n], i*softRotX, ((j+1) & 3)*softRotY, k*softRotZ);
+						++n;
+					}
+				}
 			}
 		}
-	}
 
-	setObject3Dpos(softObj, 0, dist + (SinF16(getTicks() << 14) >> 13), 0);
-	setObject3Drot(softObj, softRotX, softRotY, softRotZ);
+		case 2:
+		{
+		}
+
+		case 3:
+		{
+		}
+	}
 
 	if (autoRot) {
 		softRotX += 1;
@@ -309,10 +285,9 @@ void effectMeshWorldRun()
 
 	inputScript(dt);
 
-	setObjectsPosAndRot(dt);
+	setObjectsPosAndRot(worldIndex, dt);
 
-	setCameraPos(camera, camPosX>>FP_CORE, camHeight + (camPosY>>FP_CORE), camPosZ>>FP_CORE);
-	setCameraRot(camera, camRotX,camRotY,camRotZ);
+	renderWorld(myWorld[worldIndex]);
 
-	renderWorld(world);
+	drawNumber(288, 8, worldIndex);
 }

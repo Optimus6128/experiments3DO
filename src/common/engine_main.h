@@ -1,8 +1,9 @@
 #ifndef ENGINE_MAIN_H
 #define ENGINE_MAIN_H
 
-#include "engine_mesh.h"
 #include "mathutil.h"
+#include "engine_view.h"
+#include "engine_mesh.h"
 
 #define MAX_VERTEX_ELEMENTS_NUM 2048
 
@@ -21,24 +22,12 @@ typedef struct ScreenElement
 	int u,v;
 }ScreenElement;
 
-typedef struct BoundingBox
-{
-	Vector3D center;
-	Vector3D halfSize;
-}BoundingBox;
-
 typedef struct Object3D
 {
 	Mesh *mesh;
 	Vector3D pos, rot;
 	BoundingBox bbox;
 }Object3D;
-
-typedef struct Camera
-{
-	Vector3D pos, rot;	// should rather use a dir instead of a rot, but need to get rot angles back from vector dir
-	mat33f16 inverseRotMat;
-}Camera;
 
 typedef struct Light
 {
@@ -62,10 +51,6 @@ void setLightPos(Light *light, int px, int py, int pz);
 void setLightDir(Light *light, int vx, int vy, int vz);
 
 void setGlobalLight(Light *light);
-
-Camera *createCamera(void);
-void setCameraPos(Camera *cam, int px, int py, int pz);
-void setCameraRot(Camera *cam, int rx, int ry, int rz);
 
 void createRotationMatrixValues(int rotX, int rotY, int rotZ, int *rotVecs);
 

@@ -6,7 +6,7 @@
 
 
 int isin[256];
-uint32 recZ[NUM_REC_Z];
+int recZ[NUM_REC_Z];
 
 
 int isqrt(int x) {

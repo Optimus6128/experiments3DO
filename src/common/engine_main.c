@@ -3,10 +3,9 @@
 #include "tools.h"
 #include "cel_helpers.h"
 
+#include "engine_view.h"
 #include "engine_main.h"
-#include "engine_mesh.h"
 #include "engine_texture.h"
-#include "engine_main.h"
 #include "engine_soft.h"
 
 #include "system_graphics.h"
@@ -239,10 +238,10 @@ static void translateAndProjectVertices(Object3D *obj, Camera *cam)
 		int vz = screenVertices[i].z + posFromCam[2];
 		CLAMP(vz, fovNear, fovFar)
 
-		//screenElements[i].x = offsetX + ((((screenVertices[i].x + posFromCam[0]) << PROJ_SHR) * recZ[vz]) >> REC_FPSHR);
-		//screenElements[i].y = offsetY - ((((screenVertices[i].y + posFromCam[1]) << PROJ_SHR) * recZ[vz]) >> REC_FPSHR);
-		screenElements[i].x = offsetX + ((screenVertices[i].x + posFromCam[0]) << PROJ_SHR) / vz;
-		screenElements[i].y = offsetY - ((screenVertices[i].y + posFromCam[1]) << PROJ_SHR) / vz;
+		screenElements[i].x = offsetX + ((((screenVertices[i].x + posFromCam[0]) << PROJ_SHR) * recZ[vz]) >> REC_FPSHR);
+		screenElements[i].y = offsetY - ((((screenVertices[i].y + posFromCam[1]) << PROJ_SHR) * recZ[vz]) >> REC_FPSHR);
+		//screenElements[i].x = offsetX + ((screenVertices[i].x + posFromCam[0]) << PROJ_SHR) / vz;
+		//screenElements[i].y = offsetY - ((screenVertices[i].y + posFromCam[1]) << PROJ_SHR) / vz;
 		screenElements[i].z = vz;
 	}
 }
@@ -381,30 +380,6 @@ void setObject3Dmesh(Object3D *obj, Mesh *ms)
 	obj->mesh = ms;
 }
 
-
-void setCameraPos(Camera *cam, int px, int py, int pz)
-{
-	cam->pos.x = px;
-	cam->pos.y = py;
-	cam->pos.z = pz;
-}
-
-void setCameraRot(Camera *cam, int rx, int ry, int rz)
-{
-	cam->rot.x = rx;
-	cam->rot.y = ry;
-	cam->rot.z = rz;
-}
-
-Camera *createCamera()
-{
-	Camera *cam = (Camera*)AllocMem(sizeof(Camera), MEMTYPE_ANY);
-
-	setCameraPos(cam, 0,0,0);
-	setCameraRot(cam, 0,0,0);
-
-	return cam;
-}
 
 void setLightPos(Light *light, int px, int py, int pz)
 {

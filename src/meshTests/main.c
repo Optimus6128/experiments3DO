@@ -15,13 +15,13 @@ static char *effectName[EFFECTS_NUM] = { "mesh pyramids test", "mesh grid", "sof
 
 int main()
 {
-	int extraOpts = 0;//CORE_SHOW_MEM;
+	int extraOpts = CORE_SHOW_MEM;
 
 	//const int effectIndex = runEffectSelector(effectName, EFFECTS_NUM);
 	const int effectIndex = EFFECT_MESH_WORLD;
 
 	if (effectIndex == EFFECT_MESH_SOFT || effectIndex == EFFECT_MESH_WORLD) extraOpts |= CORE_INIT_3D_ENGINE_SOFT;
 
-	coreInit(effectInitFunc[effectIndex], CORE_DEFAULT_INPUT | CORE_SHOW_FPS | CORE_INIT_3D_ENGINE | CORE_VRAM_MAXBUFFERS | extraOpts);
+	coreInit(effectInitFunc[effectIndex], CORE_NO_VSYNC | CORE_SHOW_FPS | CORE_INIT_3D_ENGINE | CORE_VRAM_MAXBUFFERS | extraOpts);
 	coreRun(effectRunFunc[effectIndex]);
 }

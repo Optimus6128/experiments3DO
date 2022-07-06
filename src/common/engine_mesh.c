@@ -92,6 +92,20 @@ void prepareCelList(Mesh *ms)
 	}
 }
 
+void setMeshPaletteIndex(int palIndex, Mesh *ms)
+{
+	if (!(ms->renderType & MESH_OPTION_RENDER_SOFT)) {
+		int i;
+		for (i=0; i<ms->polysNum; i++) {
+			Texture *tex = &ms->tex[ms->poly[i].textureId];
+			if (tex) {
+				ms->poly[i].palId = palIndex;
+				ms->cel[i].ccb_PLUTPtr = (uint16*)&tex->pal[palIndex << getPaletteColorsNum(tex->bpp)];
+			}
+		}
+	}
+}
+
 static void setMeshCELflags(Mesh *ms, uint32 flags, bool enable)
 {
 	if (!(ms->renderType & MESH_OPTION_RENDER_SOFT)) {

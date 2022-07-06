@@ -66,6 +66,8 @@ void setMeshTransparency(Mesh *ms, bool enable);
 void setMeshTranslucency(Mesh *ms, bool enable);
 void setMeshDottedDisplay(Mesh *ms, bool enable);
 
+void setMeshPaletteIndex(int palIndex, Mesh *ms);
+
 void updateMeshCELs(Mesh *ms);
 
 #endif

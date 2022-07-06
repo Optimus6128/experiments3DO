@@ -32,6 +32,12 @@ typedef struct Vector3D
 	int x,y,z;
 }Vector3D;
 
+typedef struct BoundingBox
+{
+	Vector3D center;
+	Vector3D halfSize;
+}BoundingBox;
+
 typedef struct Point2D
 {
     int x,y;
@@ -49,7 +55,7 @@ typedef struct Point2Darray
 #define REC_FPSHR 18
 
 extern int isin[256];
-extern uint32 recZ[NUM_REC_Z];
+extern int recZ[NUM_REC_Z];
 
 
 int isqrt(int x);

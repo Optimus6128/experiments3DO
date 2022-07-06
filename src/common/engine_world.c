@@ -154,10 +154,12 @@ static void updateObjectWorldBoundingBox(int objectIndex, World *world, Camera *
 static void sortObjectByBoundingBoxZ(int objectIndex, BoundingBox *bbox)
 {
 	int n;
+	int i = sortedObjectsNum;
 	const int z = bbox[objectIndex].center.z;
 
+	if (z < 0) return;	// don't sort if Z negative (will also do some sort of viewcone clipping in the future)
+
 	// find insertion point
-	int i = sortedObjectsNum;
 	while(i > 0 && z < bbox[sortedObjectIndex[i-1]].center.z){--i;};
 
 	// move stuff up to make space
