@@ -22,6 +22,9 @@ Camera *createCamera()
 	setCameraPos(cam, 0,0,0);
 	setCameraRot(cam, 0,0,0);
 
+	cam->near = 16;
+	cam->far = NUM_REC_Z-1;
+
 	return cam;
 }
 

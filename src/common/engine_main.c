@@ -27,9 +27,6 @@ static bool polygonOrderTestCPU = true;
 
 static void(*mapcelFunc)(CCB*, Point*, uint8);
 
-static int fovNear = 16;
-static int fovFar = NUM_REC_Z-1;
-
 
 int shadeTable[SHADE_TABLE_SIZE] = {
  0x03010301,0x07010701,0x0B010B01,0x0F010F01,0x13011301,0x17011701,0x1B011B01,0x1F011F01,
@@ -97,49 +94,48 @@ static void prepareTransformedMeshCELs(Mesh *mesh)
 {
 	int i;
 	int *index = mesh->index;
-	Point qpt[4];
 	CCB *cel = mesh->cel;
 	Vector3D *normal = mesh->polyNormal;
 
 	for (i=0; i<mesh->polysNum; ++i) {
-		bool discardPoly;
-		int n = 1;
-		const int dt = 1024;
-		int d0,d1,d2,d3;
-		qpt[0].pt_X = screenElements[*index].x; qpt[0].pt_Y = screenElements[*index].y; ++index;
-		qpt[1].pt_X = screenElements[*index].x; qpt[1].pt_Y = screenElements[*index].y; ++index;
-		qpt[2].pt_X = screenElements[*index].x; qpt[2].pt_Y = screenElements[*index].y; ++index;
+		const int polyNumPoints = mesh->poly[i].numPoints;
 
-		// Handling quads or triangles for now.
-		if (mesh->poly[i].numPoints == 4) {
-			qpt[3].pt_X = screenElements[*index].x; qpt[3].pt_Y = screenElements[*index].y; ++index;
+		ScreenElement *sc1 = &screenElements[*index];
+		ScreenElement *sc2 = &screenElements[*(index+1)];
+		ScreenElement *sc3 = &screenElements[*(index+2)];
+		ScreenElement *sc4;
+		bool discardPoly = sc1->outside & sc2->outside & sc3->outside;
+		if (polyNumPoints == 3) {
+			sc4 = sc3;
 		} else {
-			qpt[3].pt_X = qpt[2].pt_X; qpt[3].pt_Y = qpt[2].pt_Y;
-		}
-		
-		d0 = qpt[1].pt_X - qpt[0].pt_X;
-		d1 = qpt[1].pt_Y - qpt[0].pt_Y;
-		d2 = qpt[3].pt_X - qpt[0].pt_X;
-		d3 = qpt[3].pt_Y - qpt[0].pt_Y;
-
-		discardPoly = d0 > dt || d1 > dt || d2 > dt || d3 > dt;
-
-		if (!discardPoly && polygonOrderTestCPU) {
-			n = (qpt[0].pt_X - qpt[1].pt_X) * (qpt[2].pt_Y - qpt[1].pt_Y) - (qpt[2].pt_X - qpt[1].pt_X) * (qpt[0].pt_Y - qpt[1].pt_Y);
+			sc4 = &screenElements[*(index+3)];
+			discardPoly &= sc4->outside;
 		}
 
-		if (discardPoly || n <= 0) {
+		if (discardPoly) {
 			cel->ccb_Flags |= CCB_SKIP;
 		} else {
-			cel->ccb_Flags &= ~CCB_SKIP;
+			if (polygonOrderTestCPU && (sc1->x - sc2->x) * (sc3->y - sc2->y) - (sc3->x - sc2->x) * (sc1->y - sc2->y) <= 0) {
+				cel->ccb_Flags |= CCB_SKIP;
+			} else {
+				Point qpt[4];
 
-			if (mesh->renderType & MESH_OPTION_ENABLE_LIGHTING) {
-				int shade = -(getVector3Ddot(normal, &rotatedGlobalLightVec) >> NORMAL_SHIFT);
-				CLAMP(shade,(1<<(NORMAL_SHIFT-4)),((1<<NORMAL_SHIFT)-1))
-				cel->ccb_PIXC = shadeTable[shade >> (NORMAL_SHIFT-SHADE_TABLE_SHR)];
+				cel->ccb_Flags &= ~CCB_SKIP;
+
+				if (mesh->renderType & MESH_OPTION_ENABLE_LIGHTING) {
+					int shade = -(getVector3Ddot(normal, &rotatedGlobalLightVec) >> NORMAL_SHIFT);
+					CLAMP(shade,(1<<(NORMAL_SHIFT-4)),((1<<NORMAL_SHIFT)-1))
+					cel->ccb_PIXC = shadeTable[shade >> (NORMAL_SHIFT-SHADE_TABLE_SHR)];
+				}
+
+				qpt[0].pt_X = sc1->x; qpt[0].pt_Y = sc1->y;
+				qpt[1].pt_X = sc2->x; qpt[1].pt_Y = sc2->y;
+				qpt[2].pt_X = sc3->x; qpt[2].pt_Y = sc3->y;
+				qpt[3].pt_X = sc4->x; qpt[3].pt_Y = sc4->y;
+				mapcelFunc(cel, qpt, mesh->poly[i].texShifts);
 			}
-			mapcelFunc(cel, qpt, mesh->poly[i].texShifts);
 		}
+		index += 4;
 		++cel;
 		++normal;
 	}
@@ -236,13 +232,14 @@ static void translateAndProjectVertices(Object3D *obj, Camera *cam)
 	for (i=0; i<lvNum; i++)
 	{
 		int vz = screenVertices[i].z + posFromCam[2];
-		CLAMP(vz, fovNear, fovFar)
+		CLAMP(vz, cam->near, cam->far)
 
 		screenElements[i].x = offsetX + ((((screenVertices[i].x + posFromCam[0]) << PROJ_SHR) * recZ[vz]) >> REC_FPSHR);
 		screenElements[i].y = offsetY - ((((screenVertices[i].y + posFromCam[1]) << PROJ_SHR) * recZ[vz]) >> REC_FPSHR);
 		//screenElements[i].x = offsetX + ((screenVertices[i].x + posFromCam[0]) << PROJ_SHR) / vz;
 		//screenElements[i].y = offsetY - ((screenVertices[i].y + posFromCam[1]) << PROJ_SHR) / vz;
 		screenElements[i].z = vz;
+		screenElements[i].outside = (screenElements[i].x < 0 || screenElements[i].x >= screenWidth || screenElements[i].y < 0  || screenElements[i].y >= screenHeight);
 	}
 }
 

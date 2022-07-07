@@ -1,4 +1,5 @@
 #include "engine_world.h"
+#include "system_graphics.h"
 
 int sortedObjectIndex[256];
 int sortedObjectsNum = 0;
@@ -34,6 +35,7 @@ void resetWorld(World *world, bool resetCameras, bool resetLights)
 	for (i=0; i<world->maxObjects; ++i) {
 		world->objects[i] = NULL;
 		world->objectInfo[i].priority = 0;
+		world->objectInfo[i].visCheck = true;
 	}
 	world->nextObject = 0;
 
@@ -75,9 +77,10 @@ static void moveWorldObject(int srcIndex, int dstIndex, World *world)
 {
 	world->objects[dstIndex] = world->objects[srcIndex];
 	world->objectInfo[dstIndex].priority = world->objectInfo[srcIndex].priority;
+	world->objectInfo[dstIndex].visCheck = world->objectInfo[srcIndex].visCheck;
 }
 
-static void slotObjectIndexBasedOnPriority(Object3D *object, int priority, World *world)
+static void slotObjectIndexBasedOnPriority(Object3D *object, int priority, bool visCheck, World *world)
 {
 	int i,j;
 
@@ -95,13 +98,14 @@ static void slotObjectIndexBasedOnPriority(Object3D *object, int priority, World
 	//slot it
 	world->objects[i] = object;
 	world->objectInfo[i].priority = priority;
+	world->objectInfo[i].visCheck = visCheck;
 }
 
-void addObjectToWorld(Object3D *object, int priority, World *world)
+void addObjectToWorld(Object3D *object, int priority, bool visCheck, World *world)
 {
 	const int objectIndex = world->nextObject;
 	if (objectIndex < world->maxObjects) {
-		slotObjectIndexBasedOnPriority(object, priority, world);
+		slotObjectIndexBasedOnPriority(object, priority, visCheck, world);
 	}
 }
 
@@ -155,12 +159,10 @@ static void sortObjectByBoundingBoxZ(int objectIndex, BoundingBox *bbox)
 {
 	int n;
 	int i = sortedObjectsNum;
-	const int z = bbox[objectIndex].center.z;
-
-	if (z < 0) return;	// don't sort if Z negative (will also do some sort of viewcone clipping in the future)
+	const int currentBboxZ = bbox[objectIndex].center.z;
 
 	// find insertion point
-	while(i > 0 && z < bbox[sortedObjectIndex[i-1]].center.z){--i;};
+	while(i > 0 && currentBboxZ < bbox[sortedObjectIndex[i-1]].center.z){--i;};
 
 	// move stuff up to make space
 	for (n=sortedObjectsNum; n>i; --n) {
@@ -172,6 +174,29 @@ static void sortObjectByBoundingBoxZ(int objectIndex, BoundingBox *bbox)
 	sortedObjectIndex[i] = objectIndex;
 }
 
+static bool isBoundingBoxInView(BoundingBox *bbox, Camera *camera)
+{
+	const int scrEdgeX = 2*(SCREEN_WIDTH/2);
+	const int scrEdgeY = 2*(SCREEN_HEIGHT/2);
+	const Vector3D *bboxCenter = &bbox->center;
+	int bboxHalfX, bboxHalfY, bboxHalfZ;
+	int edgeX, edgeY;
+
+	bboxHalfZ = (bbox->halfSize.z * bboxCenter->z) >> PROJ_SHR;
+	if (bboxCenter->z < camera->near - bboxHalfZ || bboxCenter->z > camera->far + bboxHalfZ) return false;
+
+	edgeX = (scrEdgeX * bboxCenter->z) >> PROJ_SHR;
+	bboxHalfX = (bbox->halfSize.x * bboxCenter->z) >> PROJ_SHR;
+	if (bboxCenter->x < - edgeX - bboxHalfX || bboxCenter->x > edgeX + bboxHalfX) return false;
+
+	edgeY = (scrEdgeY * bboxCenter->z) >> PROJ_SHR;
+	bboxHalfY = (bbox->halfSize.y * bboxCenter->z) >> PROJ_SHR;
+	if (bboxCenter->y < - edgeY - bboxHalfY || bboxCenter->y > edgeY + bboxHalfY) return false;
+
+	return true;
+}
+
+
 static void sortAndRenderObjects(int objectIndex, int num, World *world, Camera *camera)
 {
 	int i;
@@ -180,6 +205,7 @@ static void sortAndRenderObjects(int objectIndex, int num, World *world, Camera 
 	sortedObjectsNum = 0;
 	for (i=objectIndex; i<nextIndex; ++i) {
 		updateObjectWorldBoundingBox(i, world, camera);
+		if (world->objectInfo[i].visCheck && !isBoundingBoxInView(&world->objectBbox[i], camera)) continue;
 		sortObjectByBoundingBoxZ(i, world->objectBbox);
 	}
 

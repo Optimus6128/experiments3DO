@@ -23,7 +23,7 @@ static Viewer *viewer;
 static Light *light;
 
 
-#define GRID_SIZE 16
+#define GRID_SIZE 64
 
 static Mesh *gridMesh;
 static Mesh *cubeMesh[8];
@@ -118,15 +118,15 @@ static World *initMyWorld(int worldIndex, Camera *camera, Light *light)
 	addCameraToWorld(camera, world);
 	addLightToWorld(light, world);
 
-	addObjectToWorld(gridObj, 0, world);
+	addObjectToWorld(gridObj, 0, false, world);
 
 	switch(worldIndex) {
 		case 0:
 		{
 			for (i=0; i<8; ++i) {
-				addObjectToWorld(cubeObj[i], 1, world);
+				addObjectToWorld(cubeObj[i], 1, true, world);
 			}
-			addObjectToWorld(softObj, 1, world);
+			addObjectToWorld(softObj, 1, true, world);
 			setRenderSoftMethod(RENDER_SOFT_METHOD_ENVMAP);
 		}
 		break;
@@ -134,7 +134,7 @@ static World *initMyWorld(int worldIndex, Camera *camera, Light *light)
 		case 1:
 		{
 			for (i=0; i<54; ++i) {
-				addObjectToWorld(cubeObj[i], 1, world);
+				addObjectToWorld(cubeObj[i], 1, true, world);
 			}
 		}
 		break;

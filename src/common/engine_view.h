@@ -12,6 +12,7 @@
 typedef struct Camera
 {
 	Vector3D pos, rot;
+	int near, far;
 	mat33f16 inverseRotMat;
 }Camera;
 

@@ -9,6 +9,7 @@
 typedef struct ObjectInfo
 {
 	int priority;
+	bool visCheck;
 }ObjectInfo;
 
 typedef struct World
@@ -33,7 +34,7 @@ typedef struct World
 World *initWorld(int maxObjects, int maxCameras, int maxLights);
 void resetWorld(World *world, bool resetCameras, bool resetLights);
 
-void addObjectToWorld(Object3D *object, int priority, World *world);
+void addObjectToWorld(Object3D *object, int priority, bool visCheck, World *world);
 void addCameraToWorld(Camera *camera, World *world);
 void addLightToWorld(Light *light, World *world);
 

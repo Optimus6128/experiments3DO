@@ -5,7 +5,7 @@
 #include "engine_view.h"
 #include "engine_mesh.h"
 
-#define MAX_VERTEX_ELEMENTS_NUM 2048
+#define MAX_VERTEX_ELEMENTS_NUM 4096+256
 
 #define PROJ_SHR 8
 
@@ -20,6 +20,7 @@ typedef struct ScreenElement
 	int x,y,z;
 	int c;
 	int u,v;
+	bool outside;
 }ScreenElement;
 
 typedef struct Object3D
