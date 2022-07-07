@@ -342,6 +342,9 @@ static void calculateBoundingBox(Object3D* obj)
 
 	subVector3D(&bbox->halfSize, &max, &min);
 	divScalarVector3D(&bbox->halfSize, 2);
+
+	// Keep to see what breaks the compiler in the future
+	//bbox->diagonalLength = getVector3Dlength(&bbox->halfSize);
 }
 
 Object3D* initObject3D(Mesh *ms)
@@ -354,6 +357,9 @@ Object3D* initObject3D(Mesh *ms)
 	obj->rot.x = obj->rot.y = obj->rot.z = 0;
 	
 	calculateBoundingBox(obj);
+
+	// removed it from calculateBoundingBox at the end as the compiler produces wrong code? (app freezes for the same thing as here)
+	obj->bbox.diagonalLength = getVector3Dlength(&obj->bbox.halfSize);
 
 	return obj;
 }

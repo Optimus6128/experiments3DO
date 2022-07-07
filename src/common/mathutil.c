@@ -118,9 +118,14 @@ int getVector3Ddot(Vector3D *v0, Vector3D *v1)
 	return v0->x*v1->x + v0->y*v1->y + v0->z*v1->z;
 }
 
+int getVector3Dlength(Vector3D *v)
+{
+	return isqrt(v->x * v->x + v->y * v->y + v->z * v->z);
+}
+
 void normalizeVector3D(Vector3D *v)
 {
-	int length = isqrt(v->x * v->x + v->y * v->y + v->z * v->z);
+	const int length = getVector3Dlength(v);
 
 	if (length != 0) {
 		v->x = (v->x << NORMAL_SHIFT) / length;

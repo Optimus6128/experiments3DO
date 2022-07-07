@@ -176,22 +176,25 @@ static void sortObjectByBoundingBoxZ(int objectIndex, BoundingBox *bbox)
 
 static bool isBoundingBoxInView(BoundingBox *bbox, Camera *camera)
 {
-	const int scrEdgeX = 2*(SCREEN_WIDTH/2);
-	const int scrEdgeY = 2*(SCREEN_HEIGHT/2);
+	const int scrEdgeX = SCREEN_WIDTH/2;
+	const int scrEdgeY = SCREEN_HEIGHT/2;
 	const Vector3D *bboxCenter = &bbox->center;
-	int bboxHalfX, bboxHalfY, bboxHalfZ;
+	const int diagLength = bbox->diagonalLength;
+	const int bboxZnear = bboxCenter->z - diagLength;
+	const int bboxZfar = bboxCenter->z + diagLength;
+
+	int bboxDiagAtZfar;
 	int edgeX, edgeY;
 
-	bboxHalfZ = (bbox->halfSize.z * bboxCenter->z) >> PROJ_SHR;
-	if (bboxCenter->z < camera->near - bboxHalfZ || bboxCenter->z > camera->far + bboxHalfZ) return false;
+	if (bboxZfar < camera->near || bboxZnear > camera->far) return false;
 
-	edgeX = (scrEdgeX * bboxCenter->z) >> PROJ_SHR;
-	bboxHalfX = (bbox->halfSize.x * bboxCenter->z) >> PROJ_SHR;
-	if (bboxCenter->x < - edgeX - bboxHalfX || bboxCenter->x > edgeX + bboxHalfX) return false;
+	bboxDiagAtZfar = (diagLength * bboxZfar) >> PROJ_SHR;
 
-	edgeY = (scrEdgeY * bboxCenter->z) >> PROJ_SHR;
-	bboxHalfY = (bbox->halfSize.y * bboxCenter->z) >> PROJ_SHR;
-	if (bboxCenter->y < - edgeY - bboxHalfY || bboxCenter->y > edgeY + bboxHalfY) return false;
+	edgeX = (scrEdgeX * bboxZfar) >> PROJ_SHR;
+	if (bboxCenter->x < - edgeX - bboxDiagAtZfar || bboxCenter->x > edgeX + bboxDiagAtZfar) return false;
+
+	edgeY = (scrEdgeY * bboxZfar) >> PROJ_SHR;
+	if (bboxCenter->y < - edgeY - bboxDiagAtZfar || bboxCenter->y > edgeY + bboxDiagAtZfar) return false;
 
 	return true;
 }

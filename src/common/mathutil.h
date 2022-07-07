@@ -36,6 +36,7 @@ typedef struct BoundingBox
 {
 	Vector3D center;
 	Vector3D halfSize;
+	int diagonalLength;
 }BoundingBox;
 
 typedef struct Point2D
@@ -69,6 +70,7 @@ void copyVector3D(Vector3D *src, Vector3D *dst);
 void setVector3DfromVertices(Vector3D *v, Vertex *v0, Vertex *v1);
 void calcVector3Dcross(Vector3D *vRes, Vector3D *v0, Vector3D *v1);
 int getVector3Ddot(Vector3D *v0, Vector3D *v1);
+int getVector3Dlength(Vector3D *v);
 void normalizeVector3D(Vector3D *v);
 
 void addVector3D(Vector3D *dst, Vector3D *src1, Vector3D *src2);

@@ -23,7 +23,7 @@ static Viewer *viewer;
 static Light *light;
 
 
-#define GRID_SIZE 64
+#define GRID_SIZE 16
 
 static Mesh *gridMesh;
 static Mesh *cubeMesh[8];
