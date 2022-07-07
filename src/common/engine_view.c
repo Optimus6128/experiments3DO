@@ -134,28 +134,29 @@ void viewerInputFPS(Viewer *viewer, int dt)
 	}
 
 	if (isJoyButtonPressed(JOY_BUTTON_UP)) {
-		moveViewer(1,0,0, dt,viewer);
-	}
-
-	if (isJoyButtonPressed(JOY_BUTTON_DOWN)) {
-		moveViewer(-1,0,0, dt,viewer);
-	}
-
-	if (isJoyButtonPressed(JOY_BUTTON_A)) {
-		if (cameraLook) {
-			rotateViewer(1,0,0, dt,viewer);
-		} else {
-			moveViewer(0,0,1, dt,viewer);
-		}
-	}
-
-	if (isJoyButtonPressed(JOY_BUTTON_B)) {
 		if (cameraLook) {
 			rotateViewer(-1,0,0, dt,viewer);
 		} else {
-			moveViewer(0,0,-1, dt,viewer);
+			moveViewer(1,0,0, dt,viewer);
 		}
 	}
+
+	if (isJoyButtonPressed(JOY_BUTTON_DOWN)) {
+		if (cameraLook) {
+			rotateViewer(1,0,0, dt,viewer);
+		} else {
+			moveViewer(-1,0,0, dt,viewer);
+		}
+	}
+
+	if (isJoyButtonPressed(JOY_BUTTON_A)) {
+		moveViewer(0,0,1, dt,viewer);
+	}
+
+	if (isJoyButtonPressed(JOY_BUTTON_B)) {
+		moveViewer(0,0,-1, dt,viewer);
+	}
+
 	if (isJoyButtonPressed(JOY_BUTTON_LPAD)) {
 		moveViewer(0,-1,0, dt,viewer);
 	}

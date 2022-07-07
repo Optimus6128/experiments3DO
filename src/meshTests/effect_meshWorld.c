@@ -245,6 +245,7 @@ static void setObjectsPosAndRot(int worldI, int dt)
 			setObject3Dpos(softObj, 0, 2 * dist + (SinF16(getTicks() << 14) >> 13), 0);
 			setObject3Drot(softObj, softRotX, softRotY, softRotZ);
 		}
+		break;
 
 		case 1:
 		{
@@ -259,14 +260,17 @@ static void setObjectsPosAndRot(int worldI, int dt)
 				}
 			}
 		}
+		break;
 
 		case 2:
 		{
 		}
+		break;
 
 		case 3:
 		{
 		}
+		break;
 	}
 
 	if (autoRot) {
