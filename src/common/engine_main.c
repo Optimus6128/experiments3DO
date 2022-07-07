@@ -220,8 +220,10 @@ static void translateAndProjectVertices(Object3D *obj, Camera *cam)
 
 	const int lvNum = obj->mesh->verticesNum;
 
-	const int offsetX = screenOffsetX + (screenWidth >> 1);
-	const int offsetY = screenOffsetY + (screenHeight >> 1);
+	const int screenWidthHalf = screenWidth >> 1;
+	const int screenHeightHalf = screenHeight >> 1;
+	const int offsetX = screenOffsetX + screenWidthHalf;
+	const int offsetY = screenOffsetY + screenHeightHalf;
 
 	posFromCam[0] = obj->pos.x - cam->pos.x;
 	posFromCam[1] = obj->pos.y - cam->pos.y;
@@ -229,17 +231,23 @@ static void translateAndProjectVertices(Object3D *obj, Camera *cam)
 
 	MulVec3Mat33_F16(posFromCam, posFromCam, cam->inverseRotMat);
 
-	for (i=0; i<lvNum; i++)
-	{
+	for (i=0; i<lvNum; i++) {
+		int edgeX, edgeY;
+		int vx = screenVertices[i].x + posFromCam[0];
+		int vy = screenVertices[i].y + posFromCam[1];
 		int vz = screenVertices[i].z + posFromCam[2];
 		CLAMP(vz, cam->near, cam->far)
 
-		screenElements[i].x = offsetX + ((((screenVertices[i].x + posFromCam[0]) << PROJ_SHR) * recZ[vz]) >> REC_FPSHR);
-		screenElements[i].y = offsetY - ((((screenVertices[i].y + posFromCam[1]) << PROJ_SHR) * recZ[vz]) >> REC_FPSHR);
-		//screenElements[i].x = offsetX + ((screenVertices[i].x + posFromCam[0]) << PROJ_SHR) / vz;
-		//screenElements[i].y = offsetY - ((screenVertices[i].y + posFromCam[1]) << PROJ_SHR) / vz;
+		edgeX = (screenWidthHalf * vz) >> PROJ_SHR;
+		edgeY = (screenHeightHalf * vz) >> PROJ_SHR;
+		screenElements[i].outside = (vx < -edgeX || vx > edgeX || vy < -edgeY || vy > edgeY);
+
+		screenElements[i].x = offsetX + (((vx << PROJ_SHR) * recZ[vz]) >> REC_FPSHR);
+		screenElements[i].y = offsetY - (((vy << PROJ_SHR) * recZ[vz]) >> REC_FPSHR);
+		//screenElements[i].x = offsetX + (vx << PROJ_SHR) / vz;
+		//screenElements[i].y = offsetY - (vy << PROJ_SHR) / vz;
 		screenElements[i].z = vz;
-		screenElements[i].outside = (screenElements[i].x < 0 || screenElements[i].x >= screenWidth || screenElements[i].y < 0  || screenElements[i].y >= screenHeight);
+//		screenElements[i].outside = (screenElements[i].x < 0 || screenElements[i].x >= screenWidth || screenElements[i].y < 0  || screenElements[i].y >= screenHeight);
 	}
 }
 

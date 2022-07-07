@@ -15,7 +15,7 @@ static void(*effectRunFunc[EFFECTS_NUM])() = { effectMeshPyramidsRun, effectMesh
 
 int main()
 {
-	int extraOpts = CORE_SHOW_MEM;
+	int extraOpts = 0;//CORE_SHOW_MEM;
 
 	//const int effectIndex = runEffectSelector(effectName, EFFECTS_NUM);
 	const int effectIndex = EFFECT_MESH_WORLD;

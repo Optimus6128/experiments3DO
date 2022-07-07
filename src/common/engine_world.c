@@ -153,6 +153,8 @@ static void updateObjectWorldBoundingBox(int objectIndex, World *world, Camera *
 	dstBbox->center.x = centerFromCam[0];
 	dstBbox->center.y = centerFromCam[1];
 	dstBbox->center.z = centerFromCam[2];
+
+	dstBbox->diagonalLength = srcBbox->diagonalLength;
 }
 
 static void sortObjectByBoundingBoxZ(int objectIndex, BoundingBox *bbox)
