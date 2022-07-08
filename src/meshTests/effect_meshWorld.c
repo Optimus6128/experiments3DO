@@ -30,6 +30,7 @@ static Mesh *cubeMesh[8];
 static Object3D *gridObj;
 static Object3D *cubeObj[54];
 
+static Object3D *elongoidObj;
 static Object3D *columnoidObj[27];
 static Mesh *columnoidMesh;
 
@@ -37,6 +38,7 @@ static Object3D *softObj;
 static Texture *cloudTex16;
 
 static Texture *flatTex;
+static Texture *panerTex;
 static Texture *gridTex;
 static Texture *cubeTex;
 static uint16 gridPal[32];
@@ -45,7 +47,7 @@ static uint16 cubePal[32*8];
 static bool autoRot = false;
 
 
-#define WORLDS_NUM 4
+#define WORLDS_NUM 5
 
 static World *myWorld[WORLDS_NUM];
 static int worldIndex = 0;
@@ -113,11 +115,38 @@ static MeshgenParams initMeshObjectParams(int meshgenId)
 	return params;
 }
 
+static Object3D *initElongoidObject(Texture *tex)
+{
+	Object3D *meshObj;
+	Mesh *mesh;
+	MeshgenParams params;
+	int i;
+	const int numPoints = 128;
+	const int size = 64;
+	Point2Darray *ptArray = initPoint2Darray(numPoints);
+
+	for (i=0; i<numPoints; ++i) {
+		const int y = (size/2) * (numPoints/2 - i);
+		int r = ((SinF16((i*20) << 16) * (size / 2)) >> 16) + size / 2;
+		r += ((SinF16((i*24) << 15) * (size / 4)) >> 16) + size / 3;
+		r += ((SinF16((i*28) << 18) * (size / 8)) >> 16) + size / 4;
+		addPoint2D(ptArray, r,y);
+	}
+	params = makeMeshgenSquareColumnoidParams(size, ptArray->points, numPoints, true, true);
+
+	mesh = initGenMesh(MESH_SQUARE_COLUMNOID, params, MESH_OPTIONS_DEFAULT | MESH_OPTION_NO_POLYSORT | MESH_OPTION_ENABLE_LIGHTING, tex);
+	meshObj = initObject3D(mesh);
+
+	destroyPoint2Darray(ptArray);
+
+	return meshObj;
+}
+
 static World *initMyWorld(int worldIndex, Camera *camera, Light *light)
 {
 	int i;
 
-	World *world = initWorld(256, 1, 1);
+	World *world = initWorld(128, 1, 1);
 
 	addCameraToWorld(camera, world);
 	addLightToWorld(light, world);
@@ -153,6 +182,12 @@ static World *initMyWorld(int worldIndex, Camera *camera, Light *light)
 
 		case 3:
 		{
+			addObjectToWorld(elongoidObj, 1, false, world);
+		}
+		break;
+
+		case 4:
+		{
 
 		}
 		break;
@@ -164,7 +199,8 @@ static World *initMyWorld(int worldIndex, Camera *camera, Light *light)
 void effectMeshWorldInit()
 {
 	int i,x,y,z;
-	static uint8 flatCol = 0xFF;
+	static uint8 paramStretch = 4;
+	static uint8 paramCol = 0xFF;
 
 	MeshgenParams gridParams = makeMeshgenGridParams(2048, GRID_SIZE);
 	MeshgenParams cubeParams = DEFAULT_MESHGEN_PARAMS(128);
@@ -182,7 +218,8 @@ void effectMeshWorldInit()
 		}
 	}
 
-	flatTex = initGenTexture(8,8, 16, NULL, 0, TEXGEN_FLAT, false, &flatCol);
+	flatTex = initGenTexture(4,4, 16, NULL, 0, TEXGEN_FLAT, false, &paramCol);
+	panerTex = initGenTexture(16,16, 8, cubePal, 1, TEXGEN_XOR, false, &paramStretch);
 	gridTex = initGenTexture(16,16, 8, gridPal, 1, TEXGEN_GRID, false, NULL);
 	cubeTex = initGenTexture(64,64, 8, cubePal, 8, TEXGEN_CLOUDS, false, NULL);
 
@@ -198,10 +235,12 @@ void effectMeshWorldInit()
 		setMeshPaletteIndex(i & 7, cubeObj[i]->mesh);
 	}
 
-	columnoidMesh = initGenMesh(MESH_SQUARE_COLUMNOID, columnoidParams, MESH_OPTIONS_DEFAULT | MESH_OPTION_NO_POLYSORT | MESH_OPTION_ENABLE_LIGHTING, flatTex);
+	columnoidMesh = initGenMesh(MESH_SQUARE_COLUMNOID, columnoidParams, MESH_OPTIONS_DEFAULT | MESH_OPTION_NO_POLYSORT | MESH_OPTION_ENABLE_LIGHTING, panerTex);
 	for (i=0; i<27; ++i) {
 		columnoidObj[i] = initObject3D(columnoidMesh);
 	}
+
+	elongoidObj = initElongoidObject(flatTex);
 
 	cloudTex16 = initGenTexture(64, 64, 16, NULL, 1, TEXGEN_CLOUDS, false, NULL);
 	softObj = initMeshObject(MESH_SQUARE_COLUMNOID, columnoidParams, MESH_OPTION_RENDER_SOFT16 | MESH_OPTION_ENABLE_LIGHTING | MESH_OPTION_ENABLE_ENVMAP, cloudTex16);
@@ -292,6 +331,13 @@ static void setObjectsPosAndRot(int worldI, int dt)
 		break;
 
 		case 3:
+		{
+			setObject3Dpos(elongoidObj, 0, 2048, 0);
+			setObject3Drot(elongoidObj, 0, softRotY, 0);
+		}
+		break;
+
+		case 4:
 		{
 		}
 		break;
