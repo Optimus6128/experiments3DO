@@ -96,7 +96,7 @@ static void prepareTransformedMeshCELs(Mesh *mesh)
 	int *index = mesh->index;
 	CCB *cel = mesh->cel;
 	Vector3D *normal = mesh->polyNormal;
-	const bool skipPolyClipTests = (mesh->renderType & MESH_OPTION_NO_POLYCLIP);
+	const bool doPolyClipTests = !(mesh->renderType & MESH_OPTION_NO_POLYCLIP);
 
 	for (i=0; i<mesh->polysNum; ++i) {
 		const int polyNumPoints = mesh->poly[i].numPoints;
@@ -105,15 +105,13 @@ static void prepareTransformedMeshCELs(Mesh *mesh)
 		ScreenElement *sc2 = &screenElements[*(index+1)];
 		ScreenElement *sc3 = &screenElements[*(index+2)];
 		ScreenElement *sc4;
-		bool discardPoly = sc1->outside & sc2->outside & sc3->outside;
 		if (polyNumPoints == 3) {
 			sc4 = sc3;
 		} else {
 			sc4 = &screenElements[*(index+3)];
-			discardPoly &= sc4->outside;
 		}
 
-		if (!skipPolyClipTests && discardPoly) {
+		if (doPolyClipTests && sc1->outside && sc2->outside && sc3->outside && sc4->outside) {
 			cel->ccb_Flags |= CCB_SKIP;
 		} else {
 			if (polygonOrderTestCPU && (sc1->x - sc2->x) * (sc3->y - sc2->y) - (sc3->x - sc2->x) * (sc1->y - sc2->y) <= 0) {
@@ -225,6 +223,7 @@ static void translateAndProjectVertices(Object3D *obj, Camera *cam)
 	const int screenHeightHalf = screenHeight >> 1;
 	const int offsetX = screenOffsetX + screenWidthHalf;
 	const int offsetY = screenOffsetY + screenHeightHalf;
+	const bool doPolyClipTests = !(obj->mesh->renderType & MESH_OPTION_NO_POLYCLIP);
 
 	posFromCam[0] = obj->pos.x - cam->pos.x;
 	posFromCam[1] = obj->pos.y - cam->pos.y;
@@ -239,9 +238,11 @@ static void translateAndProjectVertices(Object3D *obj, Camera *cam)
 		int vz = screenVertices[i].z + posFromCam[2];
 		CLAMP(vz, cam->near, cam->far)
 
-		edgeX = (screenWidthHalf * vz) >> PROJ_SHR;
-		edgeY = (screenHeightHalf * vz) >> PROJ_SHR;
-		screenElements[i].outside = (vx < -edgeX || vx > edgeX || vy < -edgeY || vy > edgeY);
+		if (doPolyClipTests) {
+			edgeX = (screenWidthHalf * vz) >> PROJ_SHR;
+			edgeY = (screenHeightHalf * vz) >> PROJ_SHR;
+			screenElements[i].outside = (vx < -edgeX || vx > edgeX || vy < -edgeY || vy > edgeY);
+		}
 
 		screenElements[i].x = offsetX + (((vx << PROJ_SHR) * recZ[vz]) >> REC_FPSHR);
 		screenElements[i].y = offsetY - (((vy << PROJ_SHR) * recZ[vz]) >> REC_FPSHR);

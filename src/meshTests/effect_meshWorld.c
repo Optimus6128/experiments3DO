@@ -198,7 +198,7 @@ void effectMeshWorldInit()
 		setMeshPaletteIndex(i & 7, cubeObj[i]->mesh);
 	}
 
-	columnoidMesh = initGenMesh(MESH_SQUARE_COLUMNOID, columnoidParams, MESH_OPTIONS_DEFAULT | MESH_OPTION_ENABLE_LIGHTING, flatTex);
+	columnoidMesh = initGenMesh(MESH_SQUARE_COLUMNOID, columnoidParams, MESH_OPTIONS_DEFAULT | MESH_OPTION_NO_POLYSORT | MESH_OPTION_ENABLE_LIGHTING, flatTex);
 	for (i=0; i<27; ++i) {
 		columnoidObj[i] = initObject3D(columnoidMesh);
 	}
