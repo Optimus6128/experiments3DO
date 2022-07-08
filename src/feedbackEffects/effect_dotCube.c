@@ -49,7 +49,7 @@ static void setupDotcubeFx()
 			ubyte flatCol = 255;
 
 			flatTex = initGenTexture(64, 64, 1, flatPal, 6, TEXGEN_FLAT, true, &flatCol);
-			cubeMesh = initGenMesh(MESH_CUBE, DEFAULT_MESHGEN_PARAMS(256), MESH_OPTIONS_DEFAULT, flatTex);
+			cubeMesh = initGenMesh(MESH_CUBE, DEFAULT_MESHGEN_PARAMS(256), MESH_OPTIONS_DEFAULT | MESH_OPTION_NO_POLYCLIP, flatTex);
 			cubeObj = initObject3D(cubeMesh);
 
 			for (i=0; i<6; ++i) {

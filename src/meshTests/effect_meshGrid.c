@@ -123,7 +123,7 @@ void effectMeshGridInit()
 
 	setSpritePositionZoom(waterSpr, 296, 24, 256);
 
-	gridMesh = initGenMesh(MESH_GRID, params, MESH_OPTIONS_DEFAULT, gridTex);
+	gridMesh = initGenMesh(MESH_GRID, params, MESH_OPTION_FAST_MAPCEL, gridTex);
 	//setMeshTranslucency(gridMesh, true);
 	gridObj = initObject3D(gridMesh);
 

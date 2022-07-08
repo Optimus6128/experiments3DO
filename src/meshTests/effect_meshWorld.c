@@ -30,9 +30,13 @@ static Mesh *cubeMesh[8];
 static Object3D *gridObj;
 static Object3D *cubeObj[54];
 
+static Object3D *columnoidObj[27];
+static Mesh *columnoidMesh;
+
 static Object3D *softObj;
 static Texture *cloudTex16;
 
+static Texture *flatTex;
 static Texture *gridTex;
 static Texture *cubeTex;
 static uint16 gridPal[32];
@@ -65,13 +69,13 @@ static void shadeGrid()
 	}
 }
 
-static Object3D *initMeshObjectSoft(int meshgenId, const MeshgenParams params, int optionsFlags, Texture *tex)
+static Object3D *initMeshObject(int meshgenId, const MeshgenParams params, int optionsFlags, Texture *tex)
 {
 	Object3D *meshObj;
 
-	Mesh *softMesh = initGenMesh(meshgenId, params, optionsFlags, tex);
-	meshObj = initObject3D(softMesh);
-	setObject3Dmesh(meshObj, softMesh);
+	Mesh *mesh = initGenMesh(meshgenId, params, optionsFlags, tex);
+	meshObj = initObject3D(mesh);
+	//setObject3Dmesh(meshObj, mesh);
 
 	return meshObj;
 }
@@ -101,7 +105,7 @@ static MeshgenParams initMeshObjectParams(int meshgenId)
 			}
 			params = makeMeshgenSquareColumnoidParams(size, ptArray->points, numPoints, true, true);
 
-			//destroyPoint2Darray(ptArray); //why it crashes now?
+			//destroyPoint2Darray(ptArray); //must destroy it outside after initGenMesh :P
 		}
 		break;
 	}
@@ -141,6 +145,9 @@ static World *initMyWorld(int worldIndex, Camera *camera, Light *light)
 
 		case 2:
 		{
+			for (i=0; i<27; ++i) {
+				addObjectToWorld(columnoidObj[i], 1, true, world);
+			}
 		}
 		break;
 
@@ -157,10 +164,11 @@ static World *initMyWorld(int worldIndex, Camera *camera, Light *light)
 void effectMeshWorldInit()
 {
 	int i,x,y,z;
+	static uint8 flatCol = 0xFF;
 
 	MeshgenParams gridParams = makeMeshgenGridParams(2048, GRID_SIZE);
 	MeshgenParams cubeParams = DEFAULT_MESHGEN_PARAMS(128);
-	MeshgenParams softParams = initMeshObjectParams(MESH_SQUARE_COLUMNOID);
+	MeshgenParams columnoidParams = initMeshObjectParams(MESH_SQUARE_COLUMNOID);
 
 	setPalGradient(0,31, 1,3,7, 31,27,23, gridPal);
 
@@ -174,6 +182,7 @@ void effectMeshWorldInit()
 		}
 	}
 
+	flatTex = initGenTexture(8,8, 16, NULL, 0, TEXGEN_FLAT, false, &flatCol);
 	gridTex = initGenTexture(16,16, 8, gridPal, 1, TEXGEN_GRID, false, NULL);
 	cubeTex = initGenTexture(64,64, 8, cubePal, 8, TEXGEN_CLOUDS, false, NULL);
 
@@ -189,8 +198,13 @@ void effectMeshWorldInit()
 		setMeshPaletteIndex(i & 7, cubeObj[i]->mesh);
 	}
 
+	columnoidMesh = initGenMesh(MESH_SQUARE_COLUMNOID, columnoidParams, MESH_OPTIONS_DEFAULT | MESH_OPTION_ENABLE_LIGHTING, flatTex);
+	for (i=0; i<27; ++i) {
+		columnoidObj[i] = initObject3D(columnoidMesh);
+	}
+
 	cloudTex16 = initGenTexture(64, 64, 16, NULL, 1, TEXGEN_CLOUDS, false, NULL);
-	softObj = initMeshObjectSoft(MESH_SQUARE_COLUMNOID, softParams, MESH_OPTION_RENDER_SOFT16 | MESH_OPTION_ENABLE_LIGHTING | MESH_OPTION_ENABLE_ENVMAP, cloudTex16);
+	softObj = initMeshObject(MESH_SQUARE_COLUMNOID, columnoidParams, MESH_OPTION_RENDER_SOFT16 | MESH_OPTION_ENABLE_LIGHTING | MESH_OPTION_ENABLE_ENVMAP, cloudTex16);
 
 	shadeGrid();
 
@@ -264,6 +278,16 @@ static void setObjectsPosAndRot(int worldI, int dt)
 
 		case 2:
 		{
+			const int dist = 256;
+			for (k=-1; k<=1; k++) {
+				for (j=-1; j<=1; j++) {
+					for (i=-1; i<=1; i++) {
+						setObject3Dpos(columnoidObj[n], dist*i, dist + dist*j, dist*k);
+						setObject3Drot(columnoidObj[n], i*softRotX, ((j+1) & 3)*softRotY, k*softRotZ);
+						++n;
+					}
+				}
+			}
 		}
 		break;
 

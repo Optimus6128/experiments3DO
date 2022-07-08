@@ -30,6 +30,7 @@ typedef struct Viewer
 }Viewer;
 
 Camera *createCamera(void);
+void updateCameraMatrix(Camera *cam);
 void setCameraPos(Camera *cam, int px, int py, int pz);
 void setCameraRot(Camera *cam, int rx, int ry, int rz);
 

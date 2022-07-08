@@ -642,6 +642,7 @@ MeshgenParams makeMeshgenGridParams(int size, int divisions)
 
 	params.size = size;
 	params.divisions = divisions;
+	params.procPoints = NULL;
 
 	return params;
 }

@@ -6,8 +6,10 @@
 #include "tools.h"
 #include "input.h"
 
+#include "mathutil.h"
 #include "sprite_engine.h"
 #include "cel_packer.h"
+#include "engine_main.h"
 
 
 #define RAIN_LAYER_WIDTH 256
@@ -107,16 +109,15 @@ static void renderRain()
 	int i;
 	for (i=0; i<layersOnScreen; ++i) {
 		const int zoom = 512 - ((layersOnScreen - i) * 448) / layersOnScreen + ((2*time) & 127);
-		const int k = i;//rand() % layersOnScreen;
-		const int fade = (0x1F * (i + 1)) / layersOnScreen;
+		const int fade = shadeTable[i & (SHADE_TABLE_SIZE-1)];
 
 		if (showPackedRain) {
-			packedRain[k]->cel->ccb_PIXC = (fade << 8) | 0x80;
-			renderZoomRotateRainLayerSprite(packedRain[k], 0, 0, zoom, angle);
+			packedRain[i]->cel->ccb_PIXC = fade;
+			renderZoomRotateRainLayerSprite(packedRain[i], 0, 0, zoom, angle);
 		}
 		else {
-			unpackedRain[k]->cel->ccb_PIXC = (fade << 8) | 0x80;
-			renderZoomRotateRainLayerSprite(unpackedRain[k], 0, 0, zoom, angle);
+			unpackedRain[i]->cel->ccb_PIXC = fade;
+			renderZoomRotateRainLayerSprite(unpackedRain[i], 0, 0, zoom, angle);
 		}
 	}
 }

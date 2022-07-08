@@ -15,6 +15,11 @@ void setCameraRot(Camera *cam, int rx, int ry, int rz)
 	setVector3D(&cam->rot, rx, ry, rz);
 }
 
+void updateCameraMatrix(Camera *cam)
+{
+	createRotationMatrixValues(-cam->rot.x, -cam->rot.y, -cam->rot.z, (int*)cam->inverseRotMat);
+}
+
 Camera *createCamera()
 {
 	Camera *cam = (Camera*)AllocMem(sizeof(Camera), MEMTYPE_ANY);
@@ -24,6 +29,8 @@ Camera *createCamera()
 
 	cam->near = 16;
 	cam->far = NUM_REC_Z-1;
+
+	updateCameraMatrix(cam);
 
 	return cam;
 }

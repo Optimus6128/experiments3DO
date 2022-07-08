@@ -96,6 +96,7 @@ static void prepareTransformedMeshCELs(Mesh *mesh)
 	int *index = mesh->index;
 	CCB *cel = mesh->cel;
 	Vector3D *normal = mesh->polyNormal;
+	const bool skipPolyClipTests = (mesh->renderType & MESH_OPTION_NO_POLYCLIP);
 
 	for (i=0; i<mesh->polysNum; ++i) {
 		const int polyNumPoints = mesh->poly[i].numPoints;
@@ -112,7 +113,7 @@ static void prepareTransformedMeshCELs(Mesh *mesh)
 			discardPoly &= sc4->outside;
 		}
 
-		if (discardPoly) {
+		if (!skipPolyClipTests && discardPoly) {
 			cel->ccb_Flags |= CCB_SKIP;
 		} else {
 			if (polygonOrderTestCPU && (sc1->x - sc2->x) * (sc3->y - sc2->y) - (sc3->x - sc2->x) * (sc1->y - sc2->y) <= 0) {
@@ -244,10 +245,7 @@ static void translateAndProjectVertices(Object3D *obj, Camera *cam)
 
 		screenElements[i].x = offsetX + (((vx << PROJ_SHR) * recZ[vz]) >> REC_FPSHR);
 		screenElements[i].y = offsetY - (((vy << PROJ_SHR) * recZ[vz]) >> REC_FPSHR);
-		//screenElements[i].x = offsetX + (vx << PROJ_SHR) / vz;
-		//screenElements[i].y = offsetY - (vy << PROJ_SHR) / vz;
 		screenElements[i].z = vz;
-//		screenElements[i].outside = (screenElements[i].x < 0 || screenElements[i].x >= screenWidth || screenElements[i].y < 0  || screenElements[i].y >= screenHeight);
 	}
 }
 

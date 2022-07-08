@@ -224,7 +224,7 @@ void renderWorld(World *world)
 	int currentIndex = 0;
 	Camera *camera = world->cameras[world->activeCamera];
 
-	createRotationMatrixValues(-camera->rot.x, -camera->rot.y, -camera->rot.z, (int*)camera->inverseRotMat);
+	updateCameraMatrix(camera);
 
 	do {
 		const int currentSize = findCurrentPrioritySize(world, currentIndex);
