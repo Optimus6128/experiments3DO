@@ -27,6 +27,9 @@ static bool polygonOrderTestCPU = true;
 
 static void(*mapcelFunc)(CCB*, Point*, uint8);
 
+CCB *startPolyCel;
+CCB *endPolyCel;
+
 
 int shadeTable[SHADE_TABLE_SIZE] = {
  0x03010301,0x07010701,0x0B010B01,0x0F010F01,0x13011301,0x17011701,0x1B011B01,0x1F011F01,
@@ -93,11 +96,14 @@ void useCPUtestPolygonOrder(bool enable)
 static void prepareTransformedMeshCELs(Mesh *mesh)
 {
 	int i;
+	CCB *currentAddedCel = NULL;
+
 	int *index = mesh->index;
 	CCB *cel = mesh->cel;
 	Vector3D *normal = mesh->polyNormal;
 	const bool doPolyClipTests = !(mesh->renderType & MESH_OPTION_NO_POLYCLIP);
 
+	startPolyCel = NULL;
 	for (i=0; i<mesh->polysNum; ++i) {
 		const int polyNumPoints = mesh->poly[i].numPoints;
 
@@ -111,15 +117,17 @@ static void prepareTransformedMeshCELs(Mesh *mesh)
 			sc4 = &screenElements[*(index+3)];
 		}
 
-		if (doPolyClipTests && sc1->outside && sc2->outside && sc3->outside && sc4->outside) {
-			cel->ccb_Flags |= CCB_SKIP;
-		} else {
-			if (polygonOrderTestCPU && (sc1->x - sc2->x) * (sc3->y - sc2->y) - (sc3->x - sc2->x) * (sc1->y - sc2->y) <= 0) {
-				cel->ccb_Flags |= CCB_SKIP;
-			} else {
+		if (!(doPolyClipTests && sc1->outside && sc2->outside && sc3->outside && sc4->outside) && 
+			!(polygonOrderTestCPU && (sc1->x - sc2->x) * (sc3->y - sc2->y) - (sc3->x - sc2->x) * (sc1->y - sc2->y) <= 0)) {
+
 				Point qpt[4];
 
-				cel->ccb_Flags &= ~CCB_SKIP;
+				if (!startPolyCel) {
+					startPolyCel = currentAddedCel = cel;
+				} else {
+					currentAddedCel->ccb_NextPtr = cel;
+					currentAddedCel = cel;
+				}
 
 				if (mesh->renderType & MESH_OPTION_ENABLE_LIGHTING) {
 					int shade = -(getVector3Ddot(normal, &rotatedGlobalLightVec) >> NORMAL_SHIFT);
@@ -132,11 +140,15 @@ static void prepareTransformedMeshCELs(Mesh *mesh)
 				qpt[2].pt_X = sc3->x; qpt[2].pt_Y = sc3->y;
 				qpt[3].pt_X = sc4->x; qpt[3].pt_Y = sc4->y;
 				mapcelFunc(cel, qpt, mesh->poly[i].texShifts);
-			}
 		}
 		index += 4;
 		++cel;
 		++normal;
+	}
+
+	if (currentAddedCel) {
+		currentAddedCel->ccb_Flags |= CCB_LAST;
+		endPolyCel = currentAddedCel;
 	}
 }
 
@@ -285,7 +297,11 @@ static void renderTransformedMesh(Mesh *mesh)
 	useCPUtestPolygonOrder(mesh->renderType & MESH_OPTION_CPU_POLYTEST);
 
 	prepareTransformedMeshCELs(mesh);
-	drawCels(mesh->cel);
+
+	if (startPolyCel) {
+		drawCels(startPolyCel);
+		endPolyCel->ccb_Flags &= ~CCB_LAST;
+	}
 }
 
 // Multiple lights not implemented yet, just add stub arguments
