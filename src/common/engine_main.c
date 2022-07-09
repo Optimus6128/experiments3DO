@@ -11,6 +11,19 @@
 #include "system_graphics.h"
 
 
+#define Z_ORDER_SHIFT 4
+#define Z_ORDER_SIZE (NUM_REC_Z >> Z_ORDER_SHIFT)
+
+typedef struct zOrderListBucket
+{
+	CCB *first;
+	CCB *last;
+}zOrderListBucket;
+
+static zOrderListBucket zOrderList[Z_ORDER_SIZE];
+static int zIndexMin, zIndexMax;
+
+
 static Vertex screenVertices[MAX_VERTEX_ELEMENTS_NUM];
 static ScreenElement screenElements[MAX_VERTEX_ELEMENTS_NUM];
 static Vector3D rotatedNormals[MAX_VERTEX_ELEMENTS_NUM];
@@ -102,6 +115,12 @@ static void prepareTransformedMeshCELs(Mesh *mesh)
 	CCB *cel = mesh->cel;
 	Vector3D *normal = mesh->polyNormal;
 	const bool doPolyClipTests = !(mesh->renderType & MESH_OPTION_NO_POLYCLIP);
+	const bool doPolySort = !(mesh->renderType & MESH_OPTION_NO_POLYSORT);
+
+	if (doPolySort) {
+		zIndexMin = Z_ORDER_SIZE-1;
+		zIndexMax = 0;
+	}
 
 	startPolyCel = NULL;
 	for (i=0; i<mesh->polysNum; ++i) {
@@ -122,11 +141,25 @@ static void prepareTransformedMeshCELs(Mesh *mesh)
 
 				Point qpt[4];
 
-				if (!startPolyCel) {
-					startPolyCel = currentAddedCel = cel;
+				if (doPolySort) {	// prepare buckets and link CELs inside buckets
+					const int avgZ = (sc1->z + sc2->z + sc3->z + sc4->z) >> (2 + Z_ORDER_SHIFT);
+					zOrderListBucket *zBucket = &zOrderList[avgZ];
+
+					if (zBucket->first==NULL) {
+						if (avgZ < zIndexMin) zIndexMin = avgZ;
+						if (avgZ > zIndexMax) zIndexMax = avgZ;
+						zBucket->first = zBucket->last = cel;
+					} else {
+						cel->ccb_NextPtr = zBucket->first;
+						zBucket->first = cel;
+					}
 				} else {
-					currentAddedCel->ccb_NextPtr = cel;
-					currentAddedCel = cel;
+					if (!startPolyCel) {
+						startPolyCel = currentAddedCel = cel;
+					} else {
+						currentAddedCel->ccb_NextPtr = cel;
+						currentAddedCel = cel;
+					}
 				}
 
 				if (mesh->renderType & MESH_OPTION_ENABLE_LIGHTING) {
@@ -146,7 +179,25 @@ static void prepareTransformedMeshCELs(Mesh *mesh)
 		++normal;
 	}
 
-	if (currentAddedCel) {
+	if (doPolySort) {	// Iterate through zBucket min/max to link the last CELs to next first CELs in the populated buckets
+		zOrderListBucket *zBucket = &zOrderList[zIndexMax];
+		CCB *prevLastCel = zBucket->last;
+		int count = zIndexMax - zIndexMin;
+
+		startPolyCel = zBucket->first;
+		zBucket->first = NULL;
+
+		while(count-- > 0) {
+			--zBucket;
+			if (zBucket->first) {
+				prevLastCel->ccb_NextPtr = zBucket->first;
+				prevLastCel = zBucket->last;
+				zBucket->first = NULL;
+			}
+		};
+		endPolyCel = zBucket->last;
+		endPolyCel->ccb_Flags |= CCB_LAST;
+	} else if (currentAddedCel) {
 		currentAddedCel->ccb_Flags |= CCB_LAST;
 		endPolyCel = currentAddedCel;
 	}
@@ -183,9 +234,6 @@ static void calculateVertexEnvmapTC(Mesh *mesh)
 		if (normZ != 0) {
 			int normX = (rotatedNormals[i].x>>wShiftHalf) + texWidthHalf;
 			int normY = (rotatedNormals[i].y>>hShiftHalf) + texHeightHalf;
-
-//			normX &= (texWidth - 1);
-//			normY &= (texHeight - 1);
 
 			screenElements[i].u = normX;
 			screenElements[i].v = normY;
@@ -436,6 +484,7 @@ void setGlobalLight(Light *light)
 	globalLight = light;
 }
 
+
 void initEngine(bool usesSoftEngine)
 {
 	initEngineLUTs();
@@ -445,6 +494,8 @@ void initEngine(bool usesSoftEngine)
 
 	globalLight = createLight(true);
 	setLightDir(globalLight, -1,-1,1);
+
+	memset(zOrderList, 0, sizeof(zOrderListBucket) * Z_ORDER_SIZE);
 
 	if (usesSoftEngine) initEngineSoft();
 }

@@ -50,13 +50,12 @@ static bool autoRot = false;
 #define WORLDS_NUM 5
 
 static World *myWorld[WORLDS_NUM];
-static int worldIndex = 0;
+static int worldIndex = 3;
 
 
 static void shadeGrid()
 {
 	int x,y;
-	//Vertex *dstVertex = gridMesh->vertex;
 	CCB *cel = gridMesh->cel;
 
 	for (y=0; y<GRID_SIZE; ++y) {
@@ -134,7 +133,7 @@ static Object3D *initElongoidObject(Texture *tex)
 	}
 	params = makeMeshgenSquareColumnoidParams(size, ptArray->points, numPoints, true, true);
 
-	mesh = initGenMesh(MESH_SQUARE_COLUMNOID, params, MESH_OPTIONS_DEFAULT | MESH_OPTION_NO_POLYSORT | MESH_OPTION_ENABLE_LIGHTING, tex);
+	mesh = initGenMesh(MESH_SQUARE_COLUMNOID, params, MESH_OPTIONS_DEFAULT | MESH_OPTION_ENABLE_LIGHTING, tex);
 	meshObj = initObject3D(mesh);
 
 	destroyPoint2Darray(ptArray);
@@ -223,11 +222,11 @@ void effectMeshWorldInit()
 	gridTex = initGenTexture(16,16, 8, gridPal, 1, TEXGEN_GRID, false, NULL);
 	cubeTex = initGenTexture(64,64, 8, cubePal, 8, TEXGEN_CLOUDS, false, NULL);
 
-	gridMesh = initGenMesh(MESH_GRID, gridParams, MESH_OPTIONS_DEFAULT, gridTex);
+	gridMesh = initGenMesh(MESH_GRID, gridParams, MESH_OPTIONS_DEFAULT | MESH_OPTION_NO_POLYSORT, gridTex);
 	gridObj = initObject3D(gridMesh);
 
 	for (i=0; i<8; ++i) {
-		cubeMesh[i] = initGenMesh(MESH_CUBE, cubeParams, MESH_OPTIONS_DEFAULT | MESH_OPTION_ENABLE_LIGHTING, cubeTex);
+		cubeMesh[i] = initGenMesh(MESH_CUBE, cubeParams, MESH_OPTIONS_DEFAULT | MESH_OPTION_NO_POLYSORT | MESH_OPTION_ENABLE_LIGHTING, cubeTex);
 	}
 
 	for (i=0; i<54; ++i) {
@@ -248,7 +247,8 @@ void effectMeshWorldInit()
 	shadeGrid();
 
 	viewer = createViewer(64,192,64, 176);
-	setViewerPos(viewer, 0,96,-1024);
+	setViewerPos(viewer, 0,2048+2048+1024,-1024-128);
+	setViewerRot(viewer, -45,0,0);
 
 	light = createLight(true);
 
