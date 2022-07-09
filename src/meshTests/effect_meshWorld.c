@@ -34,6 +34,9 @@ static Object3D *elongoidObj;
 static Object3D *columnoidObj[27];
 static Mesh *columnoidMesh;
 
+static Object3D *loadedObj;
+static Mesh *loadedMesh;
+
 static Object3D *softObj;
 static Texture *cloudTex16;
 
@@ -150,7 +153,7 @@ static World *initMyWorld(int worldIndex, Camera *camera, Light *light)
 	addCameraToWorld(camera, world);
 	addLightToWorld(light, world);
 
-	addObjectToWorld(gridObj, 0, false, world);
+	//addObjectToWorld(gridObj, 0, false, world);
 
 	switch(worldIndex) {
 		case 0:
@@ -187,7 +190,7 @@ static World *initMyWorld(int worldIndex, Camera *camera, Light *light)
 
 		case 4:
 		{
-
+			addObjectToWorld(loadedObj, 1, true, world);
 		}
 		break;
 	}
@@ -231,7 +234,7 @@ void effectMeshWorldInit()
 
 	for (i=0; i<54; ++i) {
 		cubeObj[i] = initObject3D(cubeMesh[i&7]);
-		setMeshPaletteIndex(i & 7, cubeObj[i]->mesh);
+		setMeshPaletteIndex(cubeObj[i]->mesh, i & 7);
 	}
 
 	columnoidMesh = initGenMesh(MESH_SQUARE_COLUMNOID, columnoidParams, MESH_OPTIONS_DEFAULT | MESH_OPTION_NO_POLYSORT | MESH_OPTION_ENABLE_LIGHTING, panerTex);
@@ -241,6 +244,10 @@ void effectMeshWorldInit()
 
 	elongoidObj = initElongoidObject(flatTex);
 
+	loadedMesh = loadMesh("data/teapot.3do", false, MESH_OPTION_FAST_MAPCEL | MESH_OPTION_ENABLE_LIGHTING);
+	setMeshTexture(loadedMesh, flatTex);
+	loadedObj = initObject3D(loadedMesh);
+
 	cloudTex16 = initGenTexture(64, 64, 16, NULL, 1, TEXGEN_CLOUDS, false, NULL);
 	softObj = initMeshObject(MESH_SQUARE_COLUMNOID, columnoidParams, MESH_OPTION_RENDER_SOFT16 | MESH_OPTION_ENABLE_LIGHTING | MESH_OPTION_ENABLE_ENVMAP, cloudTex16);
 
@@ -248,7 +255,6 @@ void effectMeshWorldInit()
 
 	viewer = createViewer(64,192,64, 176);
 	setViewerPos(viewer, 0,96,-1024);
-	setViewerRot(viewer, 45,0,0);
 
 	light = createLight(true);
 
@@ -339,6 +345,8 @@ static void setObjectsPosAndRot(int worldI, int dt)
 
 		case 4:
 		{
+			setObject3Dpos(loadedObj, 0, 256, 0);
+			setObject3Drot(loadedObj, softRotX, softRotY, softRotZ);
 		}
 		break;
 	}

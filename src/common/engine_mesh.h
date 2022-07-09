@@ -59,7 +59,7 @@ typedef struct Mesh
 
 
 Mesh* initMesh(int verticesNum, int polysNum, int indicesNum, int linesNum, int renderType);
-// TODO: Mesh *loadMesh(char *path);
+Mesh *loadMesh(char *path, bool loadLines, int optionsFlags);
 
 void prepareCelList(Mesh *ms);
 
@@ -68,7 +68,10 @@ void setMeshTransparency(Mesh *ms, bool enable);
 void setMeshTranslucency(Mesh *ms, bool enable);
 void setMeshDottedDisplay(Mesh *ms, bool enable);
 
-void setMeshPaletteIndex(int palIndex, Mesh *ms);
+void setMeshTexture(Mesh *ms, Texture *tex);
+void setMeshPaletteIndex(Mesh *ms, int palIndex);
+
+void setAllPolyData(Mesh *ms, int numPoints, int textureId, int palId);
 
 void updateMeshCELs(Mesh *ms);
 

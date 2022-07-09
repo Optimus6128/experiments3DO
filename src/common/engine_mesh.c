@@ -6,7 +6,12 @@
 
 #include "engine_mesh.h"
 #include "engine_texture.h"
+#include "procgen_mesh.h"
 #include "mathutil.h"
+
+#include "filestream.h"
+#include "filestreamfunctions.h"
+
 
 static int getPaletteColorsNum(int bpp)
 {
@@ -80,7 +85,7 @@ void prepareCelList(Mesh *ms)
 
 			cel->ccb_PLUTPtr = (uint16*)&tex->pal[ms->poly[i].palId << getPaletteColorsNum(tex->bpp)];
 
-			cel->ccb_Flags &= ~CCB_ACW;	// Initially, ACW is off and only ACCW (counterclockwise) polygons are visible
+			//cel->ccb_Flags &= ~CCB_ACW;	// Initially, ACW is off and only ACCW (counterclockwise) polygons are visible
 
 			cel->ccb_Flags |= CCB_BGND;
 			if (!(tex->type & TEXTURE_TYPE_FEEDBACK))
@@ -91,7 +96,12 @@ void prepareCelList(Mesh *ms)
 	}
 }
 
-void setMeshPaletteIndex(int palIndex, Mesh *ms)
+void setMeshTexture(Mesh *ms, Texture *tex)
+{
+	ms->tex = tex;
+}
+
+void setMeshPaletteIndex(Mesh *ms, int palIndex)
 {
 	if (!(ms->renderType & MESH_OPTION_RENDER_SOFT)) {
 		int i;
@@ -168,6 +178,19 @@ void setMeshDottedDisplay(Mesh *ms, bool enable)
 	}
 }
 
+void setAllPolyData(Mesh *ms, int numPoints, int textureId, int palId)
+{
+	PolyData *poly = ms->poly;
+
+	int i;
+	for (i=0; i<ms->polysNum; i++) {
+		poly->numPoints = numPoints;
+		poly->textureId = textureId;
+		poly->palId = palId;
+		++poly;
+	}
+}
+
 Mesh* initMesh(int verticesNum, int polysNum, int indicesNum, int linesNum, int renderType)
 {
 	Mesh *ms = (Mesh*)AllocMem(sizeof(Mesh), MEMTYPE_ANY);
@@ -192,5 +215,79 @@ Mesh* initMesh(int verticesNum, int polysNum, int indicesNum, int linesNum, int 
 	}
 	ms->renderType = renderType;
 
+	return ms;
+}
+
+
+#define SHORT_ENDIAN_FLIP(v) (uint16)((((v) >> 8) & 255) | ((v) << 8))
+
+// This loads only my .3DO basic binary format from my GP32/GP2X demos for now. I don't even check for extension atm.
+Mesh *loadMesh(char *path, bool loadLines, int optionsFlags)
+{
+	Stream *CDstreamMesh;
+	Mesh *ms = NULL;
+
+	CDstreamMesh = OpenDiskStream(path, 0);
+
+	if (CDstreamMesh) {
+		uint16 elementsNum[3];
+		int verticesNum, polysNum, linesNum = 0;
+		int i, tempBuffSize;
+
+		char *tempBuffSrc;
+		uint8 *tempBuff8;
+		uint16 *tempBuff16;
+
+		ReadDiskStream(CDstreamMesh, (char*)elementsNum, 3 * sizeof(uint16));
+
+		verticesNum = SHORT_ENDIAN_FLIP(elementsNum[0]);
+		polysNum = SHORT_ENDIAN_FLIP(elementsNum[2]);
+		if (loadLines) {
+			linesNum = SHORT_ENDIAN_FLIP(elementsNum[1]);
+		}
+
+		ms = initMesh(verticesNum, polysNum, 3*polysNum, linesNum, optionsFlags);
+
+		tempBuffSize = verticesNum * 3;
+		tempBuffSrc = AllocMem(tempBuffSize, MEMTYPE_ANY);
+		ReadDiskStream(CDstreamMesh, tempBuffSrc, tempBuffSize);
+		tempBuff8 = (uint8*)tempBuffSrc;
+		for (i=0; i<verticesNum; ++i) {
+			ms->vertex[i].x = *tempBuff8++ - 128;
+			ms->vertex[i].y = *tempBuff8++ - 128;
+			ms->vertex[i].z = *tempBuff8++ - 128;
+		}
+		FreeMem(tempBuffSrc, tempBuffSize);
+
+		tempBuffSize = 2*linesNum * sizeof(uint16);
+		if (loadLines) {
+			tempBuffSrc = AllocMem(tempBuffSize, MEMTYPE_ANY);
+			ReadDiskStream(CDstreamMesh, tempBuffSrc, tempBuffSize);
+			tempBuff16 = (uint16*)tempBuffSrc;
+			for (i=0; i<2*linesNum; ++i) {
+				ms->lineIndex[i] = SHORT_ENDIAN_FLIP(tempBuff16[i]);
+			}
+			FreeMem(tempBuffSrc, tempBuffSize);
+		} else {
+			SeekDiskStream(CDstreamMesh, tempBuffSize, SEEK_CUR);
+		}
+
+		tempBuffSize = 3*polysNum * sizeof(uint16);
+		tempBuffSrc = AllocMem(tempBuffSize, MEMTYPE_ANY);
+		ReadDiskStream(CDstreamMesh, tempBuffSrc, tempBuffSize);
+		tempBuff16 = (uint16*)tempBuffSrc;
+		for (i=0; i<3*polysNum; ++i) {
+			ms->index[i] = SHORT_ENDIAN_FLIP(tempBuff16[i]);
+		}
+		FreeMem(tempBuffSrc, tempBuffSize);
+
+		CloseDiskStream(CDstreamMesh);
+
+		setAllPolyData(ms, 3, 0, 0);
+
+		calculateMeshNormals(ms);
+
+		prepareCelList(ms);
+	}
 	return ms;
 }

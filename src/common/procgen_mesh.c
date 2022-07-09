@@ -129,20 +129,6 @@ static void addVertexNormal(int x, int y, int z)
 	normal->z = z;
 }
 
-static void setAllPolyData(Mesh *ms, int numPoints, int textureId, int palId)
-{
-	PolyData *poly = ms->poly;
-
-	int i;
-	for (i=0; i<ms->polysNum; i++) {
-		poly->numPoints = numPoints;
-		poly->textureId = textureId;
-		poly->palId = palId;
-		++poly;
-	}
-}
-
-
 static void generateWireframe(Mesh *ms)
 {
 	int i,j,n;
@@ -209,7 +195,6 @@ static void calculateVertexNormals(Mesh *ms)
 	int i,j;
 	int *index = ms->index;
 
-	//ConvergingNormals *convNormalsSet = (ConvergingNormals*)AllocMem(ms->verticesNum * sizeof(ConvergingNormals), MEMTYPE_TRACKSIZE);
 	static ConvergingNormals convNormalsSet[256];
 
 	for (i=0; i<ms->verticesNum; ++i) {
@@ -247,11 +232,9 @@ static void calculateVertexNormals(Mesh *ms)
 		normalSum.z /= num;
 		addVertexNormal(normalSum.x, normalSum.y, normalSum.z);
 	}
-
-	//FreeMem(convNormalsSet, -1);
 }
 
-static void calculateNormals(Mesh *ms)
+void calculateMeshNormals(Mesh *ms)
 {
 	calculatePolyNormals(ms);
 	if (ms->renderType & MESH_OPTION_RENDER_SOFT) calculateVertexNormals(ms);
@@ -448,7 +431,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 
 			setAllPolyData(ms,3,0,0);
 
-			calculateNormals(ms);
+			calculateMeshNormals(ms);
 		}
 		break;
 
@@ -608,7 +591,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 
 			setAllPolyData(ms,4,0,0);
 
-			calculateNormals(ms);
+			calculateMeshNormals(ms);
 
 			generateWireframe(ms);
 		}
