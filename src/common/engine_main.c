@@ -182,7 +182,9 @@ static void prepareTransformedMeshCELs(Mesh *mesh)
 	if (doPolySort) {	// Iterate through zBucket min/max to link the last CELs to next first CELs in the populated buckets
 		zOrderListBucket *zBucket = &zOrderList[zIndexMax];
 		CCB *prevLastCel = zBucket->last;
+
 		int count = zIndexMax - zIndexMin;
+		if (count < 0) return;
 
 		startPolyCel = zBucket->first;
 		zBucket->first = NULL;

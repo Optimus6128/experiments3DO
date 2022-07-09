@@ -247,8 +247,8 @@ void effectMeshWorldInit()
 	shadeGrid();
 
 	viewer = createViewer(64,192,64, 176);
-	setViewerPos(viewer, 0,2048+2048+1024,-1024-128);
-	setViewerRot(viewer, -45,0,0);
+	setViewerPos(viewer, 0,96,-1024);
+	setViewerRot(viewer, 45,0,0);
 
 	light = createLight(true);
 
