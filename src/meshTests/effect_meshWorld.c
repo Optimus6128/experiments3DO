@@ -80,7 +80,6 @@ static Object3D *initMeshObject(int meshgenId, const MeshgenParams params, int o
 
 	Mesh *mesh = initGenMesh(meshgenId, params, optionsFlags, tex);
 	meshObj = initObject3D(mesh);
-	//setObject3Dmesh(meshObj, mesh);
 
 	return meshObj;
 }
@@ -154,7 +153,7 @@ static World *initMyWorld(int worldIndex, Camera *camera, Light *light)
 	addCameraToWorld(camera, world);
 	addLightToWorld(light, world);
 
-	//addObjectToWorld(gridObj, 0, false, world);
+	addObjectToWorld(gridObj, 0, false, world);
 
 	switch(worldIndex) {
 		case 0:
@@ -211,7 +210,7 @@ void effectMeshWorldInit()
 
 	setPalGradient(0,31, 1,3,7, 31,27,23, gridPal);
 	
-	setBackgroundColor(0x12341234);
+	//setBackgroundColor(0x12341234);
 
 	i = 0;
 	for (z=0; z<=1; ++z) {
@@ -248,6 +247,7 @@ void effectMeshWorldInit()
 	elongoidObj = initElongoidObject(flatTex);
 
 	loadedMesh = loadMesh("data/teapot.3do", false, MESH_OPTION_FAST_MAPCEL | MESH_OPTION_ENABLE_LIGHTING, flatTex);
+	setMeshPolygonOrder(loadedMesh, true, false);
 	loadedObj = initObject3D(loadedMesh);
 
 	cloudTex16 = initGenTexture(64, 64, 16, NULL, 1, TEXGEN_CLOUDS, false, NULL);

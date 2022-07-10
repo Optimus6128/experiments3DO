@@ -495,7 +495,7 @@ void initEngine(bool usesSoftEngine)
 	useMapCelFunctionFast(true);
 
 	globalLight = createLight(true);
-	setLightDir(globalLight, -1,-1,1);
+	setLightDir(globalLight, 0,0,1);
 
 	memset(zOrderList, 0, sizeof(zOrderListBucket) * Z_ORDER_SIZE);
 
