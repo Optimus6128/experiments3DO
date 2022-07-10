@@ -132,8 +132,7 @@ static void initSemiSoftGouraud()
 
 	for (c0=0; c0<GRADIENT_SHADES; ++c0) {
 		for (c1=0; c1<GRADIENT_SHADES; ++c1) {
-			const int repDiv = divTab[GRADIENT_LENGTH + DIV_TAB_SIZE / 2];
-			const int dc = ((c1 - c0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
+			const int dc = ((c1 - c0) << FP_BASE) / GRADIENT_LENGTH;
 			int fc = INT_TO_FIXED(c0, FP_BASE);
 			for (x=0; x<GRADIENT_LENGTH; ++x) {
 				int c = FIXED_TO_INT(fc, FP_BASE);
@@ -429,7 +428,7 @@ static void prepareEdgeListGouraudEnvmap(ScreenElement *e0, ScreenElement *e1)
 static void fillGouraudEdges8_SemiSoft(int y0, int y1)
 {
 	Edge *le = &leftEdge[y0];
-	Edge *re = &rightEdge[y1];
+	Edge *re = &rightEdge[y0];
 
 	int y;
 	CCB *firstCel = *currentScanlineCel8;
@@ -1079,9 +1078,9 @@ static void prepareMeshSoftRender(Mesh *ms, ScreenElement *elements)
 			if (useFastGouraud) {
 				fillEdges = fillGouraudEdges8_SemiSoft;
 			} else {
-			fillEdges = fillGouraudEdges16;
-			if (ms->renderType & MESH_OPTION_RENDER_SOFT8) {
-				fillEdges = fillGouraudEdges8;
+				fillEdges = fillGouraudEdges16;
+				if (ms->renderType & MESH_OPTION_RENDER_SOFT8) {
+					fillEdges = fillGouraudEdges8;
 				}
 			}
 		}
