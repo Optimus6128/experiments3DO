@@ -1,6 +1,7 @@
 #include "core.h"
 
 #include "effect_meshWorld.h"
+#include "effect_meshLoad.h"
 
 #include "system_graphics.h"
 #include "tools.h"
@@ -209,6 +210,8 @@ void effectMeshWorldInit()
 	MeshgenParams columnoidParams = initMeshObjectParams(MESH_SQUARE_COLUMNOID);
 
 	setPalGradient(0,31, 1,3,7, 31,27,23, gridPal);
+	
+	setBackgroundColor(0x12341234);
 
 	i = 0;
 	for (z=0; z<=1; ++z) {
@@ -244,8 +247,7 @@ void effectMeshWorldInit()
 
 	elongoidObj = initElongoidObject(flatTex);
 
-	loadedMesh = loadMesh("data/teapot.3do", false, MESH_OPTION_FAST_MAPCEL | MESH_OPTION_ENABLE_LIGHTING);
-	setMeshTexture(loadedMesh, flatTex);
+	loadedMesh = loadMesh("data/teapot.3do", false, MESH_OPTION_FAST_MAPCEL | MESH_OPTION_ENABLE_LIGHTING, flatTex);
 	loadedObj = initObject3D(loadedMesh);
 
 	cloudTex16 = initGenTexture(64, 64, 16, NULL, 1, TEXGEN_CLOUDS, false, NULL);

@@ -5,7 +5,7 @@
 #include "engine_view.h"
 #include "engine_mesh.h"
 
-#define MAX_VERTEX_ELEMENTS_NUM 2048
+#define MAX_VERTEX_ELEMENTS_NUM (6144+1024)
 
 #define PROJ_SHR 8
 

@@ -85,7 +85,7 @@ void prepareCelList(Mesh *ms)
 
 			cel->ccb_PLUTPtr = (uint16*)&tex->pal[ms->poly[i].palId << getPaletteColorsNum(tex->bpp)];
 
-			//cel->ccb_Flags &= ~CCB_ACW;	// Initially, ACW is off and only ACCW (counterclockwise) polygons are visible
+			cel->ccb_Flags &= ~CCB_ACW;	// Initially, ACW is off and only ACCW (counterclockwise) polygons are visible
 
 			cel->ccb_Flags |= CCB_BGND;
 			if (!(tex->type & TEXTURE_TYPE_FEEDBACK))
@@ -221,8 +221,10 @@ Mesh* initMesh(int verticesNum, int polysNum, int indicesNum, int linesNum, int 
 
 #define SHORT_ENDIAN_FLIP(v) (uint16)((((v) >> 8) & 255) | ((v) << 8))
 
+static char tempBuffSrc[8192];
+
 // This loads only my .3DO basic binary format from my GP32/GP2X demos for now. I don't even check for extension atm.
-Mesh *loadMesh(char *path, bool loadLines, int optionsFlags)
+Mesh *loadMesh(char *path, bool loadLines, int optionsFlags, Texture *tex)
 {
 	Stream *CDstreamMesh;
 	Mesh *ms = NULL;
@@ -231,10 +233,10 @@ Mesh *loadMesh(char *path, bool loadLines, int optionsFlags)
 
 	if (CDstreamMesh) {
 		uint16 elementsNum[3];
-		int verticesNum, polysNum, linesNum = 0;
+		int verticesNum, polysNum, linesNum;
 		int i, tempBuffSize;
 
-		char *tempBuffSrc;
+		//char *tempBuffSrc;
 		uint8 *tempBuff8;
 		uint16 *tempBuff16;
 
@@ -242,46 +244,43 @@ Mesh *loadMesh(char *path, bool loadLines, int optionsFlags)
 
 		verticesNum = SHORT_ENDIAN_FLIP(elementsNum[0]);
 		polysNum = SHORT_ENDIAN_FLIP(elementsNum[2]);
-		if (loadLines) {
-			linesNum = SHORT_ENDIAN_FLIP(elementsNum[1]);
-		}
+		linesNum = SHORT_ENDIAN_FLIP(elementsNum[1]);
 
-		ms = initMesh(verticesNum, polysNum, 3*polysNum, linesNum, optionsFlags);
+		ms = initMesh(verticesNum, polysNum, 3*polysNum, linesNum * (int)loadLines, optionsFlags);
+		ms->tex = tex;
 
 		tempBuffSize = verticesNum * 3;
-		tempBuffSrc = AllocMem(tempBuffSize, MEMTYPE_ANY);
+		//tempBuffSrc = AllocMem(tempBuffSize, MEMTYPE_ANY);
 		ReadDiskStream(CDstreamMesh, tempBuffSrc, tempBuffSize);
 		tempBuff8 = (uint8*)tempBuffSrc;
 		for (i=0; i<verticesNum; ++i) {
-			ms->vertex[i].x = *tempBuff8++ - 128;
-			ms->vertex[i].y = *tempBuff8++ - 128;
-			ms->vertex[i].z = *tempBuff8++ - 128;
+			ms->vertex[i].x = 127 - *tempBuff8++;
+			ms->vertex[i].y = 127 - *tempBuff8++;
+			ms->vertex[i].z = 127 - *tempBuff8++;
 		}
-		FreeMem(tempBuffSrc, tempBuffSize);
+		//FreeMem(tempBuffSrc, tempBuffSize);
 
 		tempBuffSize = 2*linesNum * sizeof(uint16);
 		if (loadLines) {
-			tempBuffSrc = AllocMem(tempBuffSize, MEMTYPE_ANY);
+			//tempBuffSrc = AllocMem(tempBuffSize, MEMTYPE_ANY);
 			ReadDiskStream(CDstreamMesh, tempBuffSrc, tempBuffSize);
 			tempBuff16 = (uint16*)tempBuffSrc;
 			for (i=0; i<2*linesNum; ++i) {
 				ms->lineIndex[i] = SHORT_ENDIAN_FLIP(tempBuff16[i]);
 			}
-			FreeMem(tempBuffSrc, tempBuffSize);
+			//FreeMem(tempBuffSrc, tempBuffSize);
 		} else {
 			SeekDiskStream(CDstreamMesh, tempBuffSize, SEEK_CUR);
 		}
 
 		tempBuffSize = 3*polysNum * sizeof(uint16);
-		tempBuffSrc = AllocMem(tempBuffSize, MEMTYPE_ANY);
+		//tempBuffSrc = AllocMem(tempBuffSize, MEMTYPE_ANY);
 		ReadDiskStream(CDstreamMesh, tempBuffSrc, tempBuffSize);
 		tempBuff16 = (uint16*)tempBuffSrc;
 		for (i=0; i<3*polysNum; ++i) {
 			ms->index[i] = SHORT_ENDIAN_FLIP(tempBuff16[i]);
 		}
-		FreeMem(tempBuffSrc, tempBuffSize);
-
-		CloseDiskStream(CDstreamMesh);
+		//FreeMem(tempBuffSrc, tempBuffSize);
 
 		setAllPolyData(ms, 3, 0, 0);
 
@@ -289,5 +288,8 @@ Mesh *loadMesh(char *path, bool loadLines, int optionsFlags)
 
 		prepareCelList(ms);
 	}
+
+	//CloseDiskStream(CDstreamMesh);
+
 	return ms;
 }

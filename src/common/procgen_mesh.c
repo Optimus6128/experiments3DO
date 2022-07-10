@@ -236,6 +236,8 @@ static void calculateVertexNormals(Mesh *ms)
 
 void calculateMeshNormals(Mesh *ms)
 {
+	resetCurrentPolyNormal(ms);
+	resetCurrentVertexNormal(ms);
 	calculatePolyNormals(ms);
 	if (ms->renderType & MESH_OPTION_RENDER_SOFT) calculateVertexNormals(ms);
 }

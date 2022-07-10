@@ -10,10 +10,12 @@ int recZ[NUM_REC_Z];
 
 
 int isqrt(int x) {
-    int q = 1, r = 0;
+    long long int q = 1;	// very high numbers over ((1<<30)-1) will freeze in while if this wasn't 64bit
+	int r = 0;
     while (q <= x) {
         q <<= 2;
     }
+
     while (q > 1) {
         int t;
         q >>= 2;

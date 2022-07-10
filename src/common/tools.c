@@ -183,7 +183,7 @@ void drawZoomedText(int xtp, int ytp, char *text, int zoom)
 	--i;
 	textCel[i]->ccb_Flags |= CCB_LAST;
 	drawCels(textCel[0]);
-	textCel[i]->ccb_Flags ^= CCB_LAST;
+	textCel[i]->ccb_Flags &= ~CCB_LAST;
 }
 
 void drawTextX2(int xtp, int ytp, char *text)

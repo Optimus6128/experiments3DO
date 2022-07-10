@@ -174,7 +174,7 @@ static void prepareTransformedMeshCELs(Mesh *mesh)
 				qpt[3].pt_X = sc4->x; qpt[3].pt_Y = sc4->y;
 				mapcelFunc(cel, qpt, mesh->poly[i].texShifts);
 		}
-		index += 4;
+		index += polyNumPoints;
 		++cel;
 		++normal;
 	}

@@ -58,8 +58,9 @@ typedef struct Mesh
 }Mesh;
 
 
-Mesh* initMesh(int verticesNum, int polysNum, int indicesNum, int linesNum, int renderType);
-Mesh *loadMesh(char *path, bool loadLines, int optionsFlags);
+Mesh *initMesh(int verticesNum, int polysNum, int indicesNum, int linesNum, int renderType);
+Mesh *loadMesh(char *path, bool loadLines, int optionsFlags, Texture *tex);
+Mesh *loadMeshFuckMe(char *data, bool loadLines, int optionsFlags, Texture *tex);
 
 void prepareCelList(Mesh *ms);
 
