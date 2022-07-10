@@ -7,6 +7,7 @@
 #include "input.h"
 
 #include "mathutil.h"
+#include "file_utils.h"
 
 #include "engine_main.h"
 #include "engine_mesh.h"
@@ -90,6 +91,9 @@ void effectMeshLoadInit()
 	addCameraToWorld(viewer->camera, myWorld);
 	addLightToWorld(light, myWorld);
 	addObjectToWorld(loadedObj, 1, true, myWorld);
+
+	// Commented out this in loadMesh as it broke things (unknown API/compiler bugs?) but here it's ok although maybe not necessary
+	closeFileStream();
 }
 
 static void inputScript(int dt)
@@ -119,9 +123,9 @@ static void setObjectsPosAndRot(int dt)
 	drawNumber(32,64, loadedMesh->linesNum);*/
 
 	if (autoRot) {
-		softRotX += 1;
+		//softRotX += 1;
 		softRotY += 2;
-		softRotZ -= 1;
+		//softRotZ -= 1;
 	}
 }
 

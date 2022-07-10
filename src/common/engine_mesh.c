@@ -8,9 +8,7 @@
 #include "engine_texture.h"
 #include "procgen_mesh.h"
 #include "mathutil.h"
-
-#include "filestream.h"
-#include "filestreamfunctions.h"
+#include "file_utils.h"
 
 
 static int getPaletteColorsNum(int bpp)
@@ -218,78 +216,64 @@ Mesh* initMesh(int verticesNum, int polysNum, int indicesNum, int linesNum, int 
 	return ms;
 }
 
-
-#define SHORT_ENDIAN_FLIP(v) (uint16)((((v) >> 8) & 255) | ((v) << 8))
-
-static char tempBuffSrc[8192];
-
-// This loads only my .3DO basic binary format from my GP32/GP2X demos for now. I don't even check for extension atm.
 Mesh *loadMesh(char *path, bool loadLines, int optionsFlags, Texture *tex)
 {
-	Stream *CDstreamMesh;
+	int i;
+	int verticesNum, polysNum, linesNum, tempBuffSize;
+
+	char *tempBuffSrc;
+	uint8 *tempBuff8;
+	uint16 *tempBuff16;
+
 	Mesh *ms = NULL;
 
-	CDstreamMesh = OpenDiskStream(path, 0);
 
-	if (CDstreamMesh) {
-		uint16 elementsNum[3];
-		int verticesNum, polysNum, linesNum;
-		int i, tempBuffSize;
+	openFileStream(path); 
 
-		//char *tempBuffSrc;
-		uint8 *tempBuff8;
-		uint16 *tempBuff16;
+	tempBuffSrc = readSequentialBytesFromFile(6);
+	tempBuff16 = (uint16*)tempBuffSrc;
 
-		ReadDiskStream(CDstreamMesh, (char*)elementsNum, 3 * sizeof(uint16));
+	verticesNum = SHORT_ENDIAN_FLIP(tempBuff16[0]);
+	polysNum = SHORT_ENDIAN_FLIP(tempBuff16[2]);
+	linesNum = SHORT_ENDIAN_FLIP(tempBuff16[1]);
+	tempBuffSize = verticesNum * 3;
 
-		verticesNum = SHORT_ENDIAN_FLIP(elementsNum[0]);
-		polysNum = SHORT_ENDIAN_FLIP(elementsNum[2]);
-		linesNum = SHORT_ENDIAN_FLIP(elementsNum[1]);
 
-		ms = initMesh(verticesNum, polysNum, 3*polysNum, linesNum * (int)loadLines, optionsFlags);
-		ms->tex = tex;
+	ms = initMesh(verticesNum, polysNum, 3*polysNum, linesNum * (int)loadLines, optionsFlags);
+	ms->tex = tex;
 
-		tempBuffSize = verticesNum * 3;
-		//tempBuffSrc = AllocMem(tempBuffSize, MEMTYPE_ANY);
-		ReadDiskStream(CDstreamMesh, tempBuffSrc, tempBuffSize);
-		tempBuff8 = (uint8*)tempBuffSrc;
-		for (i=0; i<verticesNum; ++i) {
-			ms->vertex[i].x = 127 - *tempBuff8++;
-			ms->vertex[i].y = 127 - *tempBuff8++;
-			ms->vertex[i].z = 127 - *tempBuff8++;
-		}
-		//FreeMem(tempBuffSrc, tempBuffSize);
-
-		tempBuffSize = 2*linesNum * sizeof(uint16);
-		if (loadLines) {
-			//tempBuffSrc = AllocMem(tempBuffSize, MEMTYPE_ANY);
-			ReadDiskStream(CDstreamMesh, tempBuffSrc, tempBuffSize);
-			tempBuff16 = (uint16*)tempBuffSrc;
-			for (i=0; i<2*linesNum; ++i) {
-				ms->lineIndex[i] = SHORT_ENDIAN_FLIP(tempBuff16[i]);
-			}
-			//FreeMem(tempBuffSrc, tempBuffSize);
-		} else {
-			SeekDiskStream(CDstreamMesh, tempBuffSize, SEEK_CUR);
-		}
-
-		tempBuffSize = 3*polysNum * sizeof(uint16);
-		//tempBuffSrc = AllocMem(tempBuffSize, MEMTYPE_ANY);
-		ReadDiskStream(CDstreamMesh, tempBuffSrc, tempBuffSize);
-		tempBuff16 = (uint16*)tempBuffSrc;
-		for (i=0; i<3*polysNum; ++i) {
-			ms->index[i] = SHORT_ENDIAN_FLIP(tempBuff16[i]);
-		}
-		//FreeMem(tempBuffSrc, tempBuffSize);
-
-		setAllPolyData(ms, 3, 0, 0);
-
-		calculateMeshNormals(ms);
-
-		prepareCelList(ms);
+	tempBuffSrc = readSequentialBytesFromFile(tempBuffSize);
+	tempBuff8 = (uint8*)tempBuffSrc;
+	for (i=0; i<verticesNum; ++i) {
+		ms->vertex[i].x = 127 - *tempBuff8++;
+		ms->vertex[i].y = 127 - *tempBuff8++;
+		ms->vertex[i].z = 127 - *tempBuff8++;
 	}
 
-	//CloseDiskStream(CDstreamMesh);
+	tempBuffSize = 2*linesNum * sizeof(uint16);
+	if (loadLines) {
+		tempBuffSrc = readSequentialBytesFromFile(tempBuffSize);
+		tempBuff16 = (uint16*)tempBuffSrc;
+		for (i=0; i<2*linesNum; ++i) {
+			ms->lineIndex[i] = SHORT_ENDIAN_FLIP(tempBuff16[i]);
+		}
+	} else {
+		moveFilePointerRelative(tempBuffSize);
+	}
 
+	tempBuffSize = 3*polysNum * sizeof(uint16);
+	tempBuffSrc = readSequentialBytesFromFile(tempBuffSize);
+	tempBuff16 = (uint16*)tempBuffSrc;
+	for (i=0; i<3*polysNum; ++i) {
+		ms->index[i] = SHORT_ENDIAN_FLIP(tempBuff16[i]);
+	}
+
+	setAllPolyData(ms, 3, 0, 0);
+	calculateMeshNormals(ms);
+	prepareCelList(ms);
+
+	// Commenting out this will make things fail for uknown reasons
+	//closeFileStream();
+	
 	return ms;
 }
