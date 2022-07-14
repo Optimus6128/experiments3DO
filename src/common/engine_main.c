@@ -164,7 +164,8 @@ static void prepareTransformedMeshCELs(Mesh *mesh)
 
 				if (mesh->renderType & MESH_OPTION_ENABLE_LIGHTING) {
 					int shade = -(getVector3Ddot(normal, &rotatedGlobalLightVec) >> NORMAL_SHIFT);
-					CLAMP(shade,(1<<(NORMAL_SHIFT-4)),((1<<NORMAL_SHIFT)-1))
+					//CLAMP(shade,(1<<(NORMAL_SHIFT-4)),((1<<NORMAL_SHIFT)-1))
+					CLAMP(shade,(1<<(NORMAL_SHIFT-3)),((1<<NORMAL_SHIFT)-1))
 					cel->ccb_PIXC = shadeTable[shade >> (NORMAL_SHIFT-SHADE_TABLE_SHR)];
 				}
 
@@ -495,7 +496,7 @@ void initEngine(bool usesSoftEngine)
 	useMapCelFunctionFast(true);
 
 	globalLight = createLight(true);
-	setLightDir(globalLight, 0,0,1);
+	setLightDir(globalLight, -3,-2,1);
 
 	memset(zOrderList, 0, sizeof(zOrderListBucket) * Z_ORDER_SIZE);
 

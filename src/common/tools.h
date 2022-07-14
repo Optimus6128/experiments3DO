@@ -13,9 +13,9 @@
 
 #define TEXT_ZOOM_SHR 8
 
-#define CLAMP(value,min,max) if (value<min) value=min; if (value>max) value=max;
-#define CLAMP_LEFT(value,min) if (value<min) value=min;
-#define CLAMP_RIGHT(value,max) if (value>max) value=max;
+#define CLAMP(value,min,max) if ((value)<(min)) (value)=(min); if ((value)>(max)) (value)=(max);
+#define CLAMP_LEFT(value,min) if ((value)<(min)) (value)=(min);
+#define CLAMP_RIGHT(value,max) if ((value)>(max)) (value)=(max);
 
 
 #include "graphics.h"

@@ -35,8 +35,12 @@ static Object3D *elongoidObj;
 static Object3D *columnoidObj[27];
 static Mesh *columnoidMesh;
 
-static Object3D *loadedObj;
-static Mesh *loadedMesh;
+static Object3D *columnBigObj[4];
+static Object3D *columnSmallObj;
+static Object3D *templeRoofObj;
+static Mesh *columnBigMesh;
+static Mesh *columnSmallMesh;
+static Mesh *templeRoofMesh;
 
 static Object3D *softObj;
 static Texture *cloudTex16;
@@ -99,7 +103,7 @@ static MeshgenParams initMeshObjectParams(int meshgenId)
 		{
 			int i;
 			const int numPoints = 8;
-			const int size = 64;
+			const int size = 32;
 			Point2Darray *ptArray = initPoint2Darray(numPoints);
 
 			for (i=0; i<numPoints; ++i) {
@@ -142,6 +146,39 @@ static Object3D *initElongoidObject(Texture *tex)
 	destroyPoint2Darray(ptArray);
 
 	return meshObj;
+}
+
+static MeshgenParams initColumnParams(bool isBig)
+{
+	MeshgenParams params;
+
+	const int r = 36;
+	const int r2 = 28;
+	const int scaler = 20;
+
+	if (isBig) {
+		Point2Darray *ptArray = initPoint2Darray(5);
+
+		addPoint2D(ptArray, r,16*scaler);
+		addPoint2D(ptArray, r2,15*scaler);
+		addPoint2D(ptArray, r2,3*scaler);
+		addPoint2D(ptArray, r,2*scaler);
+		addPoint2D(ptArray, r,0*scaler);
+
+		params = makeMeshgenSquareColumnoidParams(r, ptArray->points, 5, false, false);
+	} else {
+		Point2Darray *ptArray = initPoint2Darray(5);
+
+		addPoint2D(ptArray, r,4*scaler);
+		addPoint2D(ptArray, r2,3*scaler);
+		addPoint2D(ptArray, r2,2*scaler);
+		addPoint2D(ptArray, r,1*scaler);
+		addPoint2D(ptArray, r,0*scaler);
+
+		params = makeMeshgenSquareColumnoidParams(r, ptArray->points, 5, true, false);
+	}
+
+	return params;
 }
 
 static World *initMyWorld(int worldIndex, Camera *camera, Light *light)
@@ -190,7 +227,18 @@ static World *initMyWorld(int worldIndex, Camera *camera, Light *light)
 
 		case 4:
 		{
-			addObjectToWorld(loadedObj, 1, true, world);
+			for (i=0; i<4; ++i) {
+				addObjectToWorld(columnBigObj[i], 1, true, world);
+				setObject3Dpos(columnBigObj[i], 192 * ((i & 1) * 2 - 1), 0, 192 * ((i >> 1) * 2 - 1));
+			}
+
+			addObjectToWorld(templeRoofObj, 1, true, world);
+			setObject3Dpos(templeRoofObj, 0,320,0);
+
+			addObjectToWorld(softObj, 1, true, world);
+			setRenderSoftMethod(RENDER_SOFT_METHOD_GOURAUD_ENVMAP);
+
+			addObjectToWorld(columnSmallObj, 1, true, world);
 		}
 		break;
 	}
@@ -207,6 +255,8 @@ void effectMeshWorldInit()
 	MeshgenParams gridParams = makeMeshgenGridParams(2048, GRID_SIZE);
 	MeshgenParams cubeParams = DEFAULT_MESHGEN_PARAMS(128);
 	MeshgenParams columnoidParams = initMeshObjectParams(MESH_SQUARE_COLUMNOID);
+	MeshgenParams columnBigParams = initColumnParams(true);
+	MeshgenParams columnSmallParams = initColumnParams(false);
 
 	setPalGradient(0,31, 1,3,7, 31,27,23, gridPal);
 	
@@ -243,12 +293,19 @@ void effectMeshWorldInit()
 	for (i=0; i<27; ++i) {
 		columnoidObj[i] = initObject3D(columnoidMesh);
 	}
-
 	elongoidObj = initElongoidObject(flatTex);
 
-	loadedMesh = loadMesh("data/teapot.3do", false, MESH_OPTION_FAST_MAPCEL | MESH_OPTION_ENABLE_LIGHTING, flatTex);
-	setMeshPolygonOrder(loadedMesh, true, false);
-	loadedObj = initObject3D(loadedMesh);
+
+	columnBigMesh = initGenMesh(MESH_SQUARE_COLUMNOID, columnBigParams, MESH_OPTIONS_DEFAULT | MESH_OPTION_ENABLE_LIGHTING, flatTex);
+	columnSmallMesh = initGenMesh(MESH_SQUARE_COLUMNOID, columnSmallParams, MESH_OPTIONS_DEFAULT | MESH_OPTION_ENABLE_LIGHTING, flatTex);
+	for (i=0; i<4; ++i) {
+		columnBigObj[i] = initObject3D(columnBigMesh);
+	}
+	columnSmallObj = initObject3D(columnSmallMesh);
+
+	templeRoofMesh = initGenMesh(MESH_PRISM, DEFAULT_MESHGEN_PARAMS(456), MESH_OPTIONS_DEFAULT | MESH_OPTION_NO_POLYSORT | MESH_OPTION_ENABLE_LIGHTING, flatTex);
+	templeRoofObj = initObject3D(templeRoofMesh);
+
 
 	cloudTex16 = initGenTexture(64, 64, 16, NULL, 1, TEXGEN_CLOUDS, false, NULL);
 	softObj = initMeshObject(MESH_SQUARE_COLUMNOID, columnoidParams, MESH_OPTION_RENDER_SOFT16 | MESH_OPTION_ENABLE_LIGHTING | MESH_OPTION_ENABLE_ENVMAP, cloudTex16);
@@ -347,8 +404,8 @@ static void setObjectsPosAndRot(int worldI, int dt)
 
 		case 4:
 		{
-			setObject3Dpos(loadedObj, 0, 256, 0);
-			setObject3Drot(loadedObj, softRotX, softRotY, softRotZ);
+			setObject3Dpos(softObj, 0, 128 + (SinF16(getTicks() << 14) >> 13), 0);
+			setObject3Drot(softObj, 2*softRotX, 2*softRotY, 2*softRotZ);
 		}
 		break;
 	}

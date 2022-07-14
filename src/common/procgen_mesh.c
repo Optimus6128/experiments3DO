@@ -437,6 +437,32 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 		}
 		break;
 
+		case MESH_PRISM:
+		{
+			ms = initMesh(6,5,18,0, optionsFlags);
+
+			resetAllCurrentPointers(ms);
+
+			addVertex(-s,  0, -s);
+			addVertex( s,  0, -s);
+			addVertex( s,  0,  s);
+			addVertex(-s,  0,  s);
+			addVertex( 0,  s, -s);
+			addVertex( 0,  s,  s);
+
+			addQuadIndices(3,2,1,0);	// CW?
+			addQuadIndices(1,2,5,4);
+			addQuadIndices(3,0,4,5);
+			addTriangleIndices(0,1,4);
+			addTriangleIndices(2,3,5);
+
+			setAllPolyData(ms,4,0,0);
+			ms->poly[3].numPoints = ms->poly[4].numPoints = 3;
+
+			calculateMeshNormals(ms);
+		}
+		break;
+
 		case MESH_PYRAMID1:
 		{
 			ms = initMesh(5,5,20,0, optionsFlags);
