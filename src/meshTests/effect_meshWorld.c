@@ -31,6 +31,11 @@ static Mesh *cubeMesh[8];
 static Object3D *gridObj;
 static Object3D *cubeObj[54];
 
+static Mesh *gridTempleMesh;
+static Object3D *gridTempleObj;
+static Mesh *baseTempleMesh;
+static Object3D *baseTempleObj;
+
 static Object3D *elongoidObj;
 static Object3D *columnoidObj[27];
 static Mesh *columnoidMesh;
@@ -46,6 +51,8 @@ static Object3D *softObj;
 static Texture *cloudTex16;
 
 static Texture *flatTex;
+static Texture *flatTex2;
+static Texture *flatGridTex[2];
 static Texture *panerTex;
 static Texture *gridTex;
 static Texture *cubeTex;
@@ -73,6 +80,20 @@ static void shadeGrid()
 			int r = (isqrt(xc*xc + yc*yc) * 16) / (GRID_SIZE / 2);
 			CLAMP(r,0,15)
 			cel->ccb_PIXC = shadeTable[15-r];
+			++cel;
+		}
+	}
+}
+
+static void prepTempleGrid()
+{
+	CCB *cel = gridTempleMesh->cel;
+
+	int x,y;
+	for (y=0; y<7; ++y) {
+		for (x=0; x<7; ++x) {
+			int c = (x + y) & 1;
+			cel->ccb_SourcePtr = (CelData*)flatGridTex[c]->bitmap;
 			++cel;
 		}
 	}
@@ -181,6 +202,21 @@ static MeshgenParams initColumnParams(bool isBig)
 	return params;
 }
 
+static MeshgenParams initBaseParams()
+{
+	MeshgenParams params;
+	Point2Darray *ptArray = initPoint2Darray(3);
+
+	addPoint2D(ptArray, 228,0);
+	addPoint2D(ptArray, 244,-64);
+	addPoint2D(ptArray, 228,-128);
+
+	params = makeMeshgenSquareColumnoidParams(456, ptArray->points, 3, false, true);
+
+	return params;
+}
+
+
 static World *initMyWorld(int worldIndex, Camera *camera, Light *light)
 {
 	int i;
@@ -190,7 +226,7 @@ static World *initMyWorld(int worldIndex, Camera *camera, Light *light)
 	addCameraToWorld(camera, world);
 	addLightToWorld(light, world);
 
-	addObjectToWorld(gridObj, 0, false, world);
+	if (worldIndex != 4) addObjectToWorld(gridObj, 0, false, world);
 
 	switch(worldIndex) {
 		case 0:
@@ -227,6 +263,9 @@ static World *initMyWorld(int worldIndex, Camera *camera, Light *light)
 
 		case 4:
 		{
+			addObjectToWorld(gridTempleObj, 0, false, world);
+			addObjectToWorld(baseTempleObj, 0, false, world);
+
 			for (i=0; i<4; ++i) {
 				addObjectToWorld(columnBigObj[i], 1, true, world);
 				setObject3Dpos(columnBigObj[i], 192 * ((i & 1) * 2 - 1), 0, 192 * ((i >> 1) * 2 - 1));
@@ -250,13 +289,19 @@ void effectMeshWorldInit()
 {
 	int i,x,y,z;
 	static uint8 paramStretch = 4;
-	static uint8 paramCol = 0xFF;
+	static uint16 paramCol = 0xFFFF;
+	static uint16 paramCol3 = MakeRGB15(16,16,16);
+	
+	static uint16 paramCol1 = MakeRGB15(15,3,7);
+	static uint16 paramCol2 = MakeRGB15(7,3,15);
 
 	MeshgenParams gridParams = makeMeshgenGridParams(2048, GRID_SIZE);
 	MeshgenParams cubeParams = DEFAULT_MESHGEN_PARAMS(128);
 	MeshgenParams columnoidParams = initMeshObjectParams(MESH_SQUARE_COLUMNOID);
 	MeshgenParams columnBigParams = initColumnParams(true);
 	MeshgenParams columnSmallParams = initColumnParams(false);
+	MeshgenParams gridTempleParams = makeMeshgenGridParams(456, 7);
+	MeshgenParams columnBaseParams = initBaseParams();
 
 	setPalGradient(0,31, 1,3,7, 31,27,23, gridPal);
 	
@@ -273,12 +318,20 @@ void effectMeshWorldInit()
 	}
 
 	flatTex = initGenTexture(4,4, 16, NULL, 0, TEXGEN_FLAT, false, &paramCol);
+	flatTex2 = initGenTexture(4,4, 16, NULL, 0, TEXGEN_FLAT, false, &paramCol3);
 	panerTex = initGenTexture(16,16, 8, cubePal, 1, TEXGEN_XOR, false, &paramStretch);
 	gridTex = initGenTexture(16,16, 8, gridPal, 1, TEXGEN_GRID, false, NULL);
 	cubeTex = initGenTexture(64,64, 8, cubePal, 8, TEXGEN_CLOUDS, false, NULL);
+	
+	flatGridTex[0] = initGenTexture(4,4, 16, NULL, 0, TEXGEN_FLAT, false, &paramCol1);
+	flatGridTex[1] = initGenTexture(4,4, 16, NULL, 0, TEXGEN_FLAT, false, &paramCol2);
 
 	gridMesh = initGenMesh(MESH_GRID, gridParams, MESH_OPTIONS_DEFAULT | MESH_OPTION_NO_POLYSORT, gridTex);
 	gridObj = initObject3D(gridMesh);
+
+	gridTempleMesh = initGenMesh(MESH_GRID, gridTempleParams, MESH_OPTIONS_DEFAULT | MESH_OPTION_NO_POLYSORT, flatGridTex[0]);
+	prepTempleGrid();
+	gridTempleObj = initObject3D(gridTempleMesh);
 
 	for (i=0; i<8; ++i) {
 		cubeMesh[i] = initGenMesh(MESH_CUBE, cubeParams, MESH_OPTIONS_DEFAULT | MESH_OPTION_NO_POLYSORT | MESH_OPTION_ENABLE_LIGHTING, cubeTex);
@@ -303,9 +356,11 @@ void effectMeshWorldInit()
 	}
 	columnSmallObj = initObject3D(columnSmallMesh);
 
-	templeRoofMesh = initGenMesh(MESH_PRISM, DEFAULT_MESHGEN_PARAMS(456), MESH_OPTIONS_DEFAULT | MESH_OPTION_NO_POLYSORT | MESH_OPTION_ENABLE_LIGHTING, flatTex);
+	templeRoofMesh = initGenMesh(MESH_PRISM, DEFAULT_MESHGEN_PARAMS(456), MESH_OPTIONS_DEFAULT | MESH_OPTION_NO_POLYSORT | MESH_OPTION_ENABLE_LIGHTING, flatTex2);
 	templeRoofObj = initObject3D(templeRoofMesh);
 
+	baseTempleMesh = initGenMesh(MESH_SQUARE_COLUMNOID, columnBaseParams, MESH_OPTIONS_DEFAULT | MESH_OPTION_NO_POLYSORT | MESH_OPTION_ENABLE_LIGHTING, flatTex);
+	baseTempleObj = initObject3D(baseTempleMesh);
 
 	cloudTex16 = initGenTexture(64, 64, 16, NULL, 1, TEXGEN_CLOUDS, false, NULL);
 	softObj = initMeshObject(MESH_SQUARE_COLUMNOID, columnoidParams, MESH_OPTION_RENDER_SOFT16 | MESH_OPTION_ENABLE_LIGHTING | MESH_OPTION_ENABLE_ENVMAP, cloudTex16);
