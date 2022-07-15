@@ -90,6 +90,33 @@ static void addVertex(int x, int y, int z)
 	v->z = z;
 }
 
+static void copyVertex(Vertex *srcVertex)
+{
+	Vertex *v = currentVertex++;
+
+	v->x = srcVertex->x;
+	v->y = srcVertex->y;
+	v->z = srcVertex->z;
+}
+
+static void insertMiddleVertex(Vertex *v0, Vertex *v1)
+{
+	Vertex *v = currentVertex++;
+
+	v->x = (v0->x + v1->x) >> 1;
+	v->y = (v0->y + v1->y) >> 1;
+	v->z = (v0->z + v1->z) >> 1;
+}
+
+static void insertAverageQuadVertex(Vertex *v0, Vertex *v1, Vertex *v2, Vertex *v3)
+{
+	Vertex *v = currentVertex++;
+
+	v->x = (v0->x + v1->x + v2->x + v3->x) >> 2;
+	v->y = (v0->y + v1->y + v2->y + v3->y) >> 2;
+	v->z = (v0->z + v1->z + v2->z + v3->z) >> 2;
+}
+
 static void addQuadIndices(int i0, int i1, int i2, int i3)
 {
 	*currentIndex++ = i0;
@@ -322,6 +349,75 @@ static void initMeshPyramids_1or3(int s)
 	addQuadIndices(1,2,4,4);
 	addQuadIndices(2,3,4,4);
 	addQuadIndices(3,0,4,4);
+}
+
+Mesh *subdivMesh(Mesh *srcMesh)
+{
+	Mesh *dstMesh;
+	
+	int *srcIndex = srcMesh->index;
+	Vertex *srcVertex = srcMesh->vertex;
+	PolyData *poly = srcMesh->poly;
+
+	int i,j;
+	int b,p;
+	int newVertNum = 0;
+	for (i=0; i<srcMesh->polysNum; ++i) {
+		if (poly[i].numPoints==3) {
+			newVertNum += 6;
+		} else {
+			newVertNum += 9;
+		}
+	}
+	dstMesh = initMesh(newVertNum, 4*srcMesh->polysNum, 4*srcMesh->indicesNum, 0, srcMesh->renderType);
+	resetAllCurrentPointers(dstMesh);
+
+	setAllPolyData(dstMesh,4,0,0);
+
+	b = 0;
+	p = 0;
+	for (i=0; i<srcMesh->polysNum; ++i) {
+		Vertex *v0 = &srcVertex[*srcIndex++];
+		Vertex *v1 = &srcVertex[*srcIndex++];
+		Vertex *v2 = &srcVertex[*srcIndex++];
+		copyVertex(v0);
+		copyVertex(v1);
+		copyVertex(v2);
+		if (poly[i].numPoints==3) {
+			insertMiddleVertex(v0, v1);
+			insertMiddleVertex(v1, v2);
+			insertMiddleVertex(v2, v0);
+			addTriangleIndices(b,  b+3,b+5);
+			addTriangleIndices(b+3,b+1,b+4);
+			addTriangleIndices(b+3,b+4,b+5);
+			addTriangleIndices(b+5,b+4,b+2);
+			b += 6;
+		} else {
+			Vertex *v3 = &srcVertex[*srcIndex++];
+			copyVertex(v3);
+			insertMiddleVertex(v0, v1);
+			insertMiddleVertex(v1, v2);
+			insertMiddleVertex(v2, v3);
+			insertMiddleVertex(v3, v0);
+			insertAverageQuadVertex(v0, v1, v2, v3);
+			addQuadIndices(b,  b+4,b+8,b+7);
+			addQuadIndices(b+4,b+1,b+5,b+8);
+			addQuadIndices(b+8,b+5,b+2,b+6);
+			addQuadIndices(b+7,b+8,b+6,b+3);
+			b += 9;
+		}
+		for (j=0; j<4; ++j) {
+			dstMesh->poly[p+j].numPoints = poly[i].numPoints;
+		}
+		p += 4;
+	}
+	calculateMeshNormals(dstMesh);
+
+	dstMesh->tex = srcMesh->tex;
+
+	prepareCelList(dstMesh);
+
+	return dstMesh;
 }
 
 Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, Texture *tex)

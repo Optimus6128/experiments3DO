@@ -20,6 +20,7 @@ typedef struct MeshgenParams
 enum {MESH_PLANE, MESH_CUBE, MESH_CUBE_TRI, MESH_ROMBUS, MESH_PRISM, MESH_PYRAMID1, MESH_PYRAMID2, MESH_PYRAMID3, MESH_GRID, MESH_SQUARE_COLUMNOID, MESH_VOLUME_SLICES };
 
 Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, Texture *tex);
+Mesh *subdivMesh(Mesh *srcMesh);
 
 MeshgenParams makeDefaultMeshgenParams(int size);
 MeshgenParams makeMeshgenGridParams(int size, int divisions);

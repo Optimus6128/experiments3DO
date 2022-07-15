@@ -33,8 +33,6 @@ static Object3D *cubeObj[54];
 
 static Mesh *gridTempleMesh;
 static Object3D *gridTempleObj;
-static Mesh *baseTempleMesh;
-static Object3D *baseTempleObj;
 
 static Object3D *elongoidObj;
 static Object3D *columnoidObj[27];
@@ -43,9 +41,12 @@ static Mesh *columnoidMesh;
 static Object3D *columnBigObj[4];
 static Object3D *columnSmallObj;
 static Object3D *templeRoofObj;
+static Object3D *templeBaseObj;
 static Mesh *columnBigMesh;
 static Mesh *columnSmallMesh;
 static Mesh *templeRoofMesh;
+static Mesh *templeBaseMesh;
+
 
 static Object3D *softObj;
 static Texture *cloudTex16;
@@ -264,7 +265,7 @@ static World *initMyWorld(int worldIndex, Camera *camera, Light *light)
 		case 4:
 		{
 			addObjectToWorld(gridTempleObj, 0, false, world);
-			addObjectToWorld(baseTempleObj, 0, false, world);
+			addObjectToWorld(templeBaseObj, 0, false, world);
 
 			for (i=0; i<4; ++i) {
 				addObjectToWorld(columnBigObj[i], 1, true, world);
@@ -349,18 +350,22 @@ void effectMeshWorldInit()
 	elongoidObj = initElongoidObject(flatTex);
 
 
-	columnBigMesh = initGenMesh(MESH_SQUARE_COLUMNOID, columnBigParams, MESH_OPTIONS_DEFAULT | MESH_OPTION_ENABLE_LIGHTING, flatTex);
+	columnBigMesh = initGenMesh(MESH_SQUARE_COLUMNOID, columnBigParams, MESH_OPTIONS_DEFAULT | MESH_OPTION_ENABLE_LIGHTING, /*gridTex*/flatTex);
+	columnBigMesh = subdivMesh(columnBigMesh);
 	columnSmallMesh = initGenMesh(MESH_SQUARE_COLUMNOID, columnSmallParams, MESH_OPTIONS_DEFAULT | MESH_OPTION_ENABLE_LIGHTING, flatTex);
 	for (i=0; i<4; ++i) {
 		columnBigObj[i] = initObject3D(columnBigMesh);
 	}
 	columnSmallObj = initObject3D(columnSmallMesh);
 
-	templeRoofMesh = initGenMesh(MESH_PRISM, DEFAULT_MESHGEN_PARAMS(456), MESH_OPTIONS_DEFAULT | MESH_OPTION_NO_POLYSORT | MESH_OPTION_ENABLE_LIGHTING, flatTex2);
+	templeRoofMesh = initGenMesh(MESH_PRISM, DEFAULT_MESHGEN_PARAMS(456), MESH_OPTIONS_DEFAULT | MESH_OPTION_NO_POLYSORT | MESH_OPTION_ENABLE_LIGHTING, /*gridTex*/flatTex2);
+	templeRoofMesh = subdivMesh(templeRoofMesh);
+	templeRoofMesh = subdivMesh(templeRoofMesh);
 	templeRoofObj = initObject3D(templeRoofMesh);
 
-	baseTempleMesh = initGenMesh(MESH_SQUARE_COLUMNOID, columnBaseParams, MESH_OPTIONS_DEFAULT | MESH_OPTION_NO_POLYSORT | MESH_OPTION_ENABLE_LIGHTING, flatTex);
-	baseTempleObj = initObject3D(baseTempleMesh);
+	templeBaseMesh = initGenMesh(MESH_SQUARE_COLUMNOID, columnBaseParams, MESH_OPTIONS_DEFAULT | MESH_OPTION_NO_POLYSORT | MESH_OPTION_ENABLE_LIGHTING, /*gridTex*/flatTex);
+	templeBaseMesh = subdivMesh(templeBaseMesh);
+	templeBaseObj = initObject3D(templeBaseMesh);
 
 	cloudTex16 = initGenTexture(64, 64, 16, NULL, 1, TEXGEN_CLOUDS, false, NULL);
 	softObj = initMeshObject(MESH_SQUARE_COLUMNOID, columnoidParams, MESH_OPTION_RENDER_SOFT16 | MESH_OPTION_ENABLE_LIGHTING | MESH_OPTION_ENABLE_ENVMAP, cloudTex16);
