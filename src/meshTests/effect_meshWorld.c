@@ -51,6 +51,9 @@ static Mesh *templeBaseMesh;
 static Object3D *softObj;
 static Texture *cloudTex16;
 
+static Mesh *startMesh;
+static Object3D *starsObj;
+
 static Texture *flatTex;
 static Texture *flatTex2;
 static Texture *flatGridTex[2];
@@ -264,21 +267,23 @@ static World *initMyWorld(int worldIndex, Camera *camera, Light *light)
 
 		case 4:
 		{
-			addObjectToWorld(gridTempleObj, 0, false, world);
-			addObjectToWorld(templeBaseObj, 0, false, world);
+			addObjectToWorld(starsObj, 0, false, world);
+
+			addObjectToWorld(gridTempleObj, 1, false, world);
+			addObjectToWorld(templeBaseObj, 1, false, world);
 
 			for (i=0; i<4; ++i) {
-				addObjectToWorld(columnBigObj[i], 1, true, world);
+				addObjectToWorld(columnBigObj[i], 2, true, world);
 				setObject3Dpos(columnBigObj[i], 192 * ((i & 1) * 2 - 1), 0, 192 * ((i >> 1) * 2 - 1));
 			}
 
-			addObjectToWorld(templeRoofObj, 1, true, world);
+			addObjectToWorld(templeRoofObj, 2, true, world);
 			setObject3Dpos(templeRoofObj, 0,320,0);
 
-			addObjectToWorld(softObj, 1, true, world);
+			addObjectToWorld(softObj, 2, true, world);
 			setRenderSoftMethod(RENDER_SOFT_METHOD_GOURAUD_ENVMAP);
 
-			addObjectToWorld(columnSmallObj, 1, true, world);
+			addObjectToWorld(columnSmallObj, 2, true, world);
 		}
 		break;
 	}
@@ -303,6 +308,7 @@ void effectMeshWorldInit()
 	MeshgenParams columnSmallParams = initColumnParams(false);
 	MeshgenParams gridTempleParams = makeMeshgenGridParams(456, 7);
 	MeshgenParams columnBaseParams = initBaseParams();
+	MeshgenParams starsParams = makeMeshgenStarsParams(NUM_REC_Z, 256);
 
 	setPalGradient(0,31, 1,3,7, 31,27,23, gridPal);
 	
@@ -326,6 +332,9 @@ void effectMeshWorldInit()
 	
 	flatGridTex[0] = initGenTexture(4,4, 16, NULL, 0, TEXGEN_FLAT, false, &paramCol1);
 	flatGridTex[1] = initGenTexture(4,4, 16, NULL, 0, TEXGEN_FLAT, false, &paramCol2);
+	
+	startMesh = initGenMesh(MESH_STARS, starsParams, MESH_OPTION_RENDER_POINTS, NULL);
+	starsObj = initObject3D(startMesh);
 
 	gridMesh = initGenMesh(MESH_GRID, gridParams, MESH_OPTIONS_DEFAULT | MESH_OPTION_NO_POLYSORT, gridTex);
 	gridObj = initObject3D(gridMesh);

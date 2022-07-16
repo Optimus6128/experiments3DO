@@ -672,7 +672,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			setAllPolyData(ms,4,0,0);
 		}
 		break;
-		
+
 		case MESH_SQUARE_COLUMNOID:
 		{
 			const int procPointsNum = params.numProcPoints;
@@ -720,7 +720,32 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			generateWireframe(ms);
 		}
 		break;
-		
+
+		case MESH_STARS:
+		{
+			const int starsNum = params.numProcPoints;
+			const int distance = params.size;
+
+			ms = initMesh(starsNum,0,0,0, optionsFlags);
+
+			resetAllCurrentPointers(ms);
+
+			for (i=0; i<starsNum; ++i) {
+				const int phi = getRand(0, 255);
+				const int theta = getRand(0, 255);
+				const int sinPhi = SinF16(phi<<16) >> FP_BASE_TO_CORE;
+				const int cosPhi = CosF16(phi<<16) >> FP_BASE_TO_CORE;
+				const int sinTheta = SinF16(theta<<16) >> FP_BASE_TO_CORE;
+				const int cosTheta = CosF16(theta<<16) >> FP_BASE_TO_CORE;
+				const int x = (distance * FIXED_MUL(cosPhi, sinTheta, FP_BASE)) >> FP_BASE;
+				const int y = (distance * FIXED_MUL(sinPhi, sinTheta, FP_BASE)) >> FP_BASE;
+				const int z = (distance * cosTheta) >> FP_BASE;
+
+				addVertex(x, y, z);
+			}
+		}
+		break;
+
 		case MESH_VOLUME_SLICES:
 		{
 		}
@@ -763,6 +788,16 @@ MeshgenParams makeMeshgenSquareColumnoidParams(int size, Point2D *points, int nu
 	params.numProcPoints = numPoints;
 	params.capTop = capTop;
 	params.capBottom = capBottom;
+
+	return params;
+}
+
+MeshgenParams makeMeshgenStarsParams(int distance, int numStars)
+{
+	MeshgenParams params;
+
+	params.size = distance;
+	params.numProcPoints = numStars;
 
 	return params;
 }

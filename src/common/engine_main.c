@@ -358,20 +358,33 @@ static void renderTransformedMesh(Mesh *mesh)
 // Multiple lights not implemented yet, just add stub arguments
 void renderObject3D(Object3D *obj, Camera *cam, Light **lights, int lightsNum)
 {
+	int i;
 	Mesh *mesh = obj->mesh;
 
 	transformMesh(obj, cam);
 
-	if (mesh->renderType & MESH_OPTION_RENDER_SOFT) {
-		if (mesh->renderType & MESH_OPTION_ENABLE_LIGHTING) {
-			calculateVertexLighting(mesh);
+	if (mesh->renderType & MESH_OPTION_RENDER_POINTS) {
+		for (i=0; i<mesh->verticesNum; ++i) {
+			ScreenElement *sc = &screenElements[i];
+			if (sc->x >= 0 && sc->x < SCREEN_WIDTH && sc->y >= 0 && sc->y < SCREEN_HEIGHT && sc->z > cam->near) {
+				const int c = 16 + ((i*i) & 15);
+				const uint16 col = MakeRGB15(c,c,c);
+				drawPixel(sc->x, sc->y, col);
+			}
 		}
-		if (mesh->renderType & MESH_OPTION_ENABLE_ENVMAP) {
-			calculateVertexEnvmapTC(mesh);
-		}
-		renderTransformedMeshSoft(mesh, screenElements);
 	} else {
-		renderTransformedMesh(mesh);
+		if (mesh->renderType & MESH_OPTION_RENDER_SOFT)
+		{
+			if (mesh->renderType & MESH_OPTION_ENABLE_LIGHTING) {
+				calculateVertexLighting(mesh);
+			}
+			if (mesh->renderType & MESH_OPTION_ENABLE_ENVMAP) {
+				calculateVertexEnvmapTC(mesh);
+			}
+			renderTransformedMeshSoft(mesh, screenElements);
+		} else {
+			renderTransformedMesh(mesh);
+		}
 	}
 }
 
