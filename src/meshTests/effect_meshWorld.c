@@ -69,7 +69,7 @@ static bool autoRot = false;
 #define WORLDS_NUM 5
 
 static World *myWorld[WORLDS_NUM];
-static int worldIndex = 3;
+static int worldIndex = 0;
 
 
 static void shadeGrid()
@@ -113,14 +113,14 @@ static Object3D *initMeshObject(int meshgenId, const MeshgenParams params, int o
 	return meshObj;
 }
 
-static MeshgenParams initMeshObjectParams(int meshgenId)
+static MeshgenParams initMeshObjectParams(int meshgenId, int sizeScale)
 {
 	MeshgenParams params;
 
 	switch(meshgenId) {
 		case MESH_CUBE:
 		{
-			params = makeDefaultMeshgenParams(64);
+			params = makeDefaultMeshgenParams(64 * sizeScale);
 		}
 		break;
 
@@ -128,7 +128,7 @@ static MeshgenParams initMeshObjectParams(int meshgenId)
 		{
 			int i;
 			const int numPoints = 8;
-			const int size = 32;
+			const int size = 32 * sizeScale;
 			Point2Darray *ptArray = initPoint2Darray(numPoints);
 
 			for (i=0; i<numPoints; ++i) {
@@ -281,7 +281,7 @@ static World *initMyWorld(int worldIndex, Camera *camera, Light *light)
 			setObject3Dpos(templeRoofObj, 0,320,0);
 
 			addObjectToWorld(softObj, 2, true, world);
-			setRenderSoftMethod(RENDER_SOFT_METHOD_GOURAUD_ENVMAP);
+			setRenderSoftMethod(RENDER_SOFT_METHOD_GOURAUD);
 
 			addObjectToWorld(columnSmallObj, 2, true, world);
 		}
@@ -303,7 +303,8 @@ void effectMeshWorldInit()
 
 	MeshgenParams gridParams = makeMeshgenGridParams(2048, GRID_SIZE);
 	MeshgenParams cubeParams = DEFAULT_MESHGEN_PARAMS(128);
-	MeshgenParams columnoidParams = initMeshObjectParams(MESH_SQUARE_COLUMNOID);
+	MeshgenParams columnoidParams = initMeshObjectParams(MESH_SQUARE_COLUMNOID, 2);
+	MeshgenParams columnoidParams2 = initMeshObjectParams(MESH_SQUARE_COLUMNOID, 1);
 	MeshgenParams columnBigParams = initColumnParams(true);
 	MeshgenParams columnSmallParams = initColumnParams(false);
 	MeshgenParams gridTempleParams = makeMeshgenGridParams(456, 7);
@@ -312,8 +313,6 @@ void effectMeshWorldInit()
 
 	setPalGradient(0,31, 1,3,7, 31,27,23, gridPal);
 	
-	//setBackgroundColor(0x12341234);
-
 	i = 0;
 	for (z=0; z<=1; ++z) {
 		for (y=0; y<=1; ++y) {
@@ -377,7 +376,7 @@ void effectMeshWorldInit()
 	templeBaseObj = initObject3D(templeBaseMesh);
 
 	cloudTex16 = initGenTexture(64, 64, 16, NULL, 1, TEXGEN_CLOUDS, false, NULL);
-	softObj = initMeshObject(MESH_SQUARE_COLUMNOID, columnoidParams, MESH_OPTION_RENDER_SOFT16 | MESH_OPTION_ENABLE_LIGHTING | MESH_OPTION_ENABLE_ENVMAP, cloudTex16);
+	softObj = initMeshObject(MESH_SQUARE_COLUMNOID, columnoidParams2, MESH_OPTION_RENDER_SOFT16 | MESH_OPTION_ENABLE_LIGHTING | MESH_OPTION_ENABLE_ENVMAP, cloudTex16);
 
 	shadeGrid();
 

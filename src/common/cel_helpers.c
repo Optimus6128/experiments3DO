@@ -213,6 +213,17 @@ int getCelDataSizeInBytes(CCB *cel)
 	return (cel->ccb_Width * cel->ccb_Height * bpp) >> 3;
 }
 
+int getCelPaletteColorsNum(int bpp)
+{
+	if (bpp <= 4) {
+		return bpp;
+	}
+	if (bpp <= 8) {
+		return 5;
+	}
+	return 0;
+}
+
 void linkCel(CCB *ccb, CCB *nextCCB)
 {
 	if (!ccb || !nextCCB) return;

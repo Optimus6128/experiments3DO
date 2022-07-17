@@ -37,6 +37,7 @@ void setCelStride(int stride, CCB *cel);
 void linkCel(CCB *ccb, CCB *nextCCB);
 
 int getCelDataSizeInBytes(CCB *cel);
+int getCelPaletteColorsNum(int bpp);
 void updateWindowCel(int posX, int posY, int width, int height, int *bitmap, CCB *cel);
 void setupWindowFeedbackCel(int posX, int posY, int width, int height, int bufferIndex, CCB *cel);
 

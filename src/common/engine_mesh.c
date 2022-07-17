@@ -11,17 +11,6 @@
 #include "file_utils.h"
 
 
-static int getPaletteColorsNum(int bpp)
-{
-	if (bpp <= 4) {
-		return bpp;
-	}
-	if (bpp <= 8) {
-		return 5;
-	}
-	return 0;
-}
-
 void updateMeshCELs(Mesh *ms)
 {
 	if (!(ms->renderType & MESH_OPTION_RENDER_SOFT)) {
@@ -55,7 +44,7 @@ void updateMeshCELs(Mesh *ms)
 				// Should spare the magic numbers at some point
 				cel->ccb_PRE0 = (cel->ccb_PRE0 & ~(((1<<10) - 1)<<6)) | (vcnt << 6);
 				cel->ccb_PRE1 = (cel->ccb_PRE1 & (65536 - 1024)) | (woffset << 16) | (tex->width-1);
-				cel->ccb_PLUTPtr = (uint16*)&tex->pal[ms->poly[i].palId << getPaletteColorsNum(tex->bpp)];
+				cel->ccb_PLUTPtr = (uint16*)&tex->pal[ms->poly[i].palId << getCelPaletteColorsNum(tex->bpp)];
 			//}
 		}
 	}
@@ -71,6 +60,7 @@ void prepareCelList(Mesh *ms)
 			const int texShrX = getShr(tex->width);
 			const int texShrY = getShr(tex->height);
 			CCB *cel = &ms->cel[i];
+			uint16 *pal = NULL;
 
 			int celType = CEL_TYPE_UNCODED;
 			if (tex->type & TEXTURE_TYPE_PALLETIZED)
@@ -79,12 +69,11 @@ void prepareCelList(Mesh *ms)
 			ms->poly[i].texShifts = (texShrX << 4) | texShrY;
 
 			initCel(tex->width, tex->height, tex->bpp, celType, cel);
-			setupCelData((uint16*)&tex->pal[ms->poly[i].palId << getPaletteColorsNum(tex->bpp)], tex->bitmap, cel);
 
-			cel->ccb_PLUTPtr = (uint16*)&tex->pal[ms->poly[i].palId << getPaletteColorsNum(tex->bpp)];
+			if (tex->pal) pal = (uint16*)&tex->pal[ms->poly[i].palId << getCelPaletteColorsNum(tex->bpp)];
+			setupCelData(pal, tex->bitmap, cel);
 
 			cel->ccb_Flags &= ~CCB_ACW;	// Initially, ACW is off and only ACCW (counterclockwise) polygons are visible
-
 			cel->ccb_Flags |= CCB_BGND;
 			if (!(tex->type & TEXTURE_TYPE_FEEDBACK))
 				cel->ccb_Flags |= (CCB_ACSC | CCB_ALSC);	// Enable Super Clipping only if Feedback Texture is not enabled, it might lock otherwise
@@ -107,7 +96,7 @@ void setMeshPaletteIndex(Mesh *ms, int palIndex)
 			Texture *tex = &ms->tex[ms->poly[i].textureId];
 			if (tex) {
 				ms->poly[i].palId = palIndex;
-				ms->cel[i].ccb_PLUTPtr = (uint16*)&tex->pal[palIndex << getPaletteColorsNum(tex->bpp)];
+				ms->cel[i].ccb_PLUTPtr = (uint16*)&tex->pal[palIndex << getCelPaletteColorsNum(tex->bpp)];
 			}
 		}
 	}
@@ -189,6 +178,23 @@ void setAllPolyData(Mesh *ms, int numPoints, int textureId, int palId)
 	}
 }
 
+void flipMeshPolyOrder(Mesh *ms)
+{
+	int i,j;
+	int *index = ms->index;
+	for (i=0; i<ms->polysNum; ++i) {
+		const int numPoints = ms->poly[i].numPoints;
+
+		for (j=0; j<numPoints/2; ++j) {
+			const int k = numPoints-1 - j;
+			const int tempIndex = *(index + j);
+			*(index + j) = *(index + k);
+			*(index + k) = tempIndex;
+		}
+		index += numPoints;
+	}
+}
+
 Mesh* initMesh(int verticesNum, int polysNum, int indicesNum, int linesNum, int renderType)
 {
 	Mesh *ms = (Mesh*)AllocMem(sizeof(Mesh), MEMTYPE_ANY);
@@ -198,25 +204,32 @@ Mesh* initMesh(int verticesNum, int polysNum, int indicesNum, int linesNum, int 
 	ms->indicesNum = indicesNum;
 	ms->linesNum = linesNum;
 
-	ms->vertex = (Vertex*)AllocMem(ms->verticesNum * sizeof(Vertex), MEMTYPE_ANY);
-	ms->index = (int*)AllocMem(ms->indicesNum * sizeof(int), MEMTYPE_ANY);
-	ms->poly = (PolyData*)AllocMem(polysNum * sizeof(PolyData), MEMTYPE_ANY);
-	ms->lineIndex = (int*)AllocMem(linesNum * 2 * sizeof(int), MEMTYPE_ANY);
-	ms->polyNormal = (Vector3D*)AllocMem(ms->polysNum * sizeof(Vector3D), MEMTYPE_ANY);
+	if (verticesNum) ms->vertex = (Vertex*)AllocMem(verticesNum * sizeof(Vertex), MEMTYPE_ANY);
+	if (indicesNum) ms->index = (int*)AllocMem(indicesNum * sizeof(int), MEMTYPE_ANY);
+	if (linesNum) ms->lineIndex = (int*)AllocMem(linesNum * 2 * sizeof(int), MEMTYPE_ANY);
+	if (polysNum) {
+		ms->poly = (PolyData*)AllocMem(polysNum * sizeof(PolyData), MEMTYPE_ANY);
+		ms->polyNormal = (Vector3D*)AllocMem(polysNum * sizeof(Vector3D), MEMTYPE_ANY);
+	}
 
 	if (renderType & MESH_OPTION_RENDER_SOFT) {
-		ms->vertexNormal = (Vector3D*)AllocMem(ms->verticesNum * sizeof(Vector3D), MEMTYPE_ANY);
-		ms->vertexCol = (int*)AllocMem(ms->verticesNum * sizeof(int), MEMTYPE_ANY);
-		ms->vertexTC = (TexCoords*)AllocMem(ms->verticesNum * sizeof(TexCoords), MEMTYPE_ANY);
+		if (verticesNum) {
+			ms->vertexNormal = (Vector3D*)AllocMem(verticesNum * sizeof(Vector3D), MEMTYPE_ANY);
+			ms->vertexCol = (int*)AllocMem(verticesNum * sizeof(int), MEMTYPE_ANY);
+			ms->vertexTC = (TexCoords*)AllocMem(verticesNum * sizeof(TexCoords), MEMTYPE_ANY);
+		}
 	} else {
-		ms->cel = (CCB*)AllocMem(polysNum * sizeof(CCB), MEMTYPE_ANY);
+		if (polysNum) ms->cel = (CCB*)AllocMem(polysNum * sizeof(CCB), MEMTYPE_ANY);
 	}
 	ms->renderType = renderType;
+
+	ms->texturesNum = 0;
+	ms->tex = NULL;
 
 	return ms;
 }
 
-Mesh *loadMesh(char *path, bool loadLines, int optionsFlags, Texture *tex)
+Mesh *loadMesh(char *path, int loadOptions, int meshOptions, Texture *tex)
 {
 	int i;
 	int verticesNum, polysNum, linesNum, tempBuffSize;
@@ -226,6 +239,9 @@ Mesh *loadMesh(char *path, bool loadLines, int optionsFlags, Texture *tex)
 	uint16 *tempBuff16;
 
 	Mesh *ms = NULL;
+
+	bool loadLines = !(loadOptions & MESH_LOAD_SKIP_LINES);
+	bool flipPolyOrder = loadOptions & MESH_LOAD_FLIP_POLYORDER;
 
 
 	openFileStream(path); 
@@ -239,7 +255,7 @@ Mesh *loadMesh(char *path, bool loadLines, int optionsFlags, Texture *tex)
 	tempBuffSize = verticesNum * 3;
 
 
-	ms = initMesh(verticesNum, polysNum, 3*polysNum, linesNum * (int)loadLines, optionsFlags);
+	ms = initMesh(verticesNum, polysNum, 3*polysNum, linesNum * (int)loadLines, meshOptions);
 	ms->tex = tex;
 
 	tempBuffSrc = readSequentialBytesFromFile(tempBuffSize);
@@ -267,8 +283,10 @@ Mesh *loadMesh(char *path, bool loadLines, int optionsFlags, Texture *tex)
 	for (i=0; i<3*polysNum; ++i) {
 		ms->index[i] = SHORT_ENDIAN_FLIP(tempBuff16[i]);
 	}
-
 	setAllPolyData(ms, 3, 0, 0);
+
+	if (flipPolyOrder) flipMeshPolyOrder(ms);
+
 	calculateMeshNormals(ms);
 	prepareCelList(ms);
 

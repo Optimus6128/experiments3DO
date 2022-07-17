@@ -17,6 +17,9 @@
 #define MESH_OPTION_NO_POLYSORT		(1 << 8)
 #define MESH_OPTIONS_DEFAULT 		(MESH_OPTION_FAST_MAPCEL | MESH_OPTION_CPU_POLYTEST)
 
+#define MESH_LOAD_SKIP_LINES		(1 << 0)
+#define MESH_LOAD_FLIP_POLYORDER	(1 << 1)
+
 
 typedef struct PolyData
 {
@@ -60,8 +63,7 @@ typedef struct Mesh
 
 
 Mesh *initMesh(int verticesNum, int polysNum, int indicesNum, int linesNum, int renderType);
-Mesh *loadMesh(char *path, bool loadLines, int optionsFlags, Texture *tex);
-Mesh *loadMeshFuckMe(char *data, bool loadLines, int optionsFlags, Texture *tex);
+Mesh *loadMesh(char *path, int loadOptions, int meshOptions, Texture *tex);
 
 void prepareCelList(Mesh *ms);
 
@@ -74,6 +76,7 @@ void setMeshTexture(Mesh *ms, Texture *tex);
 void setMeshPaletteIndex(Mesh *ms, int palIndex);
 
 void setAllPolyData(Mesh *ms, int numPoints, int textureId, int palId);
+void flipPolyOrder(Mesh *ms);
 
 void updateMeshCELs(Mesh *ms);
 

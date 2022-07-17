@@ -63,7 +63,6 @@ void effectMeshLoadInit()
 	static uint8 paramCol = 0xFF;
 	MeshgenParams gridParams = makeMeshgenGridParams(2048, GRID_SIZE);
 	
-	//setBackgroundColor(0x12341234);
 	setPalGradient(0,31, 1,3,7, 31,27,23, gridPal);
 
 	flatTex = initGenTexture(4,4, 16, NULL, 0, TEXGEN_FLAT, false, &paramCol);
@@ -71,8 +70,7 @@ void effectMeshLoadInit()
 
 	gridMesh = initGenMesh(MESH_GRID, gridParams, MESH_OPTIONS_DEFAULT | MESH_OPTION_NO_POLYSORT, gridTex);
 	
-	loadedMesh = loadMesh("data/face.3do", false, MESH_OPTION_FAST_MAPCEL | MESH_OPTION_ENABLE_LIGHTING, flatTex);
-	setMeshPolygonOrder(loadedMesh, true, true);
+	loadedMesh = loadMesh("data/teapot.3do", MESH_LOAD_SKIP_LINES | MESH_LOAD_FLIP_POLYORDER, MESH_OPTIONS_DEFAULT | MESH_OPTION_ENABLE_LIGHTING, flatTex);
 	loadedObj = initObject3D(loadedMesh);
 
 
