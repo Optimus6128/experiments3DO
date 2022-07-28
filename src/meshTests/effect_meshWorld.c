@@ -21,7 +21,6 @@
 
 
 static Viewer *viewer;
-static Light *light;
 
 
 #define GRID_SIZE 16
@@ -221,14 +220,13 @@ static MeshgenParams initBaseParams()
 }
 
 
-static World *initMyWorld(int worldIndex, Camera *camera, Light *light)
+static World *initMyWorld(int worldIndex, Camera *camera)
 {
 	int i;
 
 	World *world = initWorld(128, 1, 1);
 
 	addCameraToWorld(camera, world);
-	addLightToWorld(light, world);
 
 	if (worldIndex != 4) addObjectToWorld(gridObj, 0, false, world);
 
@@ -383,10 +381,10 @@ void effectMeshWorldInit()
 	viewer = createViewer(64,192,64, 176);
 	setViewerPos(viewer, 0,96,-1024);
 
-	light = createLight(true);
+	setGlobalLightDir(-3,-2,1);
 
 	for (i=0; i<WORLDS_NUM; ++i) {
-		myWorld[i] = initMyWorld(i, viewer->camera, light);
+		myWorld[i] = initMyWorld(i, viewer->camera);
 	}
 }
 

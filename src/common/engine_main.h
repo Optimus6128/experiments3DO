@@ -51,7 +51,7 @@ Light *createLight(bool isDirectional);
 void setLightPos(Light *light, int px, int py, int pz);
 void setLightDir(Light *light, int vx, int vy, int vz);
 
-void setGlobalLight(Light *light);
+void setGlobalLightDir(int vx, int vy, int vz);
 
 void createRotationMatrixValues(int rotX, int rotY, int rotZ, int *rotVecs);
 

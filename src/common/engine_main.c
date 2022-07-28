@@ -495,9 +495,9 @@ Light *createLight(bool isDirectional)
 	return light;
 }
 
-void setGlobalLight(Light *light)
+void setGlobalLightDir(int vx, int vy, int vz)
 {
-	globalLight = light;
+	setLightDir(globalLight, vx, vy, vz);
 }
 
 
@@ -509,7 +509,7 @@ void initEngine(bool usesSoftEngine)
 	useMapCelFunctionFast(true);
 
 	globalLight = createLight(true);
-	setLightDir(globalLight, -3,-2,1);
+	setGlobalLightDir(0,0,1);
 
 	memset(zOrderList, 0, sizeof(zOrderListBucket) * Z_ORDER_SIZE);
 
