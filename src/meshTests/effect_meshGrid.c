@@ -113,11 +113,11 @@ void effectMeshGridInit()
 	MeshgenParams params = makeMeshgenGridParams(1024, WATER_SIZE);
 
 	setPalGradient(0,31, 1,1,3, 27,29,31, waterPal);
-	waterTex = initGenTexture(WATER_SIZE, WATER_SIZE, 8, waterPal, 1, TEXGEN_EMPTY, false, NULL);
+	waterTex = initGenTexture(WATER_SIZE, WATER_SIZE, 8, waterPal, 1, TEXGEN_EMPTY, NULL);
 
 	setPalGradient(0,31, 1,3,7, 15,23,31, floorPal);
-	gridTex = initGenTexture(16,16, 8, floorPal, 1, TEXGEN_GRID, false, NULL);
-	cloudTex = initGenTexture(128,128, 8, floorPal, 1, TEXGEN_CLOUDS, false, NULL);
+	gridTex = initGenTexture(16,16, 8, floorPal, 1, TEXGEN_GRID, NULL);
+	cloudTex = initGenTexture(128,128, 8, floorPal, 1, TEXGEN_CLOUDS, NULL);
 
 	waterSpr = newSprite(WATER_SIZE, WATER_SIZE, 8, CEL_TYPE_CODED, waterPal, waterTex->bitmap);
 

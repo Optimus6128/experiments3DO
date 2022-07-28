@@ -323,14 +323,14 @@ void effectMeshWorldInit()
 		}
 	}
 
-	flatTex = initGenTexture(4,4, 16, NULL, 0, TEXGEN_FLAT, false, &paramCol);
-	flatTex2 = initGenTexture(4,4, 16, NULL, 0, TEXGEN_FLAT, false, &paramCol3);
-	panerTex = initGenTexture(16,16, 8, cubePal, 1, TEXGEN_XOR, false, &paramStretch);
-	gridTex = initGenTexture(16,16, 8, gridPal, 1, TEXGEN_GRID, false, NULL);
-	cubeTex = initGenTexture(64,64, 8, cubePal, 8, TEXGEN_CLOUDS, false, NULL);
+	flatTex = initGenTexture(4,4, 16, NULL, 0, TEXGEN_FLAT, &paramCol);
+	flatTex2 = initGenTexture(4,4, 16, NULL, 0, TEXGEN_FLAT, &paramCol3);
+	panerTex = initGenTexture(16,16, 8, cubePal, 1, TEXGEN_XOR, &paramStretch);
+	gridTex = initGenTexture(16,16, 8, gridPal, 1, TEXGEN_GRID, NULL);
+	cubeTex = initGenTexture(64,64, 8, cubePal, 8, TEXGEN_CLOUDS, NULL);
 	
-	flatGridTex[0] = initGenTexture(4,4, 16, NULL, 0, TEXGEN_FLAT, false, &paramCol1);
-	flatGridTex[1] = initGenTexture(4,4, 16, NULL, 0, TEXGEN_FLAT, false, &paramCol2);
+	flatGridTex[0] = initGenTexture(4,4, 16, NULL, 0, TEXGEN_FLAT, &paramCol1);
+	flatGridTex[1] = initGenTexture(4,4, 16, NULL, 0, TEXGEN_FLAT, &paramCol2);
 	
 	startMesh = initGenMesh(MESH_STARS, starsParams, MESH_OPTION_RENDER_POINTS, NULL);
 	starsObj = initObject3D(startMesh);
@@ -375,7 +375,7 @@ void effectMeshWorldInit()
 	templeBaseMesh = subdivMesh(templeBaseMesh);
 	templeBaseObj = initObject3D(templeBaseMesh);
 
-	cloudTex16 = initGenTexture(64, 64, 16, NULL, 1, TEXGEN_CLOUDS, false, NULL);
+	cloudTex16 = initGenTexture(64, 64, 16, NULL, 1, TEXGEN_CLOUDS, NULL);
 	softObj = initMeshObject(MESH_SQUARE_COLUMNOID, columnoidParams2, MESH_OPTION_RENDER_SOFT16 | MESH_OPTION_ENABLE_LIGHTING | MESH_OPTION_ENABLE_ENVMAP, cloudTex16);
 
 	shadeGrid();

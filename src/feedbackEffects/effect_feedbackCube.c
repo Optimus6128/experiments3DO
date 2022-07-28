@@ -148,7 +148,7 @@ void effectFeedbackCubeInit()
 	MeshgenParams params = DEFAULT_MESHGEN_PARAMS(256);
 
 	feedbackTex0 = initFeedbackTexture(0, 0, FB_WIDTH, FB_HEIGHT, 0);
-	softFeedbackTex = initTexture(FB_WIDTH, FB_HEIGHT, 16, TEXTURE_TYPE_STATIC, NULL, NULL, 0);
+	softFeedbackTex = initTexture(FB_WIDTH, FB_HEIGHT, 16, TEXTURE_TYPE_DEFAULT, NULL, NULL, 0);
 	draculTex = loadTexture("data/draculin.cel");
 
 	cubeMesh = initGenMesh(MESH_CUBE, params, MESH_OPTION_CPU_POLYTEST, feedbackTex0);

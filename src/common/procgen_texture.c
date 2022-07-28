@@ -324,13 +324,12 @@ static void copyAndShadeTextureData(Texture *src, Texture *dst, int shade, int b
 	}
 }
 
-static Texture* initGenTextures(int width, int height, int bpp, uint16 *pal, ubyte numPals, ubyte numTextures, int texgenId, bool dynamic, bool shade, void *params)
+static Texture* initGenTextures(int width, int height, int bpp, uint16 *pal, ubyte numPals, ubyte numTextures, int texgenId, bool shade, void *params)
 {
 	int i;
 	Texture *tex;
 
-	int type = TEXTURE_TYPE_STATIC;
-	if (dynamic) type = TEXTURE_TYPE_DYNAMIC;
+	int type = TEXTURE_TYPE_DEFAULT;
 	if (bpp <= 8 && numPals > 0) type |= TEXTURE_TYPE_PALLETIZED;
 
 	tex = initTextures(width, height, bpp, type, NULL, pal, numPals, numTextures);
@@ -347,32 +346,32 @@ static Texture* initGenTextures(int width, int height, int bpp, uint16 *pal, uby
 	return tex;
 }
 
-Texture* initGenTexture(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, bool dynamic, void *params)
+Texture* initGenTexture(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, void *params)
 {
-	return initGenTextures(width, height, bpp, pal, numPals, 1, texgenId, dynamic, false, params);
+	return initGenTextures(width, height, bpp, pal, numPals, 1, texgenId, false, params);
 }
 
-Texture* initGenTextureShades(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, bool dynamic, int numShades, void *params)
+Texture* initGenTextureShades(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, int numShades, void *params)
 {
-	return initGenTextures(width, height, bpp, pal, numPals, numShades, texgenId, dynamic, true, params);
+	return initGenTextures(width, height, bpp, pal, numPals, numShades, texgenId, true, params);
 }
 
-Texture *initGenTexturesTriangleHack(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, bool dynamic, void *params)
+Texture *initGenTexturesTriangleHack(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, void *params)
 {
 	Texture *tex;
 
-	tex = initGenTextures(width, height, bpp, pal, numPals, 2, texgenId, dynamic, false, params);
+	tex = initGenTextures(width, height, bpp, pal, numPals, 2, texgenId, false, params);
 	// COMMENT OUT PALETTE BUG
 	eraseHalfTextureTriangleArea(&tex[1], TRI_AREA_LR_TOP, 0);
 
 	return tex;
 }
 
-Texture *initGenTexturesTriangleHack2(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, bool dynamic, void *params)
+Texture *initGenTexturesTriangleHack2(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, void *params)
 {
 	Texture *tex;
 
-	tex = initGenTextures(width, height, bpp, pal, numPals, 2, texgenId, dynamic, false, params);
+	tex = initGenTextures(width, height, bpp, pal, numPals, 2, texgenId, false, params);
 	// COMMENT OUT PALETTE BUG
 	squishTextureToTriangleArea(&tex[1], TRI_AREA_LR_TOP);
 

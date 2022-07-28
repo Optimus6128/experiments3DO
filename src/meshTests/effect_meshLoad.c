@@ -65,8 +65,8 @@ void effectMeshLoadInit()
 	
 	setPalGradient(0,31, 1,3,7, 31,27,23, gridPal);
 
-	flatTex = initGenTexture(4,4, 16, NULL, 0, TEXGEN_FLAT, false, &paramCol);
-	gridTex = initGenTexture(16,16, 8, gridPal, 1, TEXGEN_GRID, false, NULL);
+	flatTex = initGenTexture(4,4, 16, NULL, 0, TEXGEN_FLAT, &paramCol);
+	gridTex = initGenTexture(16,16, 8, gridPal, 1, TEXGEN_GRID, NULL);
 
 	gridMesh = initGenMesh(MESH_GRID, gridParams, MESH_OPTIONS_DEFAULT | MESH_OPTION_NO_POLYSORT, gridTex);
 	
