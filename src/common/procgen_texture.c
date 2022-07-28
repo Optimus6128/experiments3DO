@@ -251,10 +251,15 @@ static void genTexture(int texgenId, void *params, Texture *tex)
 
 		case TEXGEN_XOR:
 		{
-			const ubyte stretch = *((ubyte*)params);
+			ubyte stretch = 0;
+			if (params) stretch = *((ubyte*)params);
 			for (y=0; y<height; y++) {
 				for (x=0; x<width; x++) {
-					*dst++ = (x ^ ((y*stretch) & 15)) & 31;
+					if (stretch==0) {
+						*dst++ = (x ^ y) & 31;
+					} else {
+						*dst++ = (x ^ ((y*stretch) & 15)) & 31;
+					}
 				}
 			}
 		}
