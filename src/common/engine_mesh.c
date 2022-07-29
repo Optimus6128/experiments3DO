@@ -118,17 +118,8 @@ static void setMeshCELflags(Mesh *ms, uint32 flags, bool enable)
 void setMeshPolygonOrder(Mesh *ms, bool cw, bool ccw)
 {
 	if (!(ms->renderType & MESH_OPTION_RENDER_SOFT)) {
-		if (cw) {
-			setMeshCELflags(ms, CCB_ACW, true);
-		} else {
-			setMeshCELflags(ms, CCB_ACW, false);
-		}
-
-		if (ccw) {
-			setMeshCELflags(ms, CCB_ACCW, true);
-		} else {
-			setMeshCELflags(ms, CCB_ACCW, false);
-		}
+		setMeshCELflags(ms, CCB_ACW, cw);
+		setMeshCELflags(ms, CCB_ACCW, ccw);
 	}
 }
 

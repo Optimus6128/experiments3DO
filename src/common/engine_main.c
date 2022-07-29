@@ -136,8 +136,8 @@ static void prepareTransformedMeshCELs(Mesh *mesh)
 			sc4 = &screenElements[*(index+3)];
 		}
 
-		if (!(doPolyClipTests && sc1->outside && sc2->outside && sc3->outside && sc4->outside) && 
-			!(polygonOrderTestCPU && (sc1->x - sc2->x) * (sc3->y - sc2->y) - (sc3->x - sc2->x) * (sc1->y - sc2->y) <= 0)) {
+		if (!((doPolyClipTests == TRUE) && sc1->outside && sc2->outside && sc3->outside && sc4->outside) && 
+			!((polygonOrderTestCPU == TRUE) && (sc1->x - sc2->x) * (sc3->y - sc2->y) - (sc3->x - sc2->x) * (sc1->y - sc2->y) <= 0)) {
 
 				Point qpt[4];
 
