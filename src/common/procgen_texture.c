@@ -229,7 +229,7 @@ static void genTexture(int texgenId, void *params, Texture *tex)
 
 		case TEXGEN_FLAT:
 		{
-			if (tex->bpp==8) {
+			if (tex->bpp<=8) {
 				const ubyte color = *((ubyte*)params);
 				memset(dst, color, size);
 			} else {

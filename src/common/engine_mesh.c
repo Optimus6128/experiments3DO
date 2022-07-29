@@ -19,7 +19,7 @@ void updateMeshCELs(Mesh *ms)
 			Texture *tex = &ms->tex[ms->poly[i].textureId];
 			int woffset;
 			int vcnt;
-			CCB *cel = ms->cel;
+			CCB *cel = &ms->cel[i];
 
 			const int texShrX = getShr(tex->width);
 			const int texShrY = getShr(tex->height);
@@ -43,7 +43,7 @@ void updateMeshCELs(Mesh *ms)
 			// Should spare the magic numbers at some point
 			cel->ccb_PRE0 = (cel->ccb_PRE0 & ~(((1<<10) - 1)<<6)) | (vcnt << 6);
 			cel->ccb_PRE1 = (cel->ccb_PRE1 & (65536 - 1024)) | (woffset << 16) | (tex->width-1);
-			cel->ccb_PLUTPtr = (uint16*)&tex->pal[ms->poly[i].palId << getCelPaletteColorsNum(tex->bpp)];
+			cel->ccb_PLUTPtr = (uint16*)&tex->pal[ms->poly[i].palId << getCelPaletteColorsRealBpp(tex->bpp)];
 		}
 	}
 }
@@ -68,7 +68,7 @@ void prepareCelList(Mesh *ms)
 
 			initCel(tex->width, tex->height, tex->bpp, celType, cel);
 
-			if (tex->pal) pal = (uint16*)&tex->pal[ms->poly[i].palId << getCelPaletteColorsNum(tex->bpp)];
+			if (tex->pal) pal = (uint16*)&tex->pal[ms->poly[i].palId << getCelPaletteColorsRealBpp(tex->bpp)];
 			setupCelData(pal, tex->bitmap, cel);
 
 			cel->ccb_Flags &= ~CCB_ACW;	// Initially, ACW is off and only ACCW (counterclockwise) polygons are visible
@@ -94,7 +94,7 @@ void setMeshPaletteIndex(Mesh *ms, int palIndex)
 			Texture *tex = &ms->tex[ms->poly[i].textureId];
 			if (tex) {
 				ms->poly[i].palId = palIndex;
-				ms->cel[i].ccb_PLUTPtr = (uint16*)&tex->pal[palIndex << getCelPaletteColorsNum(tex->bpp)];
+				ms->cel[i].ccb_PLUTPtr = (uint16*)&tex->pal[palIndex << getCelPaletteColorsRealBpp(tex->bpp)];
 			}
 		}
 	}
@@ -103,15 +103,14 @@ void setMeshPaletteIndex(Mesh *ms, int palIndex)
 static void setMeshCELflags(Mesh *ms, uint32 flags, bool enable)
 {
 	if (!(ms->renderType & MESH_OPTION_RENDER_SOFT)) {
-		CCB *cel = ms->cel;
 		int i;
 		for (i=0; i<ms->polysNum; i++) {
+			CCB *cel = &ms->cel[i];
 			if (enable) {
 				cel->ccb_Flags |= flags;
 			} else {
 				cel->ccb_Flags &= ~flags;
 			}
-			++cel;
 		}
 	}
 }
@@ -136,9 +135,9 @@ void setMeshPolygonOrder(Mesh *ms, bool cw, bool ccw)
 void setMeshTranslucency(Mesh *ms, bool enable)
 {
 	if (!(ms->renderType & MESH_OPTION_RENDER_SOFT)) {
-		CCB *cel = ms->cel;
 		int i;
 		for (i=0; i<ms->polysNum; i++) {
+			CCB *cel = &ms->cel[i];
 			if (enable) {
 				cel->ccb_PIXC = TRANSLUCENT_CEL;
 			} else {

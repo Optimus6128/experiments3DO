@@ -213,7 +213,7 @@ int getCelDataSizeInBytes(CCB *cel)
 	return (cel->ccb_Width * cel->ccb_Height * bpp) >> 3;
 }
 
-int getCelPaletteColorsNum(int bpp)
+int getCelPaletteColorsRealBpp(int bpp)
 {
 	if (bpp <= 4) {
 		return bpp;
