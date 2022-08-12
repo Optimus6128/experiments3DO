@@ -50,7 +50,7 @@ static Mesh *templeBaseMesh;
 static Object3D *softObj;
 static Texture *cloudTex16;
 
-static Mesh *startMesh;
+static Mesh *starsMesh;
 static Object3D *starsObj;
 
 static Texture *flatTex;
@@ -330,8 +330,8 @@ void effectMeshWorldInit()
 	flatGridTex[0] = initGenTexture(4,4, 16, NULL, 0, TEXGEN_FLAT, &paramCol1);
 	flatGridTex[1] = initGenTexture(4,4, 16, NULL, 0, TEXGEN_FLAT, &paramCol2);
 	
-	startMesh = initGenMesh(MESH_STARS, starsParams, MESH_OPTION_RENDER_POINTS, NULL);
-	starsObj = initObject3D(startMesh);
+	starsMesh = initGenMesh(MESH_STARS, starsParams, MESH_OPTION_RENDER_POINTS, NULL);
+	starsObj = initObject3D(starsMesh);
 
 	gridMesh = initGenMesh(MESH_GRID, gridParams, MESH_OPTIONS_DEFAULT | MESH_OPTION_NO_POLYSORT, gridTex);
 	gridObj = initObject3D(gridMesh);
