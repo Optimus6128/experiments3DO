@@ -50,16 +50,13 @@ void updateMeshCELs(Mesh *ms)
 
 void prepareCelList(Mesh *ms)
 {
-	const bool isBillBoards = (ms->renderType & MESH_OPTION_RENDER_BILLBOARDS) != 0;
-
 	if (!(ms->renderType & MESH_OPTION_RENDER_SOFT)) {
+		const bool isBillBoards = (ms->renderType & MESH_OPTION_RENDER_BILLBOARDS) != 0;
 		int i;
-		int celNum = ms->polysNum;
-		if (isBillBoards) {
-			celNum = ms->verticesNum;
-		}
+		int celsNum = ms->polysNum;
+		if (isBillBoards) celsNum = ms->verticesNum;
 
-		for (i=0; i<celNum; i++) {
+		for (i=0; i<celsNum; i++) {
 			Texture *tex = ms->tex;
 			uint16 *pal = (uint16*)tex->pal;
 
@@ -106,11 +103,19 @@ void setMeshTexture(Mesh *ms, Texture *tex)
 void setMeshPaletteIndex(Mesh *ms, int palIndex)
 {
 	if (!(ms->renderType & MESH_OPTION_RENDER_SOFT)) {
+		const bool isBillBoards = (ms->renderType & MESH_OPTION_RENDER_BILLBOARDS) != 0;
 		int i;
-		for (i=0; i<ms->polysNum; i++) {
-			Texture *tex = &ms->tex[ms->poly[i].textureId];
-			if (tex) {
+		int celsNum = ms->polysNum;
+		if (isBillBoards) celsNum = ms->verticesNum;
+
+		for (i=0; i<celsNum; i++) {
+			Texture *tex = ms->tex;
+			if (isBillBoards) {
+				tex = &ms->tex[ms->poly[i].textureId];
+			} else {
 				ms->poly[i].palId = palIndex;
+			}
+			if (tex) {
 				ms->cel[i].ccb_PLUTPtr = (uint16*)&tex->pal[palIndex << getCelPaletteColorsRealBpp(tex->bpp)];
 			}
 		}
@@ -120,8 +125,12 @@ void setMeshPaletteIndex(Mesh *ms, int palIndex)
 static void setMeshCELflags(Mesh *ms, uint32 flags, bool enable)
 {
 	if (!(ms->renderType & MESH_OPTION_RENDER_SOFT)) {
+		const bool isBillBoards = (ms->renderType & MESH_OPTION_RENDER_BILLBOARDS) != 0;
 		int i;
-		for (i=0; i<ms->polysNum; i++) {
+		int celsNum = ms->polysNum;
+		if (isBillBoards) celsNum = ms->verticesNum;
+
+		for (i=0; i<celsNum; i++) {
 			CCB *cel = &ms->cel[i];
 			if (enable) {
 				cel->ccb_Flags |= flags;
@@ -140,18 +149,24 @@ void setMeshPolygonOrder(Mesh *ms, bool cw, bool ccw)
 	}
 }
 
-void setMeshTranslucency(Mesh *ms, bool enable)
+void setMeshTranslucency(Mesh *ms, bool enable, bool additive)
 {
+	uint32 pixcBlend = TRANSLUCENT_CEL;
+	if (additive) pixcBlend = 0x1F801F80;
+
 	if (!(ms->renderType & MESH_OPTION_RENDER_SOFT)) {
+		const bool isBillBoards = (ms->renderType & MESH_OPTION_RENDER_BILLBOARDS) != 0;
 		int i;
-		for (i=0; i<ms->polysNum; i++) {
+		int celsNum = ms->polysNum;
+		if (isBillBoards) celsNum = ms->verticesNum;
+
+		for (i=0; i<celsNum; i++) {
 			CCB *cel = &ms->cel[i];
 			if (enable) {
-				cel->ccb_PIXC = TRANSLUCENT_CEL;
+				cel->ccb_PIXC = pixcBlend;
 			} else {
 				cel->ccb_PIXC = SOLID_CEL;
 			}
-			++cel;
 		}
 	}
 }

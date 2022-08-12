@@ -124,7 +124,7 @@ void effectMeshGridInit()
 	setSpritePositionZoom(waterSpr, 296, 24, 256);
 
 	gridMesh = initGenMesh(MESH_GRID, params, MESH_OPTION_FAST_MAPCEL, gridTex);
-	//setMeshTranslucency(gridMesh, true);
+	//setMeshTranslucency(gridMesh, true, false);
 	gridObj = initObject3D(gridMesh);
 
 	darkenAllCels();

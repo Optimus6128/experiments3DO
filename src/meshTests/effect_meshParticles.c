@@ -73,6 +73,7 @@ void effectMeshParticlesInit()
 	blobTex = initGenTexture(8,8, 8, blobPal, 1, TEXGEN_BLOB, NULL);
 
 	particlesMesh = initGenMesh(MESH_PARTICLES, particlesParams, MESH_OPTION_RENDER_BILLBOARDS /*MESH_OPTION_RENDER_POINTS*/, blobTex);
+	setMeshTranslucency(particlesMesh, true, true);
 	particlesObj = initObject3D(particlesMesh);
 
 	viewer = createViewer(64,192,64, 176);

@@ -115,8 +115,8 @@ static void inputScript()
 
 	if (isJoyButtonPressedOnce(JOY_BUTTON_LPAD)) {
 		translucency = !translucency;
-		setMeshTranslucency(cubeMesh, translucency);
-		setMeshTranslucency(cubeMeshBack, translucency);
+		setMeshTranslucency(cubeMesh, translucency, false);
+		setMeshTranslucency(cubeMeshBack, translucency, false);
 	}
 
 	if (isJoyButtonPressedOnce(JOY_BUTTON_RPAD)) {
