@@ -32,6 +32,9 @@ static Object3D *gridObj;
 static Texture *gridTex;
 static uint16 gridPal[32];
 
+static Texture *blobTex;
+static uint16 blobPal[32];
+
 static Mesh *particlesMesh;
 static Object3D *particlesObj;
 
@@ -63,11 +66,13 @@ void effectMeshParticlesInit()
 	setPalGradient(0,31, 1,3,7, 31,27,23, gridPal);
 	gridTex = initGenTexture(16,16, 8, gridPal, 1, TEXGEN_GRID, NULL);
 	gridMesh = initGenMesh(MESH_GRID, gridParams, MESH_OPTIONS_DEFAULT | MESH_OPTION_NO_POLYSORT, gridTex);
-
 	gridObj = initObject3D(gridMesh);
 	shadeGrid();
 
-	particlesMesh = initGenMesh(MESH_PARTICLES, particlesParams, MESH_OPTION_RENDER_POINTS, NULL);
+	setPalGradient(0,31, 0,0,0, 27,29,31, blobPal);
+	blobTex = initGenTexture(8,8, 8, blobPal, 1, TEXGEN_BLOB, NULL);
+
+	particlesMesh = initGenMesh(MESH_PARTICLES, particlesParams, MESH_OPTION_RENDER_BILLBOARDS /*MESH_OPTION_RENDER_POINTS*/, blobTex);
 	particlesObj = initObject3D(particlesMesh);
 
 	viewer = createViewer(64,192,64, 176);

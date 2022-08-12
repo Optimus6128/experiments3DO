@@ -206,6 +206,77 @@ static void prepareTransformedMeshCELs(Mesh *mesh)
 	}
 }
 
+static void prepareTransformedMeshBillboardCELs(Mesh *mesh)
+{
+	int i;
+	CCB *currentAddedCel = NULL;
+
+	CCB *cel = mesh->cel;
+	const bool doPolySort = !(mesh->renderType & MESH_OPTION_NO_POLYSORT);
+
+	if (doPolySort) {
+		zIndexMin = Z_ORDER_SIZE-1;
+		zIndexMax = 0;
+	}
+
+	startPolyCel = NULL;
+	for (i=0; i<mesh->verticesNum; ++i) {
+		ScreenElement *sc = &screenElements[i];
+
+		if (!sc->outside) {
+			if (doPolySort) {	// prepare buckets and link CELs inside buckets
+				const int pointZ = sc->z >> Z_ORDER_SHIFT;
+				zOrderListBucket *zBucket = &zOrderList[pointZ];
+
+				if (zBucket->first==NULL) {
+					if (pointZ < zIndexMin) zIndexMin = pointZ;
+					if (pointZ > zIndexMax) zIndexMax = pointZ;
+					zBucket->first = zBucket->last = cel;
+				} else {
+					cel->ccb_NextPtr = zBucket->first;
+					zBucket->first = cel;
+				}
+			} else {
+				if (!startPolyCel) {
+					startPolyCel = currentAddedCel = cel;
+				} else {
+					currentAddedCel->ccb_NextPtr = cel;
+					currentAddedCel = cel;
+				}
+			}
+
+			cel->ccb_XPos = (sc->x - (cel->ccb_Width >> 1)) << 16;
+			cel->ccb_YPos = (sc->y - (cel->ccb_Height >> 1)) << 16;
+		}
+		++cel;
+	}
+
+	if (doPolySort) {	// Iterate through zBucket min/max to link the last CELs to next first CELs in the populated buckets
+		zOrderListBucket *zBucket = &zOrderList[zIndexMax];
+		CCB *prevLastCel = zBucket->last;
+
+		int count = zIndexMax - zIndexMin;
+		if (count < 0) return;
+
+		startPolyCel = zBucket->first;
+		zBucket->first = NULL;
+
+		while(count-- > 0) {
+			--zBucket;
+			if (zBucket->first) {
+				prevLastCel->ccb_NextPtr = zBucket->first;
+				prevLastCel = zBucket->last;
+				zBucket->first = NULL;
+			}
+		};
+		endPolyCel = zBucket->last;
+		endPolyCel->ccb_Flags |= CCB_LAST;
+	} else if (currentAddedCel) {
+		currentAddedCel->ccb_Flags |= CCB_LAST;
+		endPolyCel = currentAddedCel;
+	}
+}
+
 static void calculateVertexLighting(Mesh *mesh)
 {
 	int i;
@@ -355,23 +426,44 @@ static void renderTransformedMesh(Mesh *mesh)
 	}
 }
 
+static void renderTransformedBillboards(Mesh *mesh)
+{
+	useMapCelFunctionFast(mesh->renderType & MESH_OPTION_FAST_MAPCEL);
+
+	prepareTransformedMeshBillboardCELs(mesh);
+
+	if (startPolyCel) {
+		drawCels(startPolyCel);
+		endPolyCel->ccb_Flags &= ~CCB_LAST;
+	}
+}
+
+static void renderTransformedPoints(Mesh *mesh, Camera *cam)
+{
+	int i;
+	const int c = 31;
+	const uint16 col = MakeRGB15(c,c,c);
+
+	for (i=0; i<mesh->verticesNum; ++i) {
+		ScreenElement *sc = &screenElements[i];
+		if (sc->x >= 0 && sc->x < SCREEN_WIDTH && sc->y >= 0 && sc->y < SCREEN_HEIGHT && sc->z > cam->near) {
+			drawPixel(sc->x, sc->y, col);
+		}
+	}
+}
+
+
 // Multiple lights not implemented yet, just add stub arguments
 void renderObject3D(Object3D *obj, Camera *cam, Light **lights, int lightsNum)
 {
-	int i;
 	Mesh *mesh = obj->mesh;
 
 	transformMesh(obj, cam);
 
 	if (mesh->renderType & MESH_OPTION_RENDER_POINTS) {
-		for (i=0; i<mesh->verticesNum; ++i) {
-			ScreenElement *sc = &screenElements[i];
-			if (sc->x >= 0 && sc->x < SCREEN_WIDTH && sc->y >= 0 && sc->y < SCREEN_HEIGHT && sc->z > cam->near) {
-				const int c = 31;//16 + ((i*i) & 15);
-				const uint16 col = MakeRGB15(c,c,c);
-				drawPixel(sc->x, sc->y, col);
-			}
-		}
+		renderTransformedPoints(mesh, cam);
+	} else if (mesh->renderType & MESH_OPTION_RENDER_BILLBOARDS) {
+		renderTransformedBillboards(mesh);
 	} else {
 		if (mesh->renderType & MESH_OPTION_RENDER_SOFT)
 		{

@@ -50,31 +50,48 @@ void updateMeshCELs(Mesh *ms)
 
 void prepareCelList(Mesh *ms)
 {
+	const bool isBillBoards = (ms->renderType & MESH_OPTION_RENDER_BILLBOARDS) != 0;
+
 	if (!(ms->renderType & MESH_OPTION_RENDER_SOFT)) {
 		int i;
-		for (i=0; i<ms->polysNum; i++)
-		{
-			Texture *tex = &ms->tex[ms->poly[i].textureId];
-			const int texShrX = getShr(tex->width);
-			const int texShrY = getShr(tex->height);
+		int celNum = ms->polysNum;
+		if (isBillBoards) {
+			celNum = ms->verticesNum;
+		}
+
+		for (i=0; i<celNum; i++) {
+			Texture *tex = ms->tex;
+			uint16 *pal = (uint16*)tex->pal;
+
 			CCB *cel = &ms->cel[i];
-			uint16 *pal = NULL;
-
 			int celType = CEL_TYPE_UNCODED;
-			if (tex->type & TEXTURE_TYPE_PALLETIZED)
-				celType = CEL_TYPE_CODED;
 
-			ms->poly[i].texShifts = (texShrX << 4) | texShrY;
+			if (!isBillBoards) {
+				int texShrX, texShrY;
+
+				tex = &ms->tex[ms->poly[i].textureId];
+				texShrX = getShr(tex->width);
+				texShrY = getShr(tex->height);
+				ms->poly[i].texShifts = (texShrX << 4) | texShrY;
+
+				pal = (uint16*)&tex->pal[ms->poly[i].palId << getCelPaletteColorsRealBpp(tex->bpp)];
+			}
+
+			if (tex->type & TEXTURE_TYPE_PALLETIZED) {
+				celType = CEL_TYPE_CODED;
+			}
 
 			initCel(tex->width, tex->height, tex->bpp, celType, cel);
-
-			if (tex->pal) pal = (uint16*)&tex->pal[ms->poly[i].palId << getCelPaletteColorsRealBpp(tex->bpp)];
 			setupCelData(pal, tex->bitmap, cel);
 
-			cel->ccb_Flags &= ~CCB_ACW;	// Initially, ACW is off and only ACCW (counterclockwise) polygons are visible
-			cel->ccb_Flags |= CCB_BGND;
-			if (!(tex->type & TEXTURE_TYPE_FEEDBACK))
+			if (!isBillBoards) {
+				cel->ccb_Flags &= ~CCB_ACW;	// Initially, ACW is off and only ACCW (counterclockwise) polygons are visible
+				cel->ccb_Flags |= CCB_BGND;
+			}
+
+			if (!(tex->type & TEXTURE_TYPE_FEEDBACK)) {
 				cel->ccb_Flags |= (CCB_ACSC | CCB_ALSC);	// Enable Super Clipping only if Feedback Texture is not enabled, it might lock otherwise
+			}
 
 			cel->ccb_Flags &= ~CCB_LAST;
 		}

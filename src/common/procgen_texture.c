@@ -278,6 +278,20 @@ static void genTexture(int texgenId, void *params, Texture *tex)
 			}
 		}
 		break;
+		
+		case TEXGEN_BLOB:
+		{
+			for (y=0; y<height; y++) {
+				yc = y - (height >> 1);
+				for (x=0; x<width; x++) {
+					xc = x - (width >> 1);
+					c = (xc * xc + yc * yc) << 1;
+					if (c > 31) c = 31;
+					*dst++ = 31 - c;
+				}
+			}
+		}
+		break;
 
 		case TEXGEN_CLOUDS:
 			genCloudTexture(1,255,127, 8,3, tex);

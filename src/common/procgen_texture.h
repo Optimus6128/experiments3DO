@@ -3,7 +3,7 @@
 
 #include "engine_texture.h"
 
-enum {TEXGEN_EMPTY, TEXGEN_FLAT, TEXGEN_NOISE, TEXGEN_XOR, TEXGEN_GRID, TEXGEN_CLOUDS};
+enum {TEXGEN_EMPTY, TEXGEN_FLAT, TEXGEN_NOISE, TEXGEN_XOR, TEXGEN_GRID, TEXGEN_CLOUDS, TEXGEN_BLOB };
 
 Texture *initGenTexture(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, void *params);
 Texture *initGenTextureShades(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, int numShades, void *params);
