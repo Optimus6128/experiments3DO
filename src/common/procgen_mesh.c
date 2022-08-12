@@ -746,6 +746,14 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 		}
 		break;
 
+		case MESH_PARTICLES:
+		{
+			const int particlesNum = params.numProcPoints;
+
+			ms = initMesh(particlesNum,0,0,0, optionsFlags);
+		}
+		break;
+
 		case MESH_VOLUME_SLICES:
 		{
 		}
@@ -798,6 +806,15 @@ MeshgenParams makeMeshgenStarsParams(int distance, int numStars)
 
 	params.size = distance;
 	params.numProcPoints = numStars;
+
+	return params;
+}
+
+MeshgenParams makeMeshgenParticleParams(int numParticles)
+{
+	MeshgenParams params;
+
+	params.numProcPoints = numParticles;
 
 	return params;
 }

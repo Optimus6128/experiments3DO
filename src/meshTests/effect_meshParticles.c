@@ -1,6 +1,6 @@
 #include "core.h"
 
-#include "effect_meshLoad.h"
+#include "effect_meshParticles.h"
 
 #include "system_graphics.h"
 #include "tools.h"
@@ -25,18 +25,11 @@
 static Viewer *viewer;
 static Light *light;
 
-static Object3D *loadedObj;
-static Mesh *loadedMesh;
-
 static Mesh *gridMesh;
 static Object3D *gridObj;
 
-static Texture *flatTex;
 static Texture *gridTex;
-
 static uint16 gridPal[32];
-
-static bool autoRot = false;
 
 static World *myWorld;
 
@@ -58,21 +51,14 @@ static void shadeGrid()
 	}
 }
 
-void effectMeshLoadInit()
+void effectMeshParticlesInit()
 {
 	static uint8 paramCol = 0xFF;
 	MeshgenParams gridParams = makeMeshgenGridParams(2048, GRID_SIZE);
 	
 	setPalGradient(0,31, 1,3,7, 31,27,23, gridPal);
-
-	flatTex = initGenTexture(4,4, 16, NULL, 0, TEXGEN_FLAT, &paramCol);
 	gridTex = initGenTexture(16,16, 8, gridPal, 1, TEXGEN_GRID, NULL);
-
 	gridMesh = initGenMesh(MESH_GRID, gridParams, MESH_OPTIONS_DEFAULT | MESH_OPTION_NO_POLYSORT, gridTex);
-	
-	loadedMesh = loadMesh("data/teapot.3do", MESH_LOAD_SKIP_LINES | MESH_LOAD_FLIP_POLYORDER, MESH_OPTIONS_DEFAULT | MESH_OPTION_ENABLE_LIGHTING, flatTex);
-	loadedObj = initObject3D(loadedMesh);
-
 
 	gridObj = initObject3D(gridMesh);
 	shadeGrid();
@@ -88,46 +74,14 @@ void effectMeshLoadInit()
 
 	addCameraToWorld(viewer->camera, myWorld);
 	addLightToWorld(light, myWorld);
-	addObjectToWorld(loadedObj, 1, true, myWorld);
-
-	// Commented out this in loadMesh as it broke things (unknown API/compiler bugs?) but here it's ok although maybe not necessary
-	closeFileStream();
 }
 
 static void inputScript(int dt)
 {
-	if (isJoyButtonPressedOnce(JOY_BUTTON_START)) {
-		autoRot = !autoRot;
-	}
-
 	viewerInputFPS(viewer, dt);
 }
 
-static void setObjectsPosAndRot(int dt)
-{
-	static int softRotX = 0;
-	static int softRotY = 0;
-	static int softRotZ = 0;
-
-	setObject3Dpos(gridObj, 0, 0, 0);
-	setObject3Drot(gridObj, 0, 0, 0);
-
-	setObject3Dpos(loadedObj, 0, 256, 0);
-	setObject3Drot(loadedObj, softRotX, softRotY, softRotZ);
-
-	/*drawNumber(32,40, loadedMesh->verticesNum);
-	drawNumber(32,48, loadedMesh->polysNum);
-	drawNumber(32,56, loadedMesh->indicesNum);
-	drawNumber(32,64, loadedMesh->linesNum);*/
-
-	if (autoRot) {
-		//softRotX += 1;
-		softRotY += 2;
-		//softRotZ -= 1;
-	}
-}
-
-void effectMeshLoadRun()
+void effectMeshParticlesRun()
 {
 	static int prevTicks = 0;
 	int currTicks = getTicks();
@@ -135,8 +89,6 @@ void effectMeshLoadRun()
 	prevTicks = currTicks;
 
 	inputScript(dt);
-
-	setObjectsPosAndRot(dt);
 
 	renderWorld(myWorld);
 }
