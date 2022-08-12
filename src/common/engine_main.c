@@ -367,7 +367,7 @@ void renderObject3D(Object3D *obj, Camera *cam, Light **lights, int lightsNum)
 		for (i=0; i<mesh->verticesNum; ++i) {
 			ScreenElement *sc = &screenElements[i];
 			if (sc->x >= 0 && sc->x < SCREEN_WIDTH && sc->y >= 0 && sc->y < SCREEN_HEIGHT && sc->z > cam->near) {
-				const int c = 16 + ((i*i) & 15);
+				const int c = 31;//16 + ((i*i) & 15);
 				const uint16 col = MakeRGB15(c,c,c);
 				drawPixel(sc->x, sc->y, col);
 			}

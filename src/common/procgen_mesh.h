@@ -26,7 +26,7 @@ MeshgenParams makeDefaultMeshgenParams(int size);
 MeshgenParams makeMeshgenGridParams(int size, int divisions);
 MeshgenParams makeMeshgenSquareColumnoidParams(int size, Point2D *points, int numPoints, bool capTop, bool capBottom);
 MeshgenParams makeMeshgenStarsParams(int distance, int numStars);
-MeshgenParams makeMeshgenParticleParams(int numParticles);
+MeshgenParams makeMeshgenParticlesParams(int numParticles);
 
 void calculateMeshNormals(Mesh *ms);
 

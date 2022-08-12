@@ -749,8 +749,18 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 		case MESH_PARTICLES:
 		{
 			const int particlesNum = params.numProcPoints;
+			const int halfSize = 256;
 
 			ms = initMesh(particlesNum,0,0,0, optionsFlags);
+
+			resetAllCurrentPointers(ms);
+
+			for (i=0; i<particlesNum; ++i) {
+				const int x = getRand(-halfSize, halfSize);
+				const int y = getRand(0, 2 * halfSize);
+				const int z = getRand(-halfSize, halfSize);
+				addVertex(x, y, z);
+			}
 		}
 		break;
 
@@ -810,7 +820,7 @@ MeshgenParams makeMeshgenStarsParams(int distance, int numStars)
 	return params;
 }
 
-MeshgenParams makeMeshgenParticleParams(int numParticles)
+MeshgenParams makeMeshgenParticlesParams(int numParticles)
 {
 	MeshgenParams params;
 
