@@ -208,7 +208,7 @@ static void prepareTransformedMeshCELs(Mesh *mesh)
 
 static void prepareTransformedMeshBillboardCELs(Mesh *mesh)
 {
-	int i;
+	int i, scale;
 	CCB *currentAddedCel = NULL;
 
 	CCB *cel = mesh->cel;
@@ -247,6 +247,10 @@ static void prepareTransformedMeshBillboardCELs(Mesh *mesh)
 
 			cel->ccb_XPos = (sc->x - (cel->ccb_Width >> 1)) << 16;
 			cel->ccb_YPos = (sc->y - (cel->ccb_Height >> 1)) << 16;
+
+			scale = ((256 << PROJ_SHR) * recZ[sc->z]) >> (REC_FPSHR - 8);
+			cel->ccb_HDX = scale << 4;
+			cel->ccb_VDY = scale;
 		}
 		++cel;
 	}

@@ -72,7 +72,7 @@ void effectMeshParticlesInit()
 	setPalGradient(0,31, 0,0,0, 27,29,31, blobPal);
 	blobTex = initGenTexture(8,8, 8, blobPal, 1, TEXGEN_BLOB, NULL);
 
-	particlesMesh = initGenMesh(MESH_PARTICLES, particlesParams, MESH_OPTION_RENDER_BILLBOARDS /*MESH_OPTION_RENDER_POINTS*/, blobTex);
+	particlesMesh = initGenMesh(MESH_PARTICLES, particlesParams, MESH_OPTION_RENDER_BILLBOARDS | MESH_OPTION_NO_POLYSORT, blobTex);
 	setMeshTranslucency(particlesMesh, true, true);
 	particlesObj = initObject3D(particlesMesh);
 
@@ -90,6 +90,22 @@ void effectMeshParticlesInit()
 	addLightToWorld(light, myWorld);
 }
 
+static void animateParticles(int dt)
+{
+	int i;
+	const int count = particlesMesh->verticesNum;
+	Vertex *v = particlesMesh->vertex;
+
+	dt <<= 8;
+	for (i=0; i<count; ++i) {
+		const int ii = i << 13;
+		v->x = (SinF16(13*ii + 12*dt) >> 9);
+		v->y = 128 + (SinF16(31*ii + 23*dt) >> 10);
+		v->z = (SinF16(24*ii + 11*dt) >> 9);
+		++v;
+	}
+}
+
 static void inputScript(int dt)
 {
 	viewerInputFPS(viewer, dt);
@@ -103,6 +119,8 @@ void effectMeshParticlesRun()
 	prevTicks = currTicks;
 
 	inputScript(dt);
+
+	animateParticles(currTicks);
 
 	renderWorld(myWorld);
 }
