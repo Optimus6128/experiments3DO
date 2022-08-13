@@ -22,6 +22,18 @@
 
 #define GRID_SIZE 16
 #define NUM_PARTICLES 256
+#define PARTICLE_BITS 16
+#define PARTICLE_UNIT (1 << PARTICLE_BITS)
+
+
+typedef struct Particle
+{
+	Vector3D pos;
+	Vector3D vel;
+	int life;
+}Particle;
+
+static Particle particles[NUM_PARTICLES];
 
 static Viewer *viewer;
 static Light *light;
@@ -58,6 +70,21 @@ static void shadeGrid()
 	}
 }
 
+static void emitParticle(Particle *particle)
+{
+	setVector3D(&particle->pos, 0,0,0);
+	setVector3D(&particle->vel, getRand(-PARTICLE_UNIT, PARTICLE_UNIT) / 1, 8 * PARTICLE_UNIT,getRand(-PARTICLE_UNIT, PARTICLE_UNIT) / 1);
+}
+
+static void initParticles()
+{
+	int i;
+	for (i=0; i<NUM_PARTICLES; ++i) {
+		emitParticle(&particles[i]);
+		particles[i].life = -i;
+	}
+}
+
 void effectMeshParticlesInit()
 {
 	MeshgenParams gridParams = makeMeshgenGridParams(2048, GRID_SIZE);
@@ -88,21 +115,42 @@ void effectMeshParticlesInit()
 
 	addCameraToWorld(viewer->camera, myWorld);
 	addLightToWorld(light, myWorld);
+
+	initParticles();
 }
 
 static void animateParticles(int dt)
 {
 	int i;
+	const int emits = 2;
+	const int gravity = PARTICLE_UNIT >> 3;
 	const int count = particlesMesh->verticesNum;
 	Vertex *v = particlesMesh->vertex;
+	Particle *p = particles;
 
-	dt <<= 8;
 	for (i=0; i<count; ++i) {
-		const int ii = i << 13;
-		v->x = (SinF16(13*ii + 12*dt) >> 9);
-		v->y = 128 + (SinF16(31*ii + 23*dt) >> 10);
-		v->z = (SinF16(24*ii + 11*dt) >> 9);
+		if (p->life > 0) {
+			p->pos.x += ((p->vel.x * dt) >> 4);
+			p->pos.y += ((p->vel.y * dt) >> 4);
+			p->pos.z += ((p->vel.z * dt) >> 4);
+			p->vel.y -= ((gravity * dt) >> 4);
+			if (p->pos.y < 0) {
+				p->pos.y = 0;
+				if (p->vel.y < 0) p->vel.y = -p->vel.y >> 1;
+			}
+		}
+
+		v->x = p->pos.x >> PARTICLE_BITS;
+		v->y = p->pos.y >> PARTICLE_BITS;
+		v->z = p->pos.z >> PARTICLE_BITS;
 		++v;
+
+		p->life -= emits;
+		if (p->life <= -NUM_PARTICLES) {
+			p->life += 2*NUM_PARTICLES;
+			emitParticle(p);
+		}
+		++p;
 	}
 }
 
@@ -120,7 +168,7 @@ void effectMeshParticlesRun()
 
 	inputScript(dt);
 
-	animateParticles(currTicks);
+	animateParticles(dt);
 
 	renderWorld(myWorld);
 }
