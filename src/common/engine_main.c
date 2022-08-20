@@ -214,6 +214,9 @@ static void prepareTransformedMeshBillboardCELs(Mesh *mesh)
 	CCB *cel = mesh->cel;
 	const bool doPolySort = !(mesh->renderType & MESH_OPTION_NO_POLYSORT);
 
+	PolyData *particlePolyData = mesh->poly;
+	Texture *particleTex = mesh->tex;
+
 	if (doPolySort) {
 		zIndexMin = Z_ORDER_SIZE-1;
 		zIndexMax = 0;
@@ -251,7 +254,10 @@ static void prepareTransformedMeshBillboardCELs(Mesh *mesh)
 			scale = ((256 << PROJ_SHR) * recZ[sc->z]) >> (REC_FPSHR - 8);
 			cel->ccb_HDX = scale << 4;
 			cel->ccb_VDY = scale;
+
+			cel->ccb_SourcePtr = (CelData*)particleTex[particlePolyData->textureId].bitmap;
 		}
+		++particlePolyData;
 		++cel;
 	}
 

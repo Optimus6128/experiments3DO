@@ -239,12 +239,13 @@ Mesh* initMesh(int verticesNum, int polysNum, int indicesNum, int linesNum, int 
 			ms->vertexTC = (TexCoords*)AllocMem(verticesNum * sizeof(TexCoords), MEMTYPE_ANY);
 		}
 	} else {
-		if (polysNum) {
-			ms->cel = (CCB*)AllocMem(polysNum * sizeof(CCB), MEMTYPE_ANY);
-		} else if (renderType & MESH_OPTION_RENDER_BILLBOARDS) {
+		if (renderType & MESH_OPTION_RENDER_BILLBOARDS) {
 			if (verticesNum) {
 				ms->cel = (CCB*)AllocMem(verticesNum * sizeof(CCB), MEMTYPE_ANY);
+				ms->poly = (PolyData*)AllocMem(verticesNum * sizeof(PolyData), MEMTYPE_ANY);
 			}
+		} else if (polysNum) {
+			ms->cel = (CCB*)AllocMem(polysNum * sizeof(CCB), MEMTYPE_ANY);
 		}
 	}
 	ms->renderType = renderType;

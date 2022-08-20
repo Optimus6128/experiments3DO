@@ -103,8 +103,17 @@ static bool tryCollideMoveStep(bool x, bool y, vec3f16 move, Viewer *viewer, int
 	return false;
 }
 
+static void moveStep(bool x, bool y, vec3f16 move, Viewer *viewer, int dt)
+{
+	Vector3D *viewerPos = &viewer->pos;
+
+	if (x) viewerPos->x += move[0] * viewer->moveSpeed * dt;
+	if (y) viewerPos->z += move[2] * viewer->moveSpeed * dt;
+}
+
 static void moveViewer(int forward, int right, int up, int dt, Viewer *viewer)
 {
+	static bool collideTest = false;
 	static mat33f16 rotMat;
 	static vec3f16 move;
 	int prevPosY, feetPosY;
@@ -116,10 +125,14 @@ static void moveViewer(int forward, int right, int up, int dt, Viewer *viewer)
 	createRotationMatrixValues(0, viewer->rot.y >> FP_VROT, 0, (int*)rotMat);	// not correct when looking up/down yet
 	MulVec3Mat33_F16(move, move, rotMat);
 
-	if (tryCollideMoveStep(true, true, move, viewer, dt)) {
-		if(tryCollideMoveStep(true, false, move, viewer, dt)) {
-			tryCollideMoveStep(false, true, move, viewer, dt);
+	if (collideTest) {
+		if (tryCollideMoveStep(true, true, move, viewer, dt)) {
+			if(tryCollideMoveStep(true, false, move, viewer, dt)) {
+				tryCollideMoveStep(false, true, move, viewer, dt);
+			}
 		}
+	} else {
+		moveStep(true, true, move, viewer, dt);
 	}
 
 	prevPosY = viewer->pos.y;
