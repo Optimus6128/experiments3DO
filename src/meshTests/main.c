@@ -18,7 +18,7 @@ static char *effectName[EFFECTS_NUM] = { "mesh pyramids test", "mesh grid", "sof
 
 int main()
 {
-	int extraOpts = CORE_SHOW_MEM;
+	int extraOpts = 0;//CORE_SHOW_MEM;
 
 	//const int effectIndex = runEffectSelector(effectName, EFFECTS_NUM);
 	const int effectIndex = EFFECT_MESH_HEIGHTMAP;

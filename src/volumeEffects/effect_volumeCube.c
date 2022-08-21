@@ -1,6 +1,6 @@
 #include "core.h"
 
-#include "effect.h"
+#include "effect_volumeCube.h"
 
 #include "system_graphics.h"
 #include "tools.h"
@@ -281,7 +281,7 @@ static void setPalGradientShr(int c0, int c1, int r0, int g0, int b0, int r1, in
 	setPalGradient(c0,c1, r0>>shr, g0>>shr, b0>>shr,  r1>>shr, g1>>shr, b1>>shr,  pal);
 }
 
-void effectInit()
+void effectVolumeCubeInit()
 {
 	int x, y, z, c, i = 0;
 	const int palshr = 5;
@@ -371,30 +371,6 @@ void effectInit()
 
 	camera = createCamera();
 }
-
-
-/*static void drawCelInfo(CCB *cel)
-{
-	drawNumber(64,0, (int)cel->ccb_NextPtr);
-	drawNumber(8,8, (int)cel->ccb_SourcePtr);
-	drawNumber(8,16, (int)cel->ccb_PLUTPtr);
-
-	drawNumber(8,32, cel->ccb_XPos);
-	drawNumber(8,40, cel->ccb_YPos);
-	drawNumber(8,48, cel->ccb_HDX);
-	drawNumber(8,56, cel->ccb_HDY);
-	drawNumber(8,64, cel->ccb_VDX);
-	drawNumber(8,72, cel->ccb_VDY);
-	drawNumber(8,80, cel->ccb_HDDX);
-	drawNumber(8,88, cel->ccb_HDDY);
-
-	drawNumber(8,104, cel->ccb_PIXC);
-	drawNumber(8,112, cel->ccb_PRE0);
-	drawNumber(8,120, cel->ccb_PRE1);
-
-	drawNumber(8,136, cel->ccb_Width);
-	drawNumber(8,144, cel->ccb_Height);
-}*/
 
 static void transformDotsHw(int rotX, int rotY, int rotZ)
 {
@@ -546,7 +522,7 @@ static void updateFromInput()
 	}
 }
 
-void effectRun()
+void effectVolumeCubeRun()
 {
 	updateFromInput();
 	render();
