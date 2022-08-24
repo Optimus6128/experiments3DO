@@ -103,12 +103,14 @@ static void expand8bppTo16bpp(Texture *tex, int rs, int gs, int bs, bool ri, boo
 
 static void genTexture(int texgenId, void *params, Texture *tex)
 {
-	int i, x, y, xc, yc, c;
+	int i, x, y;
 
 	const int width = tex->width;
 	const int height = tex->height;
 	const int numPixels = width * height;
 	const int size = (numPixels * tex->bpp) / 8;
+
+	ImggenParams paramsDefault = generateImageParamsDefault(width,height,0,31);
 
 	ubyte *dst = tex->bitmap;
 	uint16 *dst16 = (uint16*)dst;
@@ -162,37 +164,21 @@ static void genTexture(int texgenId, void *params, Texture *tex)
 
 		case TEXGEN_GRID:
 		{
-			for (y=0; y<height; y++) {
-				yc = y - (height >> 1);
-				for (x=0; x<width; x++) {
-					xc = x - (width >> 1);
-					c = (xc * xc * xc * xc + yc * yc * yc * yc) >> 8;
-					if (c > 31) c = 31;
-					*dst++ = c;
-				}
-			}
+			generateImage(IMGGEN_GRID, &paramsDefault, dst);
 		}
 		break;
 		
 		case TEXGEN_BLOB:
 		{
-			for (y=0; y<height; y++) {
-				yc = y - (height >> 1);
-				for (x=0; x<width; x++) {
-					xc = x - (width >> 1);
-					c = (xc * xc + yc * yc) << 1;
-					if (c > 31) c = 31;
-					*dst++ = 31 - c;
-				}
-			}
+			generateImage(IMGGEN_BLOB, &paramsDefault, dst);
 		}
 		break;
 
 		case TEXGEN_CLOUDS:
 		{
-			const ImggenParams params = generateImageParamsCloud(1,255,127,8,3);
+			ImggenParams paramsClouds = generateImageParamsCloud(width,height,1,31, 1,255,127,8,3);
 
-			generateImage(width,height, dst, 1,31, IMGGEN_CLOUDS, params);
+			generateImage(IMGGEN_CLOUDS, &paramsClouds, dst);
 			if (tex->bpp==16) {
 				expand8bppTo16bpp(tex, 0,2,1, true,true,false);
 			}

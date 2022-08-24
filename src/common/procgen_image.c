@@ -91,7 +91,6 @@ static int perlinOctave(int x, int y)
 static void genCloudTexture(int width, int height, int rangeMin, int rangeMax, ImggenParams *params, ubyte *imgData)
 {
 	int x, y;
-	uint8 *dst8 = (uint8*)imgData;
 
 	hx = params->hashX;
 	hy = params->hashY;
@@ -104,26 +103,52 @@ static void genCloudTexture(int width, int height, int rangeMin, int rangeMax, I
 		for (x = 0; x < width; ++x) {
 			int c = perlinOctave(x, y) >> RANGE_TO_COL;
 			CLAMP(c, rangeMin, rangeMax)
-			*dst8++ = c;
+			*imgData++ = c;
 		}
 	}
 }
 
-ImggenParams generateImageParamsCloud(int hashX, int hashY, int hashZ, int shrStart, int iterations)
+static void genGridTexture(int width, int height, int rangeMin, int rangeMax, ubyte *imgData)
 {
-	ImggenParams params;
+	int x, y;
+	int xc, yc;
+	int c;
 
-	params.hashX = hashX;
-	params.hashY = hashY;
-	params.hashZ = hashZ;
-	params.shrStart = shrStart;
-	params.iterations = iterations;
-
-	return params;
+	for (y=0; y<height; y++) {
+		yc = y - (height >> 1);
+		for (x=0; x<width; x++) {
+			xc = x - (width >> 1);
+			c = (xc * xc * xc * xc + yc * yc * yc * yc) >> 8;
+			if (c > 31) c = 31;
+			*imgData++ = c;
+		}
+	}
 }
 
-void generateImage(int width, int height, ubyte *imgPtr, int rangeMin, int rangeMax, int imggenId, const ImggenParams params)
+static void genBlobTexture(int width, int height, int rangeMin, int rangeMax, ubyte *imgData)
 {
+	int x, y;
+	int xc, yc;
+	int c;
+
+	for (y=0; y<height; y++) {
+		yc = y - (height >> 1);
+		for (x=0; x<width; x++) {
+			xc = x - (width >> 1);
+			c = (xc * xc + yc * yc) << 1;
+			if (c > 31) c = 31;
+			*imgData++ = 31 - c;
+		}
+	}
+}
+
+void generateImage(int imggenId, ImggenParams *params, ubyte *imgPtr)
+{
+	const int width = params->width;
+	const int height = params->height;
+	const int rangeMin = params->rangeMin;
+	const int rangeMax = params->rangeMax;
+
 	int i;
 	if (!genRandValues) {
 		for (i = 0; i < RANDV_NUM; ++i)
@@ -132,14 +157,58 @@ void generateImage(int width, int height, ubyte *imgPtr, int rangeMin, int range
 	}
 
 	switch(imggenId) {
+		case IMGGEN_BLOB:
+		{
+			genBlobTexture(width, height, rangeMin, rangeMax, imgPtr);
+
+		}
+		break;
+
+		case IMGGEN_GRID:
+		{
+			genGridTexture(width, height, rangeMin, rangeMax, imgPtr);
+
+		}
+		break;
+
 		case IMGGEN_CLOUDS:
 		{
-			ImggenParams aparams = generateImageParamsCloud(1,255,127, 8,3);
-			genCloudTexture(width, height, rangeMin, rangeMax, &aparams, imgPtr);
+			genCloudTexture(width, height, rangeMin, rangeMax, params, imgPtr);
 		}
 		break;
 		
 		default:
 		break;
 	}
+}
+
+
+ImggenParams generateImageParamsDefault(int width, int height, int rangeMin, int rangeMax)
+{
+	ImggenParams params;
+
+	params.width = width;
+	params.height = height;
+	params.rangeMin = rangeMin;
+	params.rangeMax = rangeMax;
+
+	return params;
+}
+
+ImggenParams generateImageParamsCloud(int width, int height, int rangeMin, int rangeMax, int hashX, int hashY, int hashZ, int shrStart, int iterations)
+{
+	ImggenParams params;
+
+	params.width = width;
+	params.height = height;
+	params.rangeMin = rangeMin;
+	params.rangeMax = rangeMax;
+
+	params.hashX = hashX;
+	params.hashY = hashY;
+	params.hashZ = hashZ;
+	params.shrStart = shrStart;
+	params.iterations = iterations;
+
+	return params;
 }

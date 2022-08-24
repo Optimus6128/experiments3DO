@@ -3,15 +3,19 @@
 
 typedef struct ImggenParams
 {
+	int width, height;
+	int rangeMin, rangeMax;
+
 	int hashX, hashY, hashZ;
 	int shrStart;
 	int iterations;
 } ImggenParams;
 
-enum { IMGGEN_CLOUDS };
+enum { IMGGEN_BLOB, IMGGEN_GRID, IMGGEN_CLOUDS };
 
-void generateImage(int width, int height, ubyte *imgPtr, int rangeMin, int rangeMax, int imggenId, const ImggenParams params);
+void generateImage(int imggenId, ImggenParams *params, ubyte *imgPtr);
 
-ImggenParams generateImageParamsCloud(int hashX, int hashY, int hashZ, int shrStart, int iterations);
+ImggenParams generateImageParamsDefault(int width, int height, int rangeMin, int rangeMax);
+ImggenParams generateImageParamsCloud(int width, int height, int rangeMin, int rangeMax, int hashX, int hashY, int hashZ, int shrStart, int iterations);
 
 #endif
