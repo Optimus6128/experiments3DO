@@ -20,13 +20,13 @@ typedef struct zOrderListBucket
 	CCB *last;
 }zOrderListBucket;
 
-static zOrderListBucket zOrderList[Z_ORDER_SIZE];
+static zOrderListBucket *zOrderList;
 static int zIndexMin, zIndexMax;
 
 
-static Vertex screenVertices[MAX_VERTEX_ELEMENTS_NUM];
-static ScreenElement screenElements[MAX_VERTEX_ELEMENTS_NUM];
-static Vector3D rotatedNormals[MAX_VERTEX_ELEMENTS_NUM];
+static Vertex *screenVertices;
+static ScreenElement *screenElements;
+static Vector3D *rotatedNormals;
 
 static Light *globalLight = NULL;
 static Vector3D rotatedGlobalLightVec;
@@ -602,10 +602,18 @@ void setGlobalLightDir(int vx, int vy, int vz)
 	setLightDir(globalLight, vx, vy, vz);
 }
 
+static void initEngineVertexTables()
+{
+	screenVertices = (Vertex*)AllocMem(MAX_VERTEX_ELEMENTS_NUM * sizeof(Vertex), MEMTYPE_ANY);
+	screenElements = (ScreenElement*)AllocMem(MAX_VERTEX_ELEMENTS_NUM * sizeof(ScreenElement), MEMTYPE_ANY);
+	rotatedNormals = (Vector3D*)AllocMem(MAX_VERTEX_ELEMENTS_NUM * sizeof(Vector3D), MEMTYPE_ANY);
+	zOrderList = (zOrderListBucket*)AllocMem(Z_ORDER_SIZE * sizeof(zOrderListBucket), MEMTYPE_ANY);
+}
 
 void initEngine(bool usesSoftEngine)
 {
 	initEngineLUTs();
+	initEngineVertexTables();
 
 	useCPUtestPolygonOrder(false);
 	useMapCelFunctionFast(true);

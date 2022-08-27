@@ -7,6 +7,21 @@
 #include "input.h"
 #include "mathutil.h"
 
+
+#define HMAP_WIDTH 512
+#define HMAP_HEIGHT 512
+#define HMAP_SIZE (HMAP_WIDTH * HMAP_HEIGHT)
+
+
+uint8 hmap[HMAP_SIZE];
+uint8 cmap[HMAP_SIZE/4];
+
+static void loadHeightmap()
+{
+	hmap[0] = 0;
+	cmap[0] = 0;
+}
+
 void effectVolumeScapeInit()
 {
 }
@@ -40,4 +55,6 @@ static void updateFromInput()
 void effectVolumeScapeRun()
 {
 	updateFromInput();
+
+	loadHeightmap();
 }

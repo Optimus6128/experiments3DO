@@ -5,8 +5,8 @@
 #include "core.h"
 
 
-int isin[256];
-int recZ[NUM_REC_Z];
+int *isin;
+int *recZ;
 
 
 int isqrt(int x) {
@@ -50,6 +50,10 @@ int getShr(int n)
 void initEngineLUTs()
 {
 	int i;
+
+	isin = (int*)AllocMem(256 * sizeof(int), MEMTYPE_ANY);
+	recZ = (int*)AllocMem(NUM_REC_Z * sizeof(int), MEMTYPE_ANY);
+
 	for(i=0; i<256; i++) {
 		isin[i] = SinF16(i << 16) >> 4;
 	}

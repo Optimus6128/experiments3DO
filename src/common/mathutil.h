@@ -55,8 +55,8 @@ typedef struct Point2Darray
 #define NUM_REC_Z 16384
 #define REC_FPSHR 18
 
-extern int isin[256];
-extern int recZ[NUM_REC_Z];
+extern int *isin;
+extern int *recZ;
 
 
 int isqrt(int x);

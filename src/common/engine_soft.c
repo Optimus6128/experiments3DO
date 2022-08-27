@@ -21,13 +21,13 @@
 
 // Semisoft gouraud method
 #define MAX_SCANLINES 4096
-static CCB *scanlineCel8[MAX_SCANLINES];
-static CCB **currentScanlineCel8 = scanlineCel8;
+static CCB **scanlineCel8;
+static CCB **currentScanlineCel8;
 
 #define GRADIENT_SHADES 32
 #define GRADIENT_LENGTH GRADIENT_SHADES
 #define GRADIENT_GROUP_SIZE (GRADIENT_SHADES * GRADIENT_LENGTH)
-static uint8 gourGrads[GRADIENT_SHADES * GRADIENT_GROUP_SIZE];
+static uint8 *gourGrads;
 
 static bool fastGouraud = true;
 
@@ -54,10 +54,9 @@ static int renderSoftMethod = RENDER_SOFT_METHOD_GOURAUD;
 SoftBuffer softBuffer;
 void *softBufferCurrentPtr;
 
-static Edge leftEdge[SCREEN_HEIGHT];
-static Edge rightEdge[SCREEN_HEIGHT];
-
-static int32 divTab[DIV_TAB_SIZE];
+static Edge *leftEdge;
+static Edge *rightEdge;
+static int32 *divTab;
 
 static uint16 *lineColorShades[4] = { NULL, NULL, NULL, NULL };
 static uint16 *gouraudColorShades;
@@ -118,8 +117,14 @@ static void initDivs()
 static void initSemiSoftGouraud()
 {
 	int i;
-	uint8 *dst = gourGrads;
+	uint8 *dst;
 	int c0,c1,x;
+
+	gourGrads = (uint8*)AllocMem(GRADIENT_SHADES * GRADIENT_GROUP_SIZE, MEMTYPE_ANY);
+	scanlineCel8 = (CCB**)AllocMem(MAX_SCANLINES * sizeof(CCB*), MEMTYPE_ANY);
+	currentScanlineCel8 = scanlineCel8;
+
+	dst = gourGrads;
 	for (i=0; i<MAX_SCANLINES; ++i) {
 		scanlineCel8[i] = createCel(GRADIENT_LENGTH, 1, 8, CEL_TYPE_CODED);
 		if (i>0) {
@@ -1200,10 +1205,19 @@ static void initSoftBuffer()
 	setupCelData(gouraudColorShades, softBuffer.data, softBuffer.cel);
 }
 
+static void initSoftEngineArrays()
+{
+	leftEdge = (Edge*)AllocMem(SCREEN_HEIGHT * sizeof(Edge), MEMTYPE_ANY);
+	rightEdge = (Edge*)AllocMem(SCREEN_HEIGHT * sizeof(Edge), MEMTYPE_ANY);
+	divTab = (int32*)AllocMem(DIV_TAB_SIZE * sizeof(int32), MEMTYPE_ANY);
+
+	initDivs();
+}
+
 void initEngineSoft()
 {
-	initDivs();
-	initSemiSoftGouraud();
+	initSoftEngineArrays();
+	if (fastGouraud) initSemiSoftGouraud();
 
 	if (!lineColorShades[0]) lineColorShades[0] = crateColorShades(31,23,15, COLOR_GRADIENTS_SIZE, false);
 	if (!lineColorShades[1]) lineColorShades[1] = crateColorShades(15,23,31, COLOR_GRADIENTS_SIZE, false);
