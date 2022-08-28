@@ -8,18 +8,18 @@
 #include "mathutil.h"
 
 
-#define HMAP_WIDTH 512
-#define HMAP_HEIGHT 512
+#define HMAP_WIDTH 1024
+#define HMAP_HEIGHT 1024
 #define HMAP_SIZE (HMAP_WIDTH * HMAP_HEIGHT)
 
 
-uint8 hmap[HMAP_SIZE];
-uint8 cmap[HMAP_SIZE/4];
+uint8 *hmap;
+uint8 *cmap;
 
 static void loadHeightmap()
 {
-	hmap[0] = 0;
-	cmap[0] = 0;
+	hmap = AllocMem(HMAP_SIZE, MEMTYPE_ANY);
+	//cmap = AllocMem(HMAP_SIZE/4, MEMTYPE_ANY);
 }
 
 void effectVolumeScapeInit()
