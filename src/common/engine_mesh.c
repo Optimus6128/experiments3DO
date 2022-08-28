@@ -149,6 +149,15 @@ void setMeshPolygonOrder(Mesh *ms, bool cw, bool ccw)
 	}
 }
 
+void setMeshPolygonCPUbackfaceTest(Mesh *ms, bool enable)
+{
+	if (enable) {
+		ms->renderType |= MESH_OPTION_CPU_POLYTEST;
+	} else {
+		ms->renderType &= ~MESH_OPTION_CPU_POLYTEST;
+	}
+}
+
 void setMeshTranslucency(Mesh *ms, bool enable, bool additive)
 {
 	uint32 pixcBlend = TRANSLUCENT_CEL;

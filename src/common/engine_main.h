@@ -57,6 +57,4 @@ void createRotationMatrixValues(int rotX, int rotY, int rotZ, int *rotVecs);
 
 void setScreenRegion(int posX, int posY, int width, int height);
 
-void useCPUtestPolygonOrder(bool enable);
-
 #endif

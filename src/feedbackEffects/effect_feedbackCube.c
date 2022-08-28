@@ -108,7 +108,8 @@ static void inputScript()
 
 	if (isJoyButtonPressedOnce(JOY_BUTTON_C)) {
 		flipPolygons = !flipPolygons;
-		useCPUtestPolygonOrder(!flipPolygons);
+		setMeshPolygonCPUbackfaceTest(cubeMesh, !flipPolygons);
+		setMeshPolygonCPUbackfaceTest(cubeMeshBack, !flipPolygons);
 		setMeshPolygonOrder(cubeMesh, flipPolygons, !flipPolygons);
 		setMeshPolygonOrder(cubeMeshBack, flipPolygons, !flipPolygons);
 	}
@@ -120,7 +121,8 @@ static void inputScript()
 	}
 
 	if (isJoyButtonPressedOnce(JOY_BUTTON_RPAD)) {
-		useCPUtestPolygonOrder(false);
+		setMeshPolygonCPUbackfaceTest(cubeMesh, false);
+		setMeshPolygonCPUbackfaceTest(cubeMeshBack, false);
 		setMeshPolygonOrder(cubeMesh, true, true);
 		setMeshPolygonOrder(cubeMeshBack, true, true);
 	}

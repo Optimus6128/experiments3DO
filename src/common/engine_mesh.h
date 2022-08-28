@@ -73,6 +73,8 @@ void setMeshTransparency(Mesh *ms, bool enable);
 void setMeshTranslucency(Mesh *ms, bool enable, bool additive);
 void setMeshDottedDisplay(Mesh *ms, bool enable);
 
+void setMeshPolygonCPUbackfaceTest(Mesh *ms, bool enable);
+
 void setMeshTexture(Mesh *ms, Texture *tex);
 void setMeshPaletteIndex(Mesh *ms, int palIndex);
 
