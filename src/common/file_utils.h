@@ -15,6 +15,6 @@ void moveFilePointerRelative(int offset);
 char *readBytesFromFile(int offset, int size);
 char *readSequentialBytesFromFile(int size);
 
-char *readBytesFromFileAndClose(char *path, int offset, int size);
+void readBytesFromFileAndStore(char *path, int offset, int size, uint8 *dst);
 
 #endif

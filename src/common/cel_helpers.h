@@ -30,6 +30,9 @@ void setCelPalette(uint16 *pal, CCB *cel);
 void setCelBitmap(void *bitmap, CCB *cel);
 void setCelPosition(int x, int y, CCB *cel);
 
+void flipCelOrientation(bool horizontal, bool vertical, CCB *cel);
+void rotateCelOrientation(CCB *cel);
+
 void setCelWidth(int width, CCB *cel);
 void setCelHeight(int height, CCB *cel);
 void setCelStride(int stride, CCB *cel);

@@ -163,6 +163,32 @@ void setCelPosition(int x, int y, CCB *cel)
 	cel->ccb_YPos = y << 16;
 }
 
+void flipCelOrientation(bool horizontal, bool vertical, CCB *cel)
+{
+	if (horizontal){
+		cel->ccb_HDX = -cel->ccb_HDX;
+		cel->ccb_HDY = -cel->ccb_HDY;
+	}
+
+	if (vertical) {
+		cel->ccb_VDX = -cel->ccb_VDX;
+		cel->ccb_VDY = -cel->ccb_VDY;
+	}
+}
+
+void rotateCelOrientation(CCB *cel)
+{
+	int tempX;
+
+	tempX = cel->ccb_HDX;
+	cel->ccb_HDX = cel->ccb_HDY;
+	cel->ccb_HDY = tempX;
+
+	tempX = cel->ccb_VDX;
+	cel->ccb_VDX = cel->ccb_VDY;
+	cel->ccb_VDY = tempX;
+}
+
 void initCel(int width, int height, int bpp, int type, CCB *cel)
 {
 	if (!cel) return;

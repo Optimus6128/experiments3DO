@@ -51,15 +51,12 @@ void closeFileStream()
 	if (CDstream) CloseDiskStream(CDstream);
 }
 
-char *readBytesFromFileAndClose(char *path, int offset, int size)
+void readBytesFromFileAndStore(char *path, int offset, int size, uint8 *dst)
 {
-	uint8 *fileBuffPtr = NULL;
-
 	CDstream = OpenDiskStream(path, 0);
 
-	fileBuffPtr = readBytesFromFile(offset, size);
+	SeekDiskStream(CDstream, offset, SEEK_SET);
+	ReadDiskStream(CDstream, dst, size);
 	
 	if (CDstream) CloseDiskStream(CDstream);
-
-	return fileBuffPtr;
 }
