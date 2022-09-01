@@ -10,19 +10,22 @@
 #include "file_utils.h"
 
 #define FOV 48
-#define VIS_FAR 96
+#define VIS_FAR 128
 #define VIS_NEAR 8
 #define VIS_VER_STEPS (VIS_FAR - VIS_NEAR + 1)
 #define VIS_HOR_STEPS SCREEN_WIDTH
-#define VIS_SCALE 1
 
-#define HMAP_WIDTH 1024
-#define HMAP_HEIGHT 1024
+#define V_PLAYER_HEIGHT 128
+#define V_HEIGHT_SCALER_SHIFT 7
+#define V_HORIZON (SCREEN_HEIGHT / 2)
+
+#define HMAP_WIDTH 512
+#define HMAP_HEIGHT 512
 #define HMAP_SIZE (HMAP_WIDTH * HMAP_HEIGHT)
 
 
 static uint8 *hmap;
-//static uint8 *cmap;
+static uint8 *cmap;
 static Sprite *testSpr;
 
 static CCB *columnCels;
@@ -43,25 +46,30 @@ static void renderScape()
 	int *rs = raySamples;
 	uint8 *hm = &hmap[viewPos.z * HMAP_WIDTH + viewPos.x];
 	uint8 *dst = columnPixels;
+	const int viewerOffset = viewPos.z * HMAP_WIDTH + viewPos.x;
 
 	for (j=0; j<VIS_HOR_STEPS; ++j) {
-		int yMax = -SCREEN_HEIGHT/2;
+		int yMax = 0;
 		for (i=0; i<VIS_VER_STEPS; ++i) {
 			const int k = *rs++;
-			const uint8 hv = *(hm + k);
-			int h = ((playerHeight - (int)hv) * 256) / (VIS_NEAR + i);
+			const int mapOffset = (viewerOffset + k) & (HMAP_WIDTH * HMAP_HEIGHT - 1);
+			const uint8 hv = hmap[mapOffset];
+			const int h = (((-playerHeight + (int)hv) * recZ[VIS_NEAR + i]) >> (REC_FPSHR - V_HEIGHT_SCALER_SHIFT)) + V_HORIZON;
 
-			CLAMP(h, -SCREEN_HEIGHT/2, SCREEN_HEIGHT/2-1)
 			if (yMax < h) {
+				const uint8 c = hv >> 2;
 				for (l=yMax; l<h; ++l) {
-					*(dst + l + SCREEN_HEIGHT/2) = 31 - (hv >> 2);
+					*(dst + l) = c;
 				}
 				yMax = h;
 			}
-			//*(hm + k) = 31;
-			//*(dst + i) = hv >> 3;
 		}
-		setCelWidth(yMax + SCREEN_HEIGHT/2, &columnCels[j]);
+		if (yMax==0) {
+			columnCels[j].ccb_Flags |= CCB_SKIP;
+		} else {
+			columnCels[j].ccb_Flags &= ~CCB_SKIP;
+			setCelWidth(yMax, &columnCels[j]);
+		}
 		dst += SCREEN_HEIGHT;
 	}
 }
@@ -93,8 +101,8 @@ static void initRaySamplePoints()
 	const int yawL = (yaw - halfFov) & 255;
 	const int yawR = (yaw + halfFov) & 255;
 
-	traverseHorizontally(yawL, yawR, VIS_SCALE * VIS_NEAR, viewNearPoints);
-	traverseHorizontally(yawL, yawR, VIS_SCALE * VIS_FAR, viewFarPoints);
+	traverseHorizontally(yawL, yawR, VIS_NEAR, viewNearPoints);
+	traverseHorizontally(yawL, yawR, VIS_FAR, viewFarPoints);
 
 	for (j=0; j<VIS_HOR_STEPS; ++j) {
 		Point2D *pNear = &viewNearPoints[j];
@@ -133,6 +141,7 @@ void effectVolumeScapeInit()
 {
 	// alloc various tables
 	hmap = AllocMem(HMAP_SIZE, MEMTYPE_ANY);
+	cmap = AllocMem(HMAP_SIZE, MEMTYPE_ANY);
 	columnPixels = (uint8*)AllocMem(SCREEN_WIDTH * SCREEN_HEIGHT, MEMTYPE_ANY);
 	raySamples = (int*)AllocMem(VIS_VER_STEPS * VIS_HOR_STEPS * sizeof(int), MEMTYPE_ANY);
 	viewNearPoints = (Point2D*)AllocMem(VIS_HOR_STEPS * sizeof(Point2D), MEMTYPE_ANY);
@@ -143,8 +152,8 @@ void effectVolumeScapeInit()
 	testSpr = newSprite(HMAP_WIDTH, HMAP_HEIGHT, 8, CEL_TYPE_UNCODED, NULL, hmap);
 	setSpritePositionZoom(testSpr, SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 64);
 
-	setVector3D(&viewPos, HMAP_WIDTH/4, 0, HMAP_HEIGHT/4);
-	setVector3D(&viewAngle, 0,0,0);
+	setVector3D(&viewPos, 3*HMAP_WIDTH/4, V_PLAYER_HEIGHT, HMAP_HEIGHT/6);
+	setVector3D(&viewAngle, 0,128,0);
 
 	initColumnCels();
 	initEngineLUTs();
@@ -158,16 +167,16 @@ static void updateFromInput()
 	const int velZ = 8;
 
 	if (isJoyButtonPressed(JOY_BUTTON_UP)) {
-		viewPos.x += velX;
-	}
-	if (isJoyButtonPressed(JOY_BUTTON_DOWN)) {
 		viewPos.x -= velX;
 	}
+	if (isJoyButtonPressed(JOY_BUTTON_DOWN)) {
+		viewPos.x += velX;
+	}
 	if (isJoyButtonPressed(JOY_BUTTON_LEFT)) {
-		viewPos.z -= velZ;
+		viewPos.z += velZ;
 	}
 	if (isJoyButtonPressed(JOY_BUTTON_RIGHT)) {
-		viewPos.z += velZ;
+		viewPos.z -= velZ;
 	}
 
 	if (isJoyButtonPressed(JOY_BUTTON_LPAD)) {
