@@ -16,7 +16,7 @@ int main()
 	//const int effectIndex = runEffectSelector(effectName, EFFECTS_NUM);
 	const int effectIndex = EFFECT_VOLUME_HEIGHTMAP;
 
-	int extraOpts = CORE_SHOW_MEM;
+	int extraOpts = 0;//CORE_SHOW_MEM;
 	//extraOpts |= (CORE_VRAM_MAXBUFFERS | CORE_NO_VSYNC);
 
 	if (effectIndex == EFFECT_VOLUME_CUBE) extraOpts |= CORE_INIT_3D_ENGINE;

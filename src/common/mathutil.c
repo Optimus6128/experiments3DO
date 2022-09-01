@@ -55,7 +55,7 @@ void initEngineLUTs()
 	recZ = (int*)AllocMem(NUM_REC_Z * sizeof(int), MEMTYPE_ANY);
 
 	for(i=0; i<256; i++) {
-		isin[i] = SinF16(i << 16) >> 4;
+		isin[i] = SinF16(i << 16) >> FP_BASE_TO_CORE;
 	}
 
 	for (i=1; i<NUM_REC_Z; ++i) {
@@ -138,6 +138,12 @@ void normalizeVector3D(Vector3D *v)
 		v->y = (v->y << NORMAL_SHIFT) / length;
 		v->z = (v->z << NORMAL_SHIFT) / length;
 	}
+}
+
+void setPoint2D(Point2D *pt, int x, int y)
+{
+	pt->x = x;
+	pt->y = y;
 }
 
 Point2Darray *initPoint2Darray(int numPoints)

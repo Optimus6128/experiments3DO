@@ -78,6 +78,7 @@ void subVector3D(Vector3D *dst, Vector3D *src1, Vector3D *src2);
 void mulScalarVector3D(Vector3D *vec, int m);
 void divScalarVector3D(Vector3D *vec, int d);
 
+void setPoint2D(Point2D *pt, int x, int y);
 Point2Darray *initPoint2Darray(int numPoints);
 void addPoint2D(Point2Darray *ptArray, int x, int y);
 void destroyPoint2Darray(Point2Darray *ptArray);
