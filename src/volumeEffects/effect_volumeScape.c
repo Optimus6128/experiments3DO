@@ -10,14 +10,14 @@
 #include "file_utils.h"
 
 #define FOV 48
-#define VIS_FAR 128
-#define VIS_NEAR 8
+#define VIS_FAR 96
+#define VIS_NEAR 16
 #define VIS_VER_STEPS (VIS_FAR - VIS_NEAR + 1)
-#define VIS_HOR_STEPS SCREEN_WIDTH
+#define VIS_HOR_STEPS (SCREEN_WIDTH / 2)
 
-#define V_PLAYER_HEIGHT 128
+#define V_PLAYER_HEIGHT 64
 #define V_HEIGHT_SCALER_SHIFT 7
-#define V_HORIZON (SCREEN_HEIGHT / 2)
+#define V_HORIZON (3*SCREEN_HEIGHT / 4)
 
 #define HMAP_WIDTH 512
 #define HMAP_HEIGHT 512
@@ -25,12 +25,11 @@
 
 
 static uint8 *hmap;
-static uint8 *cmap;
+static uint16 *cmap;
 static Sprite *testSpr;
 
 static CCB *columnCels;
-static uint8 *columnPixels;
-static uint16 columnPal[32];
+static uint16 *columnPixels;
 
 static Vector3D viewPos;
 static Vector3D viewAngle;
@@ -44,8 +43,7 @@ static void renderScape()
 	int i,j,l;
 	const int playerHeight = viewPos.y;
 	int *rs = raySamples;
-	uint8 *hm = &hmap[viewPos.z * HMAP_WIDTH + viewPos.x];
-	uint8 *dst = columnPixels;
+	uint16 *dst = columnPixels;
 	const int viewerOffset = viewPos.z * HMAP_WIDTH + viewPos.x;
 
 	for (j=0; j<VIS_HOR_STEPS; ++j) {
@@ -53,13 +51,12 @@ static void renderScape()
 		for (i=0; i<VIS_VER_STEPS; ++i) {
 			const int k = *rs++;
 			const int mapOffset = (viewerOffset + k) & (HMAP_WIDTH * HMAP_HEIGHT - 1);
-			const uint8 hv = hmap[mapOffset];
-			const int h = (((-playerHeight + (int)hv) * recZ[VIS_NEAR + i]) >> (REC_FPSHR - V_HEIGHT_SCALER_SHIFT)) + V_HORIZON;
+			const int h = (((-playerHeight + hmap[mapOffset]) * recZ[VIS_NEAR + i]) >> (REC_FPSHR - V_HEIGHT_SCALER_SHIFT)) + V_HORIZON;
 
 			if (yMax < h) {
-				const uint8 c = hv >> 2;
+				const uint16 cv = cmap[mapOffset];
 				for (l=yMax; l<h; ++l) {
-					*(dst + l) = c;
+					*(dst + l) = cv;
 				}
 				yMax = h;
 			}
@@ -72,6 +69,8 @@ static void renderScape()
 		}
 		dst += SCREEN_HEIGHT;
 	}
+
+	drawCels(&columnCels[0]);
 }
 
 static void traverseHorizontally(int yawL, int yawR, int z, Point2D *dstPoints)
@@ -122,16 +121,16 @@ static void initColumnCels()
 {
 	int i;
 
-	columnCels = createCels(SCREEN_HEIGHT, 1, 8, CEL_TYPE_CODED, SCREEN_WIDTH);
-	setPalGradient(0,31, 0,0,0, 31,31,31, columnPal);
+	columnCels = createCels(SCREEN_HEIGHT, 1, 16, CEL_TYPE_UNCODED, VIS_HOR_STEPS);
 
-	for (i=0; i<SCREEN_WIDTH; ++i) {
+	for (i=0; i<VIS_HOR_STEPS; ++i) {
 		CCB *cel = &columnCels[i];
 
-		setupCelData(columnPal, &columnPixels[i * SCREEN_HEIGHT], cel);
-		setCelPosition(i, SCREEN_HEIGHT-1, cel);
+		setupCelData(NULL, &columnPixels[i * SCREEN_HEIGHT], cel);
+		setCelPosition(2*i, SCREEN_HEIGHT-1, cel);
 		rotateCelOrientation(cel);
 		flipCelOrientation(true, false, cel);
+		cel->ccb_VDX = 2 << 16;
 
 		if (i>0) linkCel(&columnCels[i-1], cel);
 	}
@@ -141,16 +140,18 @@ void effectVolumeScapeInit()
 {
 	// alloc various tables
 	hmap = AllocMem(HMAP_SIZE, MEMTYPE_ANY);
-	cmap = AllocMem(HMAP_SIZE, MEMTYPE_ANY);
-	columnPixels = (uint8*)AllocMem(SCREEN_WIDTH * SCREEN_HEIGHT, MEMTYPE_ANY);
+	cmap = (uint16*)AllocMem(HMAP_SIZE * sizeof(uint16), MEMTYPE_ANY);
+	columnPixels = (uint16*)AllocMem(VIS_HOR_STEPS * SCREEN_HEIGHT * sizeof(uint16), MEMTYPE_ANY);
 	raySamples = (int*)AllocMem(VIS_VER_STEPS * VIS_HOR_STEPS * sizeof(int), MEMTYPE_ANY);
 	viewNearPoints = (Point2D*)AllocMem(VIS_HOR_STEPS * sizeof(Point2D), MEMTYPE_ANY);
 	viewFarPoints = (Point2D*)AllocMem(VIS_HOR_STEPS * sizeof(Point2D), MEMTYPE_ANY);
 
-	// load heightmap
+	// load heightmap and colormap
 	readBytesFromFileAndStore("data/hmap1.bin", 0, HMAP_SIZE, hmap);
-	testSpr = newSprite(HMAP_WIDTH, HMAP_HEIGHT, 8, CEL_TYPE_UNCODED, NULL, hmap);
-	setSpritePositionZoom(testSpr, SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 64);
+	readBytesFromFileAndStore("data/cmap1.bin", 0, HMAP_SIZE * sizeof(uint16), (uint8*)cmap);
+
+	testSpr = newSprite(HMAP_WIDTH, HMAP_HEIGHT, 16, CEL_TYPE_UNCODED, NULL, (uint8*)cmap);
+	setSpritePositionZoom(testSpr, SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 128);
 
 	setVector3D(&viewPos, 3*HMAP_WIDTH/4, V_PLAYER_HEIGHT, HMAP_HEIGHT/6);
 	setVector3D(&viewAngle, 0,128,0);
@@ -162,9 +163,9 @@ void effectVolumeScapeInit()
 
 static void updateFromInput()
 {
-	const int velX = 8;
-	const int velY = 8;
-	const int velZ = 8;
+	const int velX = 4;
+	const int velY = 2;
+	const int velZ = 4;
 
 	if (isJoyButtonPressed(JOY_BUTTON_UP)) {
 		viewPos.x -= velX;
@@ -210,6 +211,5 @@ void effectVolumeScapeRun()
 
 	renderScape();
 
-	drawCels(&columnCels[0]);
 	//drawSprite(testSpr);
 }
