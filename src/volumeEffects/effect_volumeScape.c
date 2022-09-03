@@ -8,15 +8,18 @@
 #include "input.h"
 #include "mathutil.h"
 #include "file_utils.h"
+#define FP_LINEAR 10
 
 #define FOV 48
-#define VIS_FAR 128
+#define VIS_FAR 192
 #define VIS_NEAR 16
-#define VIS_VER_STEPS (VIS_FAR - VIS_NEAR + 1)
+#define VIS_SCALE_DOWN 0.375
+#define VIS_VER_STEPS ((int)((VIS_FAR - VIS_NEAR) * VIS_SCALE_DOWN))
 #define VIS_HOR_STEPS (SCREEN_WIDTH / 2)
 
-#define V_PLAYER_HEIGHT 64
+#define V_PLAYER_HEIGHT 128
 #define V_HEIGHT_SCALER_SHIFT 7
+#define V_HEIGHT_SCALER (1 << V_HEIGHT_SCALER_SHIFT)
 #define V_HORIZON (3*SCREEN_HEIGHT / 4)
 
 #define HMAP_WIDTH 512
@@ -25,6 +28,7 @@
 
 #define NUM_SHADE_PALS VIS_VER_STEPS
 
+int lintab[VIS_VER_STEPS];
 
 static uint8 *hmap;
 static uint8 *cmap;
@@ -39,6 +43,10 @@ static Point2D *viewFarPoints;
 static int *raySamples;
 
 
+static void initHeightScalerTab()
+{
+}
+
 static void renderScape()
 {
 	int i,j,l;
@@ -51,9 +59,11 @@ static void renderScape()
 		uint16 *pmap = (uint16*)&cmap[HMAP_SIZE];	// palette comes after the bitmap data
 		int yMax = 0;
 		for (i=0; i<VIS_VER_STEPS; ++i) {
+			const int z = lintab[i];
 			const int k = *rs++;
 			const int mapOffset = (viewerOffset + k) & (HMAP_WIDTH * HMAP_HEIGHT - 1);
-			int h = (((-playerHeight + hmap[mapOffset]) * recZ[VIS_NEAR + i]) >> (REC_FPSHR - V_HEIGHT_SCALER_SHIFT)) + V_HORIZON;
+
+			int h = (((-playerHeight + hmap[mapOffset]) * recZ[VIS_NEAR + ((z * VIS_FAR) >> FP_LINEAR)]) >> (REC_FPSHR - V_HEIGHT_SCALER_SHIFT)) + V_HORIZON;
 
 			if (yMax < h) {
 				const uint16 cv = pmap[cmap[mapOffset]];
@@ -62,7 +72,7 @@ static void renderScape()
 					*(dst + l) = cv;
 				}
 				yMax = h;
-				if (yMax>=SCREEN_HEIGHT) break;
+				if (yMax > SCREEN_HEIGHT - 1) break;
 			}
 			pmap += 256;
 		}
@@ -97,6 +107,21 @@ static void traverseHorizontally(int yawL, int yawR, int z, Point2D *dstPoints)
 	}
 }
 
+static void createNonLinearTable()
+{
+	int i;
+	float ii = 0.0f;
+	float di = (1.0f / VIS_VER_STEPS) * VIS_SCALE_DOWN;
+	for (i = 0; i < VIS_VER_STEPS; ++i) {
+		//float zone = ii;// (float)i / (VIS_VER_STEPS - 1);
+		//float inter = pow(zone, 1.0f);
+		lintab[i] = (int)(ii * (1 << FP_LINEAR));
+		ii += di;
+		di *=  1.018f;
+		if (ii > 1.0f) ii = 1.0f;
+	}
+}
+
 static void initRaySamplePoints()
 {
 	int i,j,k=0;
@@ -105,20 +130,20 @@ static void initRaySamplePoints()
 	const int yaw = viewAngle.y & 255;
 	const int yawL = (yaw - halfFov) & 255;
 	const int yawR = (yaw + halfFov) & 255;
+	const int icos = isin[halfFov + 64];
 
-	traverseHorizontally(yawL, yawR, VIS_NEAR, viewNearPoints);
-	traverseHorizontally(yawL, yawR, VIS_FAR, viewFarPoints);
+	traverseHorizontally(yawL, yawR, (VIS_NEAR << FP_BASE) / icos, viewNearPoints);
+	traverseHorizontally(yawL, yawR, (VIS_FAR << FP_BASE) / icos, viewFarPoints);
 
 	for (j=0; j<VIS_HOR_STEPS; ++j) {
+		Point2D pInter;
 		Point2D *pNear = &viewNearPoints[j];
 		Point2D *pFar = &viewFarPoints[j];
-		Point2D dVer;
 
-		setPoint2D(&dVer, (pFar->x - pNear->x) / (VIS_VER_STEPS - 1), (pFar->y - pNear->y) / (VIS_VER_STEPS - 1));
 		for (i=0; i<VIS_VER_STEPS; ++i) {
-			raySamples[k++] = (pNear->y >> FP_BASE) * HMAP_WIDTH + (pNear->x >> FP_BASE);
-			pNear->x += dVer.x;
-			pNear->y += dVer.y;
+			pInter.x = pNear->x + (((pFar->x - pNear->x) * lintab[i]) >> FP_LINEAR);
+			pInter.y = pNear->y + (((pFar->y - pNear->y) * lintab[i]) >> FP_LINEAR);
+			raySamples[k++] = (pInter.y >> FP_BASE) * HMAP_WIDTH + (pInter.x >> FP_BASE);
 		}
 	}
 }
@@ -151,7 +176,8 @@ static void initShadedPals()
 
 	for (j=1; j<NUM_SHADE_PALS; ++j) {
 		for (i=0; i<256; ++i) {
-			pmapNext[i] = shadeColor(pmap[i], ((NUM_SHADE_PALS-1 - j) * 256) / (NUM_SHADE_PALS-1));
+			//pmapNext[i] = shadeColor(pmap[i], ((NUM_SHADE_PALS-1 - j) * 256) / (NUM_SHADE_PALS-1));
+			pmapNext[i] = shadeColor(pmap[i], 256);
 		}
 		pmapNext += 256;
 	}
@@ -178,6 +204,7 @@ void effectVolumeScapeInit()
 
 	initColumnCels();
 	initEngineLUTs();
+	createNonLinearTable();
 	initRaySamplePoints();
 	initShadedPals();
 }
