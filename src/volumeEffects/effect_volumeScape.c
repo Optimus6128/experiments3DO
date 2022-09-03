@@ -10,7 +10,7 @@
 #include "file_utils.h"
 
 #define FOV 48
-#define VIS_FAR 96
+#define VIS_FAR 128
 #define VIS_NEAR 16
 #define VIS_VER_STEPS (VIS_FAR - VIS_NEAR + 1)
 #define VIS_HOR_STEPS (SCREEN_WIDTH / 2)
@@ -23,7 +23,7 @@
 #define HMAP_HEIGHT 512
 #define HMAP_SIZE (HMAP_WIDTH * HMAP_HEIGHT)
 
-#define NUM_SHADE_PALS 1
+#define NUM_SHADE_PALS VIS_VER_STEPS
 
 
 static uint8 *hmap;
@@ -47,23 +47,26 @@ static void renderScape()
 	uint16 *dst = columnPixels;
 	const int viewerOffset = viewPos.z * HMAP_WIDTH + viewPos.x;
 
-	uint16 *pmap = (uint16*)&cmap[HMAP_SIZE];	// palette comes after the bitmap data
-
 	for (j=0; j<VIS_HOR_STEPS; ++j) {
+		uint16 *pmap = (uint16*)&cmap[HMAP_SIZE];	// palette comes after the bitmap data
 		int yMax = 0;
 		for (i=0; i<VIS_VER_STEPS; ++i) {
 			const int k = *rs++;
 			const int mapOffset = (viewerOffset + k) & (HMAP_WIDTH * HMAP_HEIGHT - 1);
-			const int h = (((-playerHeight + hmap[mapOffset]) * recZ[VIS_NEAR + i]) >> (REC_FPSHR - V_HEIGHT_SCALER_SHIFT)) + V_HORIZON;
+			int h = (((-playerHeight + hmap[mapOffset]) * recZ[VIS_NEAR + i]) >> (REC_FPSHR - V_HEIGHT_SCALER_SHIFT)) + V_HORIZON;
 
 			if (yMax < h) {
 				const uint16 cv = pmap[cmap[mapOffset]];
+				if (h > SCREEN_HEIGHT-1) h = SCREEN_HEIGHT-1;
 				for (l=yMax; l<h; ++l) {
 					*(dst + l) = cv;
 				}
 				yMax = h;
+				if (yMax>=SCREEN_HEIGHT) break;
 			}
+			pmap += 256;
 		}
+
 		if (yMax==0) {
 			columnCels[j].ccb_Flags |= CCB_SKIP;
 		} else {
@@ -139,9 +142,24 @@ static void initColumnCels()
 	}
 }
 
+static void initShadedPals()
+{
+	int i,j;
+
+	uint16 *pmap = (uint16*)&cmap[HMAP_SIZE];	// palette comes after the bitmap data
+	uint16 *pmapNext = pmap + 256;
+
+	for (j=1; j<NUM_SHADE_PALS; ++j) {
+		for (i=0; i<256; ++i) {
+			pmapNext[i] = shadeColor(pmap[i], ((NUM_SHADE_PALS-1 - j) * 256) / (NUM_SHADE_PALS-1));
+		}
+		pmapNext += 256;
+	}
+}
+
 void effectVolumeScapeInit()
 {
-	const int cmapSize = HMAP_SIZE + 256 * NUM_SHADE_PALS * sizeof(uint16);
+	const int cmapSize = HMAP_SIZE + 512 * NUM_SHADE_PALS;
 
 	// alloc various tables
 	hmap = AllocMem(HMAP_SIZE, MEMTYPE_ANY);
@@ -161,6 +179,7 @@ void effectVolumeScapeInit()
 	initColumnCels();
 	initEngineLUTs();
 	initRaySamplePoints();
+	initShadedPals();
 }
 
 static void updateFromInput()

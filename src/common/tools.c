@@ -326,6 +326,19 @@ int runEffectSelector(char **str, int size)
 	} while(true);
 }
 
+uint16 shadeColor(uint16 c, int shade)	// dark=0, bright=256
+{
+	const int rOrig = (c >> 10) & 31;
+	const int gOrig = (c >> 5) & 31;
+	const int bOrig = c & 31;
+
+	const int rShaded = (rOrig * shade) >> 8;
+	const int gShaded = (gOrig * shade) >> 8;
+	const int bShaded = (bOrig * shade) >> 8;
+
+	return (rShaded << 10) | (gShaded << 5) | bShaded;
+}
+
 void setPal(int c, int r, int g, int b, uint16* pal)
 {
 	CLAMP(r, 0, 31)
