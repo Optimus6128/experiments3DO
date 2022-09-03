@@ -23,10 +23,11 @@
 #define HMAP_HEIGHT 512
 #define HMAP_SIZE (HMAP_WIDTH * HMAP_HEIGHT)
 
+#define NUM_SHADE_PALS 1
+
 
 static uint8 *hmap;
-static uint16 *cmap;
-static Sprite *testSpr;
+static uint8 *cmap;
 
 static CCB *columnCels;
 static uint16 *columnPixels;
@@ -46,6 +47,8 @@ static void renderScape()
 	uint16 *dst = columnPixels;
 	const int viewerOffset = viewPos.z * HMAP_WIDTH + viewPos.x;
 
+	uint16 *pmap = (uint16*)&cmap[HMAP_SIZE];	// palette comes after the bitmap data
+
 	for (j=0; j<VIS_HOR_STEPS; ++j) {
 		int yMax = 0;
 		for (i=0; i<VIS_VER_STEPS; ++i) {
@@ -54,7 +57,7 @@ static void renderScape()
 			const int h = (((-playerHeight + hmap[mapOffset]) * recZ[VIS_NEAR + i]) >> (REC_FPSHR - V_HEIGHT_SCALER_SHIFT)) + V_HORIZON;
 
 			if (yMax < h) {
-				const uint16 cv = cmap[mapOffset];
+				const uint16 cv = pmap[cmap[mapOffset]];
 				for (l=yMax; l<h; ++l) {
 					*(dst + l) = cv;
 				}
@@ -138,9 +141,11 @@ static void initColumnCels()
 
 void effectVolumeScapeInit()
 {
+	const int cmapSize = HMAP_SIZE + 256 * NUM_SHADE_PALS * sizeof(uint16);
+
 	// alloc various tables
 	hmap = AllocMem(HMAP_SIZE, MEMTYPE_ANY);
-	cmap = (uint16*)AllocMem(HMAP_SIZE * sizeof(uint16), MEMTYPE_ANY);
+	cmap = AllocMem(cmapSize, MEMTYPE_ANY);
 	columnPixels = (uint16*)AllocMem(VIS_HOR_STEPS * SCREEN_HEIGHT * sizeof(uint16), MEMTYPE_ANY);
 	raySamples = (int*)AllocMem(VIS_VER_STEPS * VIS_HOR_STEPS * sizeof(int), MEMTYPE_ANY);
 	viewNearPoints = (Point2D*)AllocMem(VIS_HOR_STEPS * sizeof(Point2D), MEMTYPE_ANY);
@@ -148,10 +153,7 @@ void effectVolumeScapeInit()
 
 	// load heightmap and colormap
 	readBytesFromFileAndStore("data/hmap1.bin", 0, HMAP_SIZE, hmap);
-	readBytesFromFileAndStore("data/cmap1.bin", 0, HMAP_SIZE * sizeof(uint16), (uint8*)cmap);
-
-	testSpr = newSprite(HMAP_WIDTH, HMAP_HEIGHT, 16, CEL_TYPE_UNCODED, NULL, (uint8*)cmap);
-	setSpritePositionZoom(testSpr, SCREEN_WIDTH/2, SCREEN_HEIGHT/2, 128);
+	readBytesFromFileAndStore("data/cmap1.bin", 0, cmapSize, cmap);
 
 	setVector3D(&viewPos, 3*HMAP_WIDTH/4, V_PLAYER_HEIGHT, HMAP_HEIGHT/6);
 	setVector3D(&viewAngle, 0,128,0);
@@ -210,6 +212,4 @@ void effectVolumeScapeRun()
 	updateFromInput();
 
 	renderScape();
-
-	//drawSprite(testSpr);
 }
