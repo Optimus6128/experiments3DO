@@ -29,6 +29,7 @@
 #define NUM_SHADE_PALS VIS_VER_STEPS
 
 int lintab[VIS_VER_STEPS];
+int heightScaleTab[VIS_VER_STEPS];
 
 static uint8 *hmap;
 static uint8 *cmap;
@@ -43,10 +44,6 @@ static Point2D *viewFarPoints;
 static int *raySamples;
 
 
-static void initHeightScalerTab()
-{
-}
-
 static void renderScape()
 {
 	int i,j,l;
@@ -59,23 +56,21 @@ static void renderScape()
 		uint16 *pmap = (uint16*)&cmap[HMAP_SIZE];	// palette comes after the bitmap data
 		int yMax = 0;
 		for (i=0; i<VIS_VER_STEPS; ++i) {
-			const int z = lintab[i];
-			const int k = *rs++;
-			const int mapOffset = (viewerOffset + k) & (HMAP_WIDTH * HMAP_HEIGHT - 1);
+			const int sampleOffset = *(rs+i);
+			const int mapOffset = (viewerOffset + sampleOffset) & (HMAP_WIDTH * HMAP_HEIGHT - 1);
 
-			int h = (((-playerHeight + hmap[mapOffset]) * recZ[VIS_NEAR + ((z * VIS_FAR) >> FP_LINEAR)]) >> (REC_FPSHR - V_HEIGHT_SCALER_SHIFT)) + V_HORIZON;
+			int h = (((-playerHeight + hmap[mapOffset]) * heightScaleTab[i]) >> (REC_FPSHR - V_HEIGHT_SCALER_SHIFT)) + V_HORIZON;
 
 			if (yMax < h) {
 				const uint16 cv = pmap[cmap[mapOffset]];
 				if (h > SCREEN_HEIGHT-1) h = SCREEN_HEIGHT-1;
-				for (l=yMax; l<h; ++l) {
-					*(dst + l) = cv;
-				}
+				for (l=yMax; l<h; ++l) *(dst + l) = cv;
 				yMax = h;
-				if (yMax > SCREEN_HEIGHT - 1) break;
+				if (yMax == SCREEN_HEIGHT - 1) break;
 			}
 			pmap += 256;
 		}
+		rs += VIS_VER_STEPS;
 
 		if (yMax==0) {
 			columnCels[j].ccb_Flags |= CCB_SKIP;
@@ -116,6 +111,7 @@ static void createNonLinearTable()
 		//float zone = ii;// (float)i / (VIS_VER_STEPS - 1);
 		//float inter = pow(zone, 1.0f);
 		lintab[i] = (int)(ii * (1 << FP_LINEAR));
+		heightScaleTab[i] = recZ[VIS_NEAR + ((lintab[i] * VIS_FAR) >> FP_LINEAR)];
 		ii += di;
 		di *=  1.018f;
 		if (ii > 1.0f) ii = 1.0f;
