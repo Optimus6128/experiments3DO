@@ -8,16 +8,17 @@
 #include "input.h"
 #include "mathutil.h"
 #include "file_utils.h"
-#define FP_LINEAR 10
+
+#define FP_LINEAR 12
 
 #define FOV 48
-#define VIS_FAR 192
+#define VIS_FAR 176
 #define VIS_NEAR 16
 #define VIS_SCALE_DOWN 0.375
 #define VIS_VER_STEPS ((int)((VIS_FAR - VIS_NEAR) * VIS_SCALE_DOWN))
 #define VIS_HOR_STEPS (SCREEN_WIDTH / 2)
 
-#define V_PLAYER_HEIGHT 128
+#define V_PLAYER_HEIGHT 176
 #define V_HEIGHT_SCALER_SHIFT 7
 #define V_HEIGHT_SCALER (1 << V_HEIGHT_SCALER_SHIFT)
 #define V_HORIZON (3*SCREEN_HEIGHT / 4)
@@ -42,6 +43,8 @@ static Vector3D viewAngle;
 static Point2D *viewNearPoints;
 static Point2D *viewFarPoints;
 static int *raySamples;
+
+static bool walk = false;
 
 
 static void renderScape()
@@ -102,18 +105,27 @@ static void traverseHorizontally(int yawL, int yawR, int z, Point2D *dstPoints)
 	}
 }
 
+/*static void createNonLinearTablePow()
+{
+	int i;
+	for (i = 0; i < VIS_VER_STEPS; ++i) {
+		float zone = (float)i / (VIS_VER_STEPS - 1);
+		float inter = pow(zone, 2.0f);
+		lintab[i] = (int)(inter * (1 << FP_LINEAR));
+		heightScaleTab[i] = recZ[VIS_NEAR + ((lintab[i] * VIS_FAR) >> FP_LINEAR)];
+	}
+}*/
+
 static void createNonLinearTable()
 {
 	int i;
 	float ii = 0.0f;
 	float di = (1.0f / VIS_VER_STEPS) * VIS_SCALE_DOWN;
 	for (i = 0; i < VIS_VER_STEPS; ++i) {
-		//float zone = ii;// (float)i / (VIS_VER_STEPS - 1);
-		//float inter = pow(zone, 1.0f);
 		lintab[i] = (int)(ii * (1 << FP_LINEAR));
 		heightScaleTab[i] = recZ[VIS_NEAR + ((lintab[i] * VIS_FAR) >> FP_LINEAR)];
 		ii += di;
-		di *=  1.018f;
+		di *=  1.024f;
 		if (ii > 1.0f) ii = 1.0f;
 	}
 }
@@ -171,9 +183,10 @@ static void initShadedPals()
 	uint16 *pmapNext = pmap + 256;
 
 	for (j=1; j<NUM_SHADE_PALS; ++j) {
+		//int cshade = ((NUM_SHADE_PALS-1 - j) * 256) / (NUM_SHADE_PALS-1);
+		int cshade = 256 - ((256 * lintab[j]) >> FP_LINEAR);
 		for (i=0; i<256; ++i) {
-			//pmapNext[i] = shadeColor(pmap[i], ((NUM_SHADE_PALS-1 - j) * 256) / (NUM_SHADE_PALS-1));
-			pmapNext[i] = shadeColor(pmap[i], 256);
+			pmapNext[i] = shadeColor(pmap[i], cshade);
 		}
 		pmapNext += 256;
 	}
@@ -201,15 +214,16 @@ void effectVolumeScapeInit()
 	initColumnCels();
 	initEngineLUTs();
 	createNonLinearTable();
+	//createNonLinearTablePow();
 	initRaySamplePoints();
 	initShadedPals();
 }
 
 static void updateFromInput()
 {
-	const int velX = 4;
+	const int velX = 3;
 	const int velY = 2;
-	const int velZ = 4;
+	const int velZ = 3;
 
 	if (isJoyButtonPressed(JOY_BUTTON_UP)) {
 		viewPos.x -= velX;
@@ -239,6 +253,10 @@ static void updateFromInput()
 		viewPos.y -= velY;
 	}
 
+	if (isJoyButtonPressedOnce(JOY_BUTTON_SELECT)) {
+		walk = !walk;
+	}
+
 	if (isMouseButtonPressed(MOUSE_BUTTON_LEFT)) {
 	}
 
@@ -246,6 +264,10 @@ static void updateFromInput()
 	}
 
 	if (isMouseButtonPressed(MOUSE_BUTTON_MIDDLE)) {
+	}
+
+	if (walk) {
+		viewPos.y = hmap[(viewPos.z * HMAP_WIDTH + viewPos.x) & (HMAP_WIDTH * HMAP_HEIGHT - 1)] + V_PLAYER_HEIGHT/4;
 	}
 }
 
