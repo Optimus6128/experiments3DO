@@ -13,8 +13,8 @@ static char *effectName[EFFECTS_NUM] = { "volume cube", "volume scape" };
 
 int main()
 {
-	//const int effectIndex = runEffectSelector(effectName, EFFECTS_NUM);
-	const int effectIndex = EFFECT_VOLUME_HEIGHTMAP;
+	const int effectIndex = runEffectSelector(effectName, EFFECTS_NUM);
+	//const int effectIndex = EFFECT_VOLUME_HEIGHTMAP;
 
 	int extraOpts = CORE_SHOW_MEM;
 	extraOpts |= (CORE_NO_VSYNC | CORE_VRAM_MAXBUFFERS);

@@ -12,7 +12,7 @@
 #define FP_LINEAR 12
 
 #define FOV 48
-#define VIS_FAR 176
+#define VIS_FAR 160
 #define VIS_NEAR 16
 #define VIS_SCALE_DOWN 0.375
 #define VIS_VER_STEPS ((int)((VIS_FAR - VIS_NEAR) * VIS_SCALE_DOWN))
@@ -44,7 +44,7 @@ static Point2D *viewNearPoints;
 static Point2D *viewFarPoints;
 static int *raySamples;
 
-static bool walk = false;
+static bool walk = true;
 
 
 static void renderScape()
@@ -58,11 +58,11 @@ static void renderScape()
 	for (j=0; j<VIS_HOR_STEPS; ++j) {
 		uint16 *pmap = (uint16*)&cmap[HMAP_SIZE];	// palette comes after the bitmap data
 		int yMax = 0;
+		int h,mapOffset;
+		
 		for (i=0; i<VIS_VER_STEPS; ++i) {
-			const int sampleOffset = *(rs+i);
-			const int mapOffset = (viewerOffset + sampleOffset) & (HMAP_WIDTH * HMAP_HEIGHT - 1);
-
-			int h = (((-playerHeight + hmap[mapOffset]) * heightScaleTab[i]) >> (REC_FPSHR - V_HEIGHT_SCALER_SHIFT)) + V_HORIZON;
+			mapOffset = (viewerOffset + *(rs+i)) & (HMAP_WIDTH * HMAP_HEIGHT - 1);
+			h = (((-playerHeight + hmap[mapOffset]) * heightScaleTab[i]) >> (REC_FPSHR - V_HEIGHT_SCALER_SHIFT)) + V_HORIZON;
 
 			if (yMax < h) {
 				const uint16 cv = pmap[cmap[mapOffset]];
@@ -73,6 +73,7 @@ static void renderScape()
 			}
 			pmap += 256;
 		}
+
 		rs += VIS_VER_STEPS;
 
 		if (yMax==0) {
@@ -125,7 +126,8 @@ static void createNonLinearTable()
 		lintab[i] = (int)(ii * (1 << FP_LINEAR));
 		heightScaleTab[i] = recZ[VIS_NEAR + ((lintab[i] * VIS_FAR) >> FP_LINEAR)];
 		ii += di;
-		di *=  1.024f;
+		di *=  1.03f;
+		//di += 0.000375f;
 		if (ii > 1.0f) ii = 1.0f;
 	}
 }
@@ -184,7 +186,8 @@ static void initShadedPals()
 
 	for (j=1; j<NUM_SHADE_PALS; ++j) {
 		//int cshade = ((NUM_SHADE_PALS-1 - j) * 256) / (NUM_SHADE_PALS-1);
-		int cshade = 256 - ((256 * lintab[j]) >> FP_LINEAR);
+		int cshade = 288 - ((256 * lintab[j]) >> FP_LINEAR);
+		CLAMP(cshade,0,256);
 		for (i=0; i<256; ++i) {
 			pmapNext[i] = shadeColor(pmap[i], cshade);
 		}
