@@ -1,6 +1,7 @@
 #include "core.h"
 
 #include "tools.h"
+#include "mathutil.h"
 #include "cel_helpers.h"
 
 #include "engine_view.h"
@@ -373,7 +374,7 @@ static void translateAndProjectVertices(Object3D *obj, Camera *cam)
 	posFromCam[1] = obj->pos.y - cam->pos.y;
 	posFromCam[2] = obj->pos.z - cam->pos.z;
 
-	MulVec3Mat33_F16(posFromCam, posFromCam, cam->inverseRotMat);
+	SoftMulVec3Mat33_F16(&posFromCam, &posFromCam, cam->inverseRotMat);
 
 	for (i=0; i<lvNum; i++) {
 		int edgeX, edgeY;
@@ -419,7 +420,7 @@ static void transformMesh(Object3D *obj, Camera *cam)
 	if (mesh->renderType & MESH_OPTION_ENABLE_LIGHTING) {
 		transposeMat3(rotMat);
 		normalizeVector3D(&globalLight->dir);
-		MulManyVec3Mat33_F16((vec3f16*)&rotatedGlobalLightVec, (vec3f16*)&globalLight->dir, rotMat, 1);
+		SoftMulVec3Mat33_F16((vec3f16*)&rotatedGlobalLightVec, (vec3f16*)&globalLight->dir, rotMat);
 	}
 }
 

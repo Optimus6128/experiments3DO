@@ -1,6 +1,8 @@
 #include "engine_world.h"
 #include "system_graphics.h"
 
+#include "mathutil.h"
+
 int sortedObjectIndex[256];
 int sortedObjectsNum = 0;
 
@@ -148,7 +150,7 @@ static void updateObjectWorldBoundingBox(int objectIndex, World *world, Camera *
 	centerFromCam[1] = obj->pos.y + srcBbox->center.y - camera->pos.y;
 	centerFromCam[2] = obj->pos.z + srcBbox->center.z - camera->pos.z;
 
-	MulVec3Mat33_F16(centerFromCam, centerFromCam, camera->inverseRotMat);
+	SoftMulVec3Mat33_F16(&centerFromCam, &centerFromCam, camera->inverseRotMat);
 
 	dstBbox->center.x = centerFromCam[0];
 	dstBbox->center.y = centerFromCam[1];

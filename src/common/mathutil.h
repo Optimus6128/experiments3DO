@@ -1,6 +1,8 @@
 #ifndef MATHUTIL_H
 #define MATHUTIL_H
 
+#include "core.h"
+
 #define FP_CORE 16
 #define FP_BASE 12
 #define FP_BASE_TO_CORE (FP_CORE - FP_BASE)
@@ -82,5 +84,7 @@ void setPoint2D(Point2D *pt, int x, int y);
 Point2Darray *initPoint2Darray(int numPoints);
 void addPoint2D(Point2Darray *ptArray, int x, int y);
 void destroyPoint2Darray(Point2Darray *ptArray);
+
+void SoftMulVec3Mat33_F16(vec3f16 *dest, vec3f16 *src, mat33f16 mat);
 
 #endif

@@ -24,8 +24,8 @@ int main()
 	//const int effectIndex = EFFECT_MESH_HEIGHTMAP;
 
 	if (effectIndex == EFFECT_MESH_SOFT || effectIndex == EFFECT_MESH_WORLD) extraOpts |= CORE_INIT_3D_ENGINE_SOFT;
-	if (effectIndex != EFFECT_MESH_PYRAMIDS) extraOpts |= CORE_NO_VSYNC;
+	if (effectIndex != EFFECT_MESH_PYRAMIDS) extraOpts |= (CORE_NO_VSYNC | CORE_VRAM_MAXBUFFERS);
 
-	coreInit(effectInitFunc[effectIndex], CORE_SHOW_FPS | CORE_INIT_3D_ENGINE | CORE_VRAM_MAXBUFFERS | extraOpts);
+	coreInit(effectInitFunc[effectIndex], CORE_SHOW_FPS | CORE_INIT_3D_ENGINE | extraOpts);
 	coreRun(effectRunFunc[effectIndex]);
 }

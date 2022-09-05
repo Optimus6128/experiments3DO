@@ -2,8 +2,6 @@
 
 #include "mathutil.h"
 
-#include "core.h"
-
 
 int *isin;
 int *recZ;
@@ -170,4 +168,19 @@ void destroyPoint2Darray(Point2Darray *ptArray)
 {
 	FreeMem(ptArray->points, -1);
 	FreeMem(ptArray, sizeof(Point2Darray));
+}
+
+void SoftMulVec3Mat33_F16(vec3f16 *dest, vec3f16 *src, mat33f16 mat)
+{
+	frac16 *m = (frac16*)mat;
+	frac16 *s = (frac16*)src;
+	frac16 *d = (frac16*)dest;
+
+	const int x = *s++;
+	const int y = *s++;
+	const int z = *s++;
+
+	*d++ = FIXED_TO_INT(x * m[0] + y * m[3] + z * m[6], FP_CORE);
+	*d++ = FIXED_TO_INT(x * m[1] + y * m[4] + z * m[7], FP_CORE);
+	*d++ = FIXED_TO_INT(x * m[2] + y * m[5] + z * m[8], FP_CORE);
 }
