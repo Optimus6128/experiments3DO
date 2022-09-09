@@ -189,6 +189,16 @@ void rotateCelOrientation(CCB *cel)
 	cel->ccb_VDY = tempX;
 }
 
+
+void setCelFlags(CCB *cel, uint32 flags, bool enable)
+{
+	if (enable) {
+		cel->ccb_Flags |= flags;
+	} else {
+		cel->ccb_Flags &= ~flags;
+	}
+}
+
 void initCel(int width, int height, int bpp, int type, CCB *cel)
 {
 	if (!cel) return;

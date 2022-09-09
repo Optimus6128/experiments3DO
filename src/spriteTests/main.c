@@ -2,21 +2,20 @@
 #include "tools.h"
 
 #include "effect_spritesGecko.h"
+#include "effect_layers.h"
+#include "effect_parallax.h"
 
-//enum { EFFECT_SPRITES_GECKO, EFFECTS_NUM };
+enum { EFFECT_SPRITES_GECKO, EFFECT_LAYERS, EFFECT_PARALLAX, EFFECTS_NUM };
 
-//static void(*effectInitFunc[EFFECTS_NUM])() = { effectSpritesGeckoInit };
-//static void(*effectRunFunc[EFFECTS_NUM])() = { effectSpritesGeckoRun };
+static void(*effectInitFunc[EFFECTS_NUM])() = { effectSpritesGeckoInit, effectLayersInit, effectParallaxInit };
+static void(*effectRunFunc[EFFECTS_NUM])() = { effectSpritesGeckoRun, effectLayersRun, effectParallaxRun };
 
-//static char *effectName[EFFECTS_NUM] = { "1920 gecko sprites" };
+static char *effectName[EFFECTS_NUM] = { "1920 gecko sprites", "background layers", "parallax tests" };
 
 int main()
 {
-	//const int effectIndex = EFFECT_SPRITES_GECKO;//runEffectSelector(effectName, EFFECTS_NUM);
+	const int effectIndex = runEffectSelector(effectName, EFFECTS_NUM);
 
-//	coreInit(effectInitFunc[effectIndex], CORE_DEFAULT);
-//	coreRun(effectRunFunc[effectIndex]);
-
-	coreInit(effectSpritesGeckoInit, CORE_DEFAULT);
-	coreRun(effectSpritesGeckoRun);
+	coreInit(effectInitFunc[effectIndex], CORE_DEFAULT);
+	coreRun(effectRunFunc[effectIndex]);
 }

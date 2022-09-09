@@ -11,6 +11,8 @@ enum {
 };
 
 #define CEL_BLEND_OPAQUE 0x1F001F00
+#define CEL_BLEND_ADDITIVE 0x1F801F80
+#define CEL_BLEND_AVERAGE 0x1F811F81
 
 void initCel(int width, int height, int bpp, int type, CCB *cel);
 CCB *createCel(int width, int height, int bpp, int type);
@@ -25,6 +27,7 @@ uint16* getCelPalette(CCB *cel);
 void* getCelBitmap(CCB *cel);
 
 void setCelBpp(int bpp, CCB *cel);
+void setCelFlags(CCB *cel, uint32 flags, bool enable);
 void setCelType(int type, CCB *cel);
 void setCelPalette(uint16 *pal, CCB *cel);
 void setCelBitmap(void *bitmap, CCB *cel);

@@ -86,5 +86,6 @@ void addPoint2D(Point2Darray *ptArray, int x, int y);
 void destroyPoint2Darray(Point2Darray *ptArray);
 
 void SoftMulVec3Mat33_F16(vec3f16 *dest, vec3f16 *src, mat33f16 mat);
+void SoftMulManyVec3Mat33_F16(vec3f16* dest, vec3f16* src, mat33f16 mat, int32 count);
 
 #endif

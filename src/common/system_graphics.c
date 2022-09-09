@@ -27,6 +27,9 @@ static int frameNum;
 bool renderToBuffer;
 static uint32 bufferIndex;
 
+static void *lastSPORTimage = NULL;
+static uint32 lastSPORTcolor = 0;
+
 void initSPORTwriteValue(uint32 value)
 {
 	memset(&ioInfo,0,sizeof(ioInfo));
@@ -35,6 +38,8 @@ void initSPORTwriteValue(uint32 value)
 	ioInfo.ioi_Offset = value; // background colour
 	ioInfo.ioi_Recv.iob_Buffer = Bitmaps[0]->bm_Buffer;
 	ioInfo.ioi_Recv.iob_Len = SCREEN_SIZE_IN_BYTES;
+
+	lastSPORTcolor = value;
 }
 
 void initSPORTcopyImage(ubyte *srcImage)
@@ -46,6 +51,8 @@ void initSPORTcopyImage(ubyte *srcImage)
 	ioInfo.ioi_Send.iob_Len = SCREEN_SIZE_IN_BYTES;
 	ioInfo.ioi_Recv.iob_Buffer = Bitmaps[0]->bm_Buffer;
 	ioInfo.ioi_Recv.iob_Len = SCREEN_SIZE_IN_BYTES;
+
+	lastSPORTimage = srcImage;
 }
 
 static bool testIfTotalBuffersFitInVRAM(uint32 totalNumBuffers)
@@ -115,7 +122,7 @@ void initGraphics(uint32 numVramBuffers, uint32 numOffscreenBuffers, bool horizo
 
 	gVRAMIOReq = CreateVRAMIOReq(); // Obtain an IOReq for all SPORT operations
 
-	initSPORTwriteValue(0);
+	initSPORTwriteValue(lastSPORTcolor);
 
 	vsyncItem = GetVBLIOReq();
 }
@@ -144,6 +151,19 @@ void loadAndSetBackgroundImage(char *path, ubyte *screenBuffer)
 void setBackgroundColor(int color)
 {
 	ioInfo.ioi_Offset = color;
+	lastSPORTcolor = color;
+}
+
+void switchToSPORTwrite()
+{
+	initSPORTwriteValue(lastSPORTcolor);
+}
+
+void switchToSPORTimage()
+{
+	if (lastSPORTimage) {
+		initSPORTcopyImage(lastSPORTimage);
+	}
 }
 
 uint16 *getVramBuffer()

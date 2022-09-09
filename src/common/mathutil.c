@@ -184,3 +184,22 @@ void SoftMulVec3Mat33_F16(vec3f16 *dest, vec3f16 *src, mat33f16 mat)
 	*d++ = FIXED_TO_INT(x * m[1] + y * m[4] + z * m[7], FP_CORE);
 	*d++ = FIXED_TO_INT(x * m[2] + y * m[5] + z * m[8], FP_CORE);
 }
+
+void SoftMulManyVec3Mat33_F16(vec3f16* dest, vec3f16* src, mat33f16 mat, int32 count)
+{
+	int i;
+	frac16 *m = (frac16*)mat;
+	frac16 *s = (frac16*)src;
+	frac16 *d = (frac16*)dest;
+
+	for (i = 0; i < count; ++i)
+	{
+		const int x = *s++;
+		const int y = *s++;
+		const int z = *s++;
+
+		*d++ = FIXED_TO_INT(x * m[0] + y * m[3] + z * m[6], FP_CORE);
+		*d++ = FIXED_TO_INT(x * m[1] + y * m[4] + z * m[7], FP_CORE);
+		*d++ = FIXED_TO_INT(x * m[2] + y * m[5] + z * m[8], FP_CORE);
+	}
+}

@@ -39,4 +39,7 @@ uint32 getNumOffscreenBuffers(void);
 void switchRenderToBuffer(bool on);
 void setRenderBuffer(uint32 num);
 
+void switchToSPORTwrite(void);
+void switchToSPORTimage(void);
+
 #endif

@@ -24,6 +24,25 @@ Sprite *newSprite(int width, int height, int bpp, int type, uint16 *pal, ubyte *
 	return spr;
 }
 
+Sprite *loadSpriteCel(char *path)
+{
+	Sprite *spr = (Sprite*)AllocMem(sizeof(Sprite), MEMTYPE_ANY);
+	CCB *sprCel = LoadCel(path, MEMTYPE_ANY);
+
+	spr->cel = sprCel;
+	spr->width = sprCel->ccb_Width;
+	spr->height = sprCel->ccb_Height;
+
+	spr->posX = spr->posY = 0;
+	spr->angle = 0;
+	spr->zoom = 256;
+
+	spr->data = getCelBitmap(sprCel);
+	spr->pal = getCelPalette(sprCel);
+
+	return spr;
+}
+
 Sprite *newFeedbackSprite(int posX, int posY, int width, int height, int bufferIndex)
 {
 	Sprite *spr = newSprite(width, height, 16, CEL_TYPE_UNCODED, NULL, (ubyte*)getBackBuffer());
@@ -45,23 +64,6 @@ Sprite *newPackedSprite(int width, int height, int bpp, int type, uint16 *pal, u
 	spr = newSprite(width, height, bpp, type, pal, providedPackedData);
 
 	spr->cel->ccb_Flags |= CCB_PACKED;
-
-	return spr;
-}
-
-Sprite *loadSpriteCel(char *path)
-{
-	Sprite *spr;
-	CCB *tempCel;
-	int size;
-
-	tempCel = LoadCel(path, MEMTYPE_ANY);
-	spr = newSprite(tempCel->ccb_Width, tempCel->ccb_Height, 16, CEL_TYPE_UNCODED, NULL, NULL);
-
-	size = (tempCel->ccb_Width * tempCel->ccb_Height * 16) / 8;
-	memcpy(spr->cel->ccb_SourcePtr, tempCel->ccb_SourcePtr, size);
-
-	UnloadCel(tempCel);
 
 	return spr;
 }
