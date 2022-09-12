@@ -54,7 +54,9 @@ static void renderScape()
 	uint8 *dstBase = columnPixels;
 	for (j=0; j<VIS_HOR_STEPS; ++j) {
 		int yMax = 0;
+		int8 cPrev = 0;
 		uint8 *dst = dstBase;
+		bool shouldInterp = false;
 
 		for (i=0; i<VIS_VER_STEPS; ++i) {
 			const int mapOffset = (viewerOffset + *(rs+i)) & (HMAP_SIZE - 1);
@@ -62,14 +64,25 @@ static void renderScape()
 			int h = (((-playerHeight + hm) * heightScaleTab[i]) >> (REC_FPSHR - V_HEIGHT_SCALER_SHIFT)) + V_HORIZON;
 			if (h > SCREEN_HEIGHT-1) h = SCREEN_HEIGHT-1;
 
+			
 			if (yMax < h) {
-				const uint8 cv = hm >> 2;
-
 				int hCount = h-yMax;
 
-				do {
-					*dst++ = cv;
-				}while(--hCount > 0);
+				if (shouldInterp) {
+					int cc = cPrev << REC_FPSHR;
+					//const int dc = ((hm - cPrev) << 8) * recZ[hCount];
+					const int dc = (hm - cPrev) * recZ[hCount];
+
+					do {
+						*dst++ = (uint8)(cc >> (REC_FPSHR + 2));
+						cc += dc;
+					}while(--hCount > 0);
+				} else {
+					const uint8 cv = hm >> 2;
+					do {
+						*dst++ = cv;
+					}while(--hCount > 0);
+				}
 
 				/*
 				// Failed attempt to sometimes draw bytes, other times 4 bytes at once. Column diffs are so small most of the time there is barely any gain.
@@ -105,6 +118,11 @@ static void renderScape()
 
 				yMax = h;
 				if (yMax == SCREEN_HEIGHT - 1) break;
+
+				cPrev = hm;
+				shouldInterp = true;
+			} else {
+				shouldInterp = false;
 			}
 		}
 		rs += VIS_VER_STEPS;
