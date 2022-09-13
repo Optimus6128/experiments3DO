@@ -10,7 +10,7 @@ enum { EFFECT_VOLUME_CUBE, EFFECT_VOLUME_SCAPE, EFFECT_VOLUME_SCAPE_GRADIENT, EF
 static void(*effectInitFunc[EFFECTS_NUM])() = { effectVolumeCubeInit, effectVolumeScapeInit, effectVolumeScapeGradientInit };
 static void(*effectRunFunc[EFFECTS_NUM])() = { effectVolumeCubeRun, effectVolumeScapeRun, effectVolumeScapeGradientRun };
 
-static char *effectName[EFFECTS_NUM] = { "volume cube", "volume scape", "volume scape gradient" };
+//static char *effectName[EFFECTS_NUM] = { "volume cube", "volume scape", "volume scape gradient" };
 
 int main()
 {

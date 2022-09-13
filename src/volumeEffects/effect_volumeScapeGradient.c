@@ -9,27 +9,37 @@
 #include "mathutil.h"
 #include "file_utils.h"
 
-#define FP_LINEAR 10
+
+//#define VERT_INTERP
+
+#define FP_VIEWER 8
+#define FP_SCAPE 10
 
 #define FOV 48
+#define VIS_NEAR 16
 #define VIS_FAR 176
 
-#define VIS_NEAR 16
-#define VIS_VER_STEPS ((VIS_FAR - VIS_NEAR) / 2)
-#define VIS_HOR_STEPS (SCREEN_WIDTH / 2)
+#define VIS_HOR_SKIP 2
+#define VIS_VER_SKIP 2
+
+#define VIS_VER_STEPS ((VIS_FAR - VIS_NEAR) / VIS_VER_SKIP)
+#define VIS_HOR_STEPS (SCREEN_WIDTH / VIS_HOR_SKIP)
 
 #define V_PLAYER_HEIGHT 176
 #define V_HEIGHT_SCALER_SHIFT 7
 #define V_HEIGHT_SCALER (1 << V_HEIGHT_SCALER_SHIFT)
-#define V_HORIZON (3*SCREEN_HEIGHT / 4)
 
 #define HMAP_WIDTH 512
 #define HMAP_HEIGHT 512
 #define HMAP_SIZE (HMAP_WIDTH * HMAP_HEIGHT)
 
 
+
 static int lintab[VIS_VER_STEPS];
 static int heightScaleTab[VIS_VER_STEPS];
+
+static Point2D *viewNearPosVec;
+static Point2D *viewNearStepVec;
 
 static uint8 *hmap;
 
@@ -39,19 +49,45 @@ static uint16 columnPal[32];
 
 static Vector3D viewPos;
 static Vector3D viewAngle;
-static int *raySamples;
+
+static int horizon = SCREEN_HEIGHT / 2;
 
 static bool walk = true;
 
-//#define VERT_INTERP
 
+static void initRaySamplePosAndStep()
+{
+	int i;
+	Point2D pl, pr, dHor;
+	
+	const int halfFov = FOV / 2;
+	const int yaw = viewAngle.y & 255;
+	const int yawL = (yaw - halfFov) & 255;
+	const int yawR = (yaw + halfFov) & 255;
+	const int length = (1 << (FP_BASE + FP_SCAPE)) / isin[halfFov + 64];
+
+	Point2D *viewPosVec = viewNearPosVec;
+	Point2D *viewStepVec = viewNearStepVec;
+
+	setPoint2D(&pl, isin[(yawL+64)&255]*length, isin[yawL]*length);
+	setPoint2D(&pr, isin[(yawR+64)&255]*length, isin[yawR]*length);
+	setPoint2D(&dHor, (pr.x - pl.x) / (VIS_HOR_STEPS - 1), (pr.y - pl.y) / (VIS_HOR_STEPS - 1));
+
+	for (i=0; i<VIS_HOR_STEPS; ++i) {
+		setPoint2D(viewStepVec++, (VIS_VER_SKIP * pl.x) >> FP_BASE, (VIS_VER_SKIP * pl.y) >> FP_BASE);
+		setPoint2D(viewPosVec++, (VIS_NEAR * pl.x) >> FP_BASE, (VIS_NEAR * pl.y) >> FP_BASE);
+
+		pl.x += dHor.x;
+		pl.y += dHor.y;
+	}
+}
 
 static void renderScape()
 {
 	int i,j;
-	const int playerHeight = viewPos.y;
-	int *rs = raySamples;
-	const int viewerOffset = viewPos.z * HMAP_WIDTH + viewPos.x;
+
+	const int playerHeight = viewPos.y >> FP_VIEWER;
+	const int viewerOffset = (viewPos.z >> FP_VIEWER) * HMAP_WIDTH + (viewPos.x >> FP_VIEWER);
 
 	uint8 *dstBase = columnPixels;
 	for (j=0; j<VIS_HOR_STEPS; ++j) {
@@ -62,14 +98,19 @@ static void renderScape()
 			bool shouldInterp = false;
 		#endif
 
+		int vx = viewNearPosVec[j].x;
+		int vy = viewNearPosVec[j].y;
+		const int dvx = viewNearStepVec[j].x;
+		const int dvy = viewNearStepVec[j].y;
+
 		uint8 *dst = dstBase;
 		for (i=0; i<VIS_VER_STEPS; ++i) {
-			const int mapOffset = (viewerOffset + *(rs+i)) & (HMAP_SIZE - 1);
+			const int sampleOffset = (vy >> FP_SCAPE) * HMAP_WIDTH + (vx >> FP_SCAPE);
+			const int mapOffset = (viewerOffset + sampleOffset) & (HMAP_SIZE - 1);
 			const int hm = hmap[mapOffset];
-			int h = (((-playerHeight + hm) * heightScaleTab[i]) >> (REC_FPSHR - V_HEIGHT_SCALER_SHIFT)) + V_HORIZON;
+			int h = (((-playerHeight + hm) * heightScaleTab[i]) >> (REC_FPSHR - V_HEIGHT_SCALER_SHIFT)) + horizon;
 			if (h > SCREEN_HEIGHT-1) h = SCREEN_HEIGHT-1;
 
-			
 			if (yMax < h) {
 				int hCount = h-yMax;
 
@@ -108,8 +149,10 @@ static void renderScape()
 				shouldInterp = false;
 			}
 			#endif
+
+			vx += dvx;
+			vy += dvy;
 		}
-		rs += VIS_VER_STEPS;
 
 		if (yMax==0) {
 			columnCels[j].ccb_Flags |= CCB_SKIP;
@@ -123,25 +166,6 @@ static void renderScape()
 	drawCels(&columnCels[0]);
 }
 
-static void traverseHorizontally(int yawL, int yawR, int z, Point2D *dstPoints)
-{
-	int i;
-	Point2D pl, pr, dHor;
-
-	setPoint2D(&pl, isin[(yawL+64)&255]*z, isin[yawL]*z);
-	setPoint2D(&pr, isin[(yawR+64)&255]*z, isin[yawR]*z);
-
-	setPoint2D(&dHor, (pr.x - pl.x) / (VIS_HOR_STEPS - 1), (pr.y - pl.y) / (VIS_HOR_STEPS - 1));
-
-	for (i=0; i<VIS_HOR_STEPS; ++i) {
-		dstPoints[i].x = pl.x;
-		dstPoints[i].y = pl.y;
-		pl.x += dHor.x;
-		pl.y += dHor.y;
-	}
-}
-
-
 static void createLinearTable()
 {
 	int i;
@@ -149,42 +173,10 @@ static void createLinearTable()
 	float dz = 1.0f / (VIS_VER_STEPS - 1);
 	for (i = 0; i < VIS_VER_STEPS; ++i) {
 		float inter = zone; //pow(zone, 1.0f);
-		lintab[i] = (int)(inter * (1 << FP_LINEAR));
-		heightScaleTab[i] = recZ[VIS_NEAR + ((lintab[i] * VIS_FAR) >> FP_LINEAR)];
+		lintab[i] = (int)(inter * (1 << FP_SCAPE));
+		heightScaleTab[i] = recZ[VIS_NEAR + ((lintab[i] * VIS_FAR) >> FP_SCAPE)];
 		zone += dz;
 	}
-}
-
-static void initRaySamplePoints()
-{
-	int i,j,k=0;
-
-	const int halfFov = FOV / 2;
-	const int yaw = viewAngle.y & 255;
-	const int yawL = (yaw - halfFov) & 255;
-	const int yawR = (yaw + halfFov) & 255;
-	const int icos = isin[halfFov + 64];
-
-	Point2D *viewNearPoints = (Point2D*)AllocMem(VIS_HOR_STEPS * sizeof(Point2D), MEMTYPE_TRACKSIZE);
-	Point2D *viewFarPoints = (Point2D*)AllocMem(VIS_HOR_STEPS * sizeof(Point2D), MEMTYPE_TRACKSIZE);
-
-	traverseHorizontally(yawL, yawR, (VIS_NEAR << FP_BASE) / icos, viewNearPoints);
-	traverseHorizontally(yawL, yawR, (VIS_FAR << FP_BASE) / icos, viewFarPoints);
-
-	for (j=0; j<VIS_HOR_STEPS; ++j) {
-		Point2D pInter;
-		Point2D *pNear = &viewNearPoints[j];
-		Point2D *pFar = &viewFarPoints[j];
-
-		for (i=0; i<VIS_VER_STEPS; ++i) {
-			pInter.x = pNear->x + (((pFar->x - pNear->x) * lintab[i]) >> FP_LINEAR);
-			pInter.y = pNear->y + (((pFar->y - pNear->y) * lintab[i]) >> FP_LINEAR);
-			raySamples[k++] = (pInter.y >> FP_BASE) * HMAP_WIDTH + (pInter.x >> FP_BASE);
-		}
-	}
-
-	FreeMem(viewNearPoints, -1);
-	FreeMem(viewFarPoints, -1);
 }
 
 static void initColumnCels()
@@ -208,51 +200,86 @@ static void initColumnCels()
 	}
 }
 
+static void setPlayerPos(int px, int py, int pz)
+{
+	setVector3D(&viewPos, px << FP_BASE, py << FP_BASE, pz << FP_BASE);
+}
 
 void effectVolumeScapeGradientInit()
 {
 	// alloc various tables
 	hmap = AllocMem(HMAP_SIZE, MEMTYPE_ANY);
 	columnPixels = (uint8*)AllocMem(VIS_HOR_STEPS * SCREEN_HEIGHT, MEMTYPE_ANY);
-	raySamples = (int*)AllocMem(VIS_VER_STEPS * VIS_HOR_STEPS * sizeof(int), MEMTYPE_ANY);
+
+	viewNearPosVec = (Point2D*)AllocMem(VIS_HOR_STEPS * sizeof(Point2D), MEMTYPE_TRACKSIZE);
+	viewNearStepVec = (Point2D*)AllocMem(VIS_HOR_STEPS * sizeof(Point2D), MEMTYPE_TRACKSIZE);
 
 	// load heightmap and colormap
 	readBytesFromFileAndStore("data/hmap1.bin", 0, HMAP_SIZE, hmap);
 
-	setVector3D(&viewPos, 3*HMAP_WIDTH/4, V_PLAYER_HEIGHT, HMAP_HEIGHT/6);
+	setPlayerPos(3*HMAP_WIDTH/4, V_PLAYER_HEIGHT, HMAP_HEIGHT/6);
 	setVector3D(&viewAngle, 0,128,0);
 
 	initColumnCels();
 	initEngineLUTs();
 
 	createLinearTable();
-	initRaySamplePoints();
 }
 
 static void updateFromInput()
 {
-	const int velX = 3;
-	const int velY = 2;
-	const int velZ = 3;
+	const int speedX = 3 << FP_VIEWER;
+	const int speedY = 2 << FP_VIEWER;
+	const int speedZ = 3 << FP_VIEWER;
+
+	const int speedA = 4;
+	const int tiltSpeed = 8;
+
+	const int velX = (speedX * isin[(viewAngle.y + 64) & 255]) >> FP_BASE;
+	const int velZ = (speedZ * isin[viewAngle.y]) >> FP_BASE;
+
+	bool tiltView = false;
+	if (isJoyButtonPressed(JOY_BUTTON_C)) {
+		tiltView = true;
+	}
 
 	if (isJoyButtonPressed(JOY_BUTTON_UP)) {
-		viewPos.x -= velX;
+		if (tiltView) {
+			if (horizon < SCREEN_HEIGHT - 1) horizon += tiltSpeed;
+		} else {
+			viewPos.x += velX;
+			viewPos.z += velZ;
+		}
 	}
 	if (isJoyButtonPressed(JOY_BUTTON_DOWN)) {
-		viewPos.x += velX;
+		if (tiltView) {
+			if (horizon > 0) horizon -= tiltSpeed;
+		} else {
+			viewPos.x -= velX;
+			viewPos.z -= velZ;
+		}
 	}
-	if (isJoyButtonPressed(JOY_BUTTON_LEFT)) {
-		viewPos.z += velZ;
-	}
-	if (isJoyButtonPressed(JOY_BUTTON_RIGHT)) {
-		viewPos.z -= velZ;
-	}
-
 	if (isJoyButtonPressed(JOY_BUTTON_LPAD)) {
-		viewPos.y += velY;
+		viewPos.x += velZ;
+		viewPos.z -= velX;
 	}
 	if (isJoyButtonPressed(JOY_BUTTON_RPAD)) {
-		viewPos.y -= velY;
+		viewPos.x -= velZ;
+		viewPos.z += velX;
+	}
+
+	if (isJoyButtonPressed(JOY_BUTTON_LEFT)) {
+		viewAngle.y = (viewAngle.y - speedA) & 255;
+	}
+	if (isJoyButtonPressed(JOY_BUTTON_RIGHT)) {
+		viewAngle.y = (viewAngle.y + speedA) & 255;
+	}
+
+	if (isJoyButtonPressed(JOY_BUTTON_A)) {
+		viewPos.y += speedY;
+	}
+	if (isJoyButtonPressed(JOY_BUTTON_B)) {
+		viewPos.y -= speedY;
 	}
 
 	if (isJoyButtonPressedOnce(JOY_BUTTON_SELECT)) {
@@ -269,7 +296,7 @@ static void updateFromInput()
 	}
 
 	if (walk) {
-		viewPos.y = hmap[(viewPos.z * HMAP_WIDTH + viewPos.x) & (HMAP_WIDTH * HMAP_HEIGHT - 1)] + V_PLAYER_HEIGHT/4;
+		viewPos.y = (hmap[((viewPos.z >> FP_VIEWER) * HMAP_WIDTH + (viewPos.x >> FP_VIEWER)) & (HMAP_SIZE - 1)] + V_PLAYER_HEIGHT/4) << FP_VIEWER;
 	}
 }
 
@@ -277,5 +304,6 @@ void effectVolumeScapeGradientRun()
 {
 	updateFromInput();
 
+	initRaySamplePosAndStep();
 	renderScape();
 }
