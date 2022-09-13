@@ -43,6 +43,8 @@ static int *raySamples;
 
 static bool walk = true;
 
+//#define VERT_INTERP
+
 
 static void renderScape()
 {
@@ -54,10 +56,13 @@ static void renderScape()
 	uint8 *dstBase = columnPixels;
 	for (j=0; j<VIS_HOR_STEPS; ++j) {
 		int yMax = 0;
-		int8 cPrev = 0;
-		uint8 *dst = dstBase;
-		bool shouldInterp = false;
 
+		#ifdef VERT_INTERP
+			int8 cPrev = 0;
+			bool shouldInterp = false;
+		#endif
+
+		uint8 *dst = dstBase;
 		for (i=0; i<VIS_VER_STEPS; ++i) {
 			const int mapOffset = (viewerOffset + *(rs+i)) & (HMAP_SIZE - 1);
 			const int hm = hmap[mapOffset];
@@ -68,62 +73,41 @@ static void renderScape()
 			if (yMax < h) {
 				int hCount = h-yMax;
 
-				if (shouldInterp) {
-					int cc = cPrev << REC_FPSHR;
-					//const int dc = ((hm - cPrev) << 8) * recZ[hCount];
-					const int dc = (hm - cPrev) * recZ[hCount];
+				#ifdef VERT_INTERP
+					if (shouldInterp) {
+						int cc = cPrev << REC_FPSHR;
+						const int dc = (hm - cPrev) * recZ[hCount];
 
-					do {
-						*dst++ = (uint8)(cc >> (REC_FPSHR + 2));
-						cc += dc;
-					}while(--hCount > 0);
-				} else {
+						do {
+							*dst++ = (uint8)(cc >> (REC_FPSHR + 2));
+							cc += dc;
+						}while(--hCount > 0);
+					} else {
+						const uint8 cv = hm >> 2;
+						do {
+							*dst++ = cv;
+						}while(--hCount > 0);
+					}
+				#else
 					const uint8 cv = hm >> 2;
 					do {
 						*dst++ = cv;
 					}while(--hCount > 0);
-				}
-
-				/*
-				// Failed attempt to sometimes draw bytes, other times 4 bytes at once. Column diffs are so small most of the time there is barely any gain.
-				if (hCount < 8) {
-					do {
-						*dst++ = cv;
-					}while(--hCount > 0);
-				} else {
-					int xlp = yMax & 3;
-					if (xlp) {
-						xlp = 4 - xlp;
-						while (xlp-- > 0 && hCount-- > 0) {
-							*dst++ = cv;
-						}
-					}
-
-					{
-						uint32 *dst32 = (uint32*)dst;
-						uint32 cv32;
-						if (hCount >= 4) cv32 = cv * 0x01010101;
-						while(hCount >= 4) {
-							*dst32++ = cv32;
-							hCount-=4;
-						};
-
-						dst = (uint8*)dst32;
-						while (hCount-- > 0) {
-							*dst++ = cv;
-						}
-					}
-				}
-				*/
+				#endif
 
 				yMax = h;
 				if (yMax == SCREEN_HEIGHT - 1) break;
 
-				cPrev = hm;
-				shouldInterp = true;
-			} else {
+				#ifdef VERT_INTERP
+					cPrev = hm;
+					shouldInterp = true;
+				#endif
+			}
+			#ifdef VERT_INTERP
+			else {
 				shouldInterp = false;
 			}
+			#endif
 		}
 		rs += VIS_VER_STEPS;
 
