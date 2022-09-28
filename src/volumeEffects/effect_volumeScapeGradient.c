@@ -202,7 +202,7 @@ static void initColumnCels()
 
 static void setPlayerPos(int px, int py, int pz)
 {
-	setVector3D(&viewPos, px << FP_BASE, py << FP_BASE, pz << FP_BASE);
+	setVector3D(&viewPos, px << FP_VIEWER, py << FP_VIEWER, pz << FP_VIEWER);
 }
 
 void effectVolumeScapeGradientInit()
