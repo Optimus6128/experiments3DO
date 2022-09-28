@@ -35,9 +35,10 @@
 #define FRAC_ITER_TIMES2_8 FRAC_ITER_TIMES2_4 FRAC_ITER_TIMES2_4
 #define FRAC_ITER_TIMES2_16 FRAC_ITER_TIMES2_8 FRAC_ITER_TIMES2_8
 
+#define SCALE 1
 
-#define JULIA_WIDTH 240
-#define JULIA_HEIGHT 160
+#define JULIA_WIDTH (240 / SCALE)
+#define JULIA_HEIGHT (160 / SCALE)
 
 static Sprite *juliaSprUp;
 static Sprite *juliaSprDown;
@@ -49,7 +50,7 @@ static void juliaRender(int xp, int yp)
 {
 	int x,y,cv;
 
-	const int di = (int)(0.022f * FP_MUL);
+	const int di = (int)(0.022f * SCALE * FP_MUL);
 
 	int yk = -di * (JULIA_HEIGHT/2);
 	int xl = di * -(JULIA_WIDTH/2) + (di / 2);
