@@ -34,6 +34,7 @@ void setSpriteDottedDisplay(Sprite *spr, bool enable);
 void setSpritePosition(Sprite *spr, int px, int py);
 void setSpritePositionZoom(Sprite *spr, int px, int py, int zoom);
 void setSpritePositionZoomRotate(Sprite *spr, int px, int py, int zoom, int angle);
+void flipSprite(Sprite *spr, bool horizontal, bool vertical);
 
 void mapZoomSpriteToQuad(Sprite *spr, int ulX, int ulY, int lrX, int lrY);
 void mapFeedbackSpriteToNewFramebufferArea(int ulX, int ulY, int lrX, int lrY, int bufferIndex, Sprite *spr);

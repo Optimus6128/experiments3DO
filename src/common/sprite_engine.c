@@ -176,6 +176,11 @@ void setSpritePositionZoomRotate(Sprite *spr, int px, int py, int zoom, int angl
 	mapZoomRotateSprite(spr);
 }
 
+void flipSprite(Sprite *spr, bool horizontal, bool vertical)
+{
+	flipCelOrientation(horizontal, vertical, spr->cel);
+}
+
 void *getSpriteBitmapData(Sprite *spr)
 {
 	return spr->data;
