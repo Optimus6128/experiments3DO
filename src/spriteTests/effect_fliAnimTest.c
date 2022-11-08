@@ -24,9 +24,9 @@ void effectFliAnimTestInit()
 
 	setSpritePosition(fliSpr, 0, (SCREEN_HEIGHT - FLI_BMP_HEIGHT) / 2);
 
-	fli = newAnimFLI("data/wavelogo.fli");
+	//fli = newAnimFLI("data/wavelogo.fli");
 	//fli = newAnimFLI("data/rrhood.fli");
-	//fli = newAnimFLI("data/acid.fli");
+	fli = newAnimFLI("data/acid.fli");
 
 	FLIload(fli);
 }
@@ -37,4 +37,6 @@ void effectFliAnimTestRun()
 	FLIshow(fli, fliBmp);
 
 	drawSprite(fliSpr);
+
+	displayDebugNums(false);
 }

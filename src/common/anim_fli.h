@@ -15,6 +15,8 @@
 
 #define VGA_WIDTH 320
 #define VGA_HEIGHT 200
+#define VGA_SIZE (VGA_WIDTH * VGA_HEIGHT)
+#define VGA_PAL_SIZE 256
 
 typedef struct FLIheader
 {
@@ -28,7 +30,7 @@ typedef struct FLIheader
     uint16 speed;
     uint32 next;
     uint32 frit;
-    unsigned char expand[102];
+    unsigned char expand[98];	// was 102 but because of word aligment it brought size to 132 and broke the offset of 128 (crazy bug that lost my time)
 } FLIheader;
 
 typedef struct FRAMEheader

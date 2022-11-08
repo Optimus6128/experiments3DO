@@ -119,8 +119,8 @@ void effectLayersRun()
 	//const int y1 = 120 + (SinF16(t<<11) >> 10);
 	const int x2 = 160 + (SinF16(t<<12) >> 9);
 	const int y2 = 120 + (SinF16(t<<11) >> 10);
-	const int x3 = 160 + (SinF16(t<<13) >> 9);
-	const int y3 = 120 + (SinF16(t<<12) >> 10);
+	//const int x3 = 160 + (SinF16(t<<13) >> 9);
+	//const int y3 = 120 + (SinF16(t<<12) >> 10);
 
 	//updateWindowCel(x1,y1, 320,240, bg1data, bg1Cel);
 	updateWindowCel(x2,y2, 320,240, bg2data, bg2Cel);

@@ -1,5 +1,6 @@
 #include "anim_fli.h"
 #include "file_utils.h"
+#include "tools.h"
 
 static unsigned char *vga_screen = NULL;
 static uint16 vga_pal[256];
@@ -7,7 +8,7 @@ static uint16 vga_pal[256];
 static unsigned char *fliPreload;
 static uint32 fliIndex = 0;
 
-static uint32 nextFliIndex = 0;
+static uint32 nextFrameIndex = 0;
 static uint32 nextchunk = 0;
 static uint32 after_first_frame = 0;
 
@@ -17,7 +18,6 @@ static FLIheader FLIhdr;
 static FRAMEheader FRMhdr;
 static CHUNKheader CHKhdr;
 
-static int nope = 0;
 
 static uint16 readU16()
 {
@@ -36,12 +36,10 @@ static uint32 readU32()
 void ReadFrameHDR()
 {
 	FRMhdr.size = readU32();
-	nextFliIndex = fliIndex - 4 + FRMhdr.size;
+	nextFrameIndex = fliIndex - 4 + FRMhdr.size;
 
 	FRMhdr.magic = readU16();
 	FRMhdr.chunks = readU16();
-
-	nope = FRMhdr.magic;
 
 	memcpy(FRMhdr.expand, fliPreload, 8);
 	fliIndex += 8;
@@ -66,7 +64,7 @@ void FliColor()
 		const int colors2skip = fliPreload[fliIndex++];
 		int colors2chng = fliPreload[fliIndex++];
 
-		if (colors2chng==0) colors2chng = 256;
+		if (colors2chng==0) colors2chng = VGA_PAL_SIZE;
 		ci+=colors2skip;
 		for (j=0; j<colors2chng; j++)
 		{
@@ -114,7 +112,7 @@ void FliLc()
 	const uint16 lines_chng = readU16();
 
 	yline += lines_skip;
-	vi = yline*(VGA_WIDTH>>1);
+	vi = yline * VGA_WIDTH;
 
 	for (i=0; i<lines_chng; i++) {
 		const unsigned char packets = fliPreload[fliIndex++];
@@ -137,20 +135,20 @@ void FliLc()
 			}
 		}	
 		yline++;
-		vi = yline*(VGA_WIDTH>>1);
+		vi = yline * VGA_WIDTH;
 	}
 }
 
 void FliCopy()
 {
-	memcpy(vga_screen, &fliPreload[fliIndex], 64000);
-	fliIndex+=64000;
+	memcpy(vga_screen, &fliPreload[fliIndex], VGA_SIZE);
+	fliIndex+=VGA_SIZE;
 }
 
 void FliBlack()
 {
-	memset(vga_screen, 0, 64000);
-	//memset(vga_pal, 0, 512);
+	memset(vga_screen, 0, VGA_SIZE);
+	memset(vga_pal, 0, 2 * VGA_PAL_SIZE);
 }
 
 void DoType(uint16 type)
@@ -162,7 +160,7 @@ void DoType(uint16 type)
 		break;
 
 		case FLI_BRUN:
-			after_first_frame = nextFliIndex;
+			after_first_frame = nextFrameIndex;
 			FliBrun();
 		break;
 
@@ -208,10 +206,10 @@ void FLIplayNextFrame(AnimFLI *anim)
 		DoType(CHKhdr.type);
 		fliIndex = nextchunk;
 	}
-	fliIndex = nextFliIndex;
+	fliIndex = nextFrameIndex;
 
-	if (fliIndex >= FLIhdr.size-128) {
-		nextFliIndex = fliIndex = after_first_frame;
+	if (fliIndex >= FLIhdr.size-sizeof(FLIhdr)) {
+		nextFrameIndex = fliIndex = after_first_frame;
 	}
 }
 
@@ -223,20 +221,10 @@ void FLIshow(AnimFLI *anim, uint16 *dst)
 	do {
 		const uint32 c = *vga32++;
 
-		*dst++ = nope;
-		*dst++ = nope;
-		*dst++ = nope;
-		*dst++ = nope;
-
-		//*dst++ = (c >> 24) & 255;
-		//*dst++ = (c >> 16) & 255;
-		//*dst++ = (c >> 8) & 255;
-		//*dst++ = c & 255;
-
-		//*dst++ = vga_pal[(c >> 24) & 255];
-		//*dst++ = vga_pal[(c >> 16) & 255];
-		//*dst++ = vga_pal[(c >> 8) & 255];
-		//*dst++ = vga_pal[c & 255];
+		*dst++ = vga_pal[(c >> 24) & 255];
+		*dst++ = vga_pal[(c >> 16) & 255];
+		*dst++ = vga_pal[(c >> 8) & 255];
+		*dst++ = vga_pal[c & 255];
 	} while(--count > 0);
 }
 
@@ -262,7 +250,7 @@ void FLIload(AnimFLI *anim)
 
 	fliPreload = AllocMem(FLIhdr.size, MEMTYPE_ANY);
 
-	readBytesFromFileAndStore(filename, sizeof(FLIhdr), FLIhdr.size - 128, fliPreload);
+	readBytesFromFileAndStore(filename, sizeof(FLIhdr), FLIhdr.size - sizeof(FLIhdr), fliPreload);
 }
 
 AnimFLI *newAnimFLI(char *filename)
