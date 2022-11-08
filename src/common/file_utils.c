@@ -51,7 +51,7 @@ void closeFileStream()
 	if (CDstream) CloseDiskStream(CDstream);
 }
 
-void readBytesFromFileAndStore(char *path, int offset, int size, uint8 *dst)
+void readBytesFromFileAndStore(char *path, int offset, int size, void *dst)
 {
 	CDstream = OpenDiskStream(path, 0);
 

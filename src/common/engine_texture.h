@@ -16,7 +16,7 @@ typedef struct Texture
 	int bpp;
 
 	// Texture bitmap and palette pointer (needed for 8bpp CODED or less)
-	ubyte *bitmap;
+	unsigned char *bitmap;
 	uint16 *pal;
 
 	// Necessary extension for feedback textures
@@ -25,9 +25,9 @@ typedef struct Texture
 }Texture;
 
 
-void setupTexture(int width, int height, int bpp, int type, ubyte *bmp, uint16 *pal, ubyte numPals, Texture *tex);
-Texture *initTextures(int width, int height, int bpp, int type, ubyte *bmp, uint16 *pal, ubyte numPals, ubyte numTextures);
-Texture *initTexture(int width, int height, int bpp, int type, ubyte *bmp, uint16 *pal, ubyte numPals);
+void setupTexture(int width, int height, int bpp, int type, unsigned char *bmp, uint16 *pal, unsigned char numPals, Texture *tex);
+Texture *initTextures(int width, int height, int bpp, int type, unsigned char *bmp, uint16 *pal, unsigned char numPals, unsigned char numTextures);
+Texture *initTexture(int width, int height, int bpp, int type, unsigned char *bmp, uint16 *pal, unsigned char numPals);
 Texture *loadTexture(char *path);
 Texture *initFeedbackTexture(int posX, int posY, int width, int height, int bufferIndex);
 

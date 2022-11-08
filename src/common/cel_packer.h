@@ -10,6 +10,6 @@ extern int packPercentage;
 void initCelPackerEngine(void);
 void deinitCelPackerEngine(void);
 
-ubyte* createPackedDataFromUnpackedBmp(int width, int height, int bpp, int type, uint16 *pal, ubyte *unpackedBmp, int transparentColor);
+unsigned char* createPackedDataFromUnpackedBmp(int width, int height, int bpp, int type, uint16 *pal, unsigned char *unpackedBmp, int transparentColor);
 
 #endif

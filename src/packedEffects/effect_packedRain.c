@@ -20,7 +20,7 @@
 
 static Sprite *unpackedRain[RAIN_LAYERS_NUM];
 static Sprite *packedRain[RAIN_LAYERS_NUM];
-static ubyte *unpackedRainBmp[RAIN_LAYERS_NUM];
+static unsigned char *unpackedRainBmp[RAIN_LAYERS_NUM];
 static uint16 pal2[4];
 
 static bool showPackedRain = false;
@@ -28,11 +28,11 @@ static bool showPackInfo = false;
 
 static int totalPackedPercentage = 0;
 
-/*static void writePixel2bpp(int posX, int posY, ubyte *dst, int color)
+/*static void writePixel2bpp(int posX, int posY, unsigned char *dst, int color)
 {
 }
 
-static void writeRainLine(int posX, int posY, ubyte *dst, int dirX)
+static void writeRainLine(int posX, int posY, unsigned char *dst, int dirX)
 {
 }*/
 
@@ -41,14 +41,14 @@ static void generateUnpackedRain()
 	int i, j;
 	
 	for (i=0; i<RAIN_LAYERS_NUM; ++i) {
-		ubyte *dst = (ubyte*)AllocMem(RAIN_LAYER_SIZE / 4, MEMTYPE_ANY);
+		unsigned char *dst = (unsigned char*)AllocMem(RAIN_LAYER_SIZE / 4, MEMTYPE_ANY);
 		unpackedRainBmp[i] = dst;
 
 		for (j=0; j<128; ++j) {
 			// noise test for now (will use the two above functions later)
 			const int bx = getRand(0, RAIN_LAYER_WIDTH / 4 - 1);
 			const int by = getRand(0, RAIN_LAYER_HEIGHT - 1);
-			*(dst + by * (RAIN_LAYER_WIDTH / 4) + bx) = (ubyte)getRand(0, 255);
+			*(dst + by * (RAIN_LAYER_WIDTH / 4) + bx) = (unsigned char)getRand(0, 255);
 		}
 	}
 

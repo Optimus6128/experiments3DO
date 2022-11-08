@@ -10,7 +10,7 @@ typedef struct pixelRepeatsType
 #define TEMP_BUFF_SIZE 262144
 #define TEMP_LINE_SIZE 1024
 
-static ubyte *tempBuff;
+static unsigned char *tempBuff;
 static int *tempLine;
 
 int packPercentage;
@@ -20,17 +20,17 @@ static int currentBit;
 static bool packerIsReady = false;
 
 
-static void extractPixelsToChunkyBytes(ubyte *unpackedLine, int width, int bpp)
+static void extractPixelsToChunkyBytes(unsigned char *unpackedLine, int width, int bpp)
 {
 	int i;
-	ubyte *src8 = unpackedLine;
+	unsigned char *src8 = unpackedLine;
 	uint16 *src16 = (uint16*)unpackedLine;
 	int *dst = tempLine;
 
 	switch(bpp) {
 		case 1:
 			for (i=0; i<width; i+=8) {
-				const ubyte b = *src8++;
+				const unsigned char b = *src8++;
 				*dst++ = b >> 7;
 				*dst++ = (b >> 6) & 1;
 				*dst++ = (b >> 5) & 1;
@@ -44,7 +44,7 @@ static void extractPixelsToChunkyBytes(ubyte *unpackedLine, int width, int bpp)
 
 		case 2:
 			for (i=0; i<width; i+=4) {
-				const ubyte b = *src8++;
+				const unsigned char b = *src8++;
 				*dst++ = b >> 6;
 				*dst++ = (b >> 4) & 3;
 				*dst++ = (b >> 2) & 3;
@@ -54,7 +54,7 @@ static void extractPixelsToChunkyBytes(ubyte *unpackedLine, int width, int bpp)
 
 		case 4:
 			for (i=0; i<width; i+=2) {
-				const ubyte b = *src8++;
+				const unsigned char b = *src8++;
 				*dst++ = b >> 4;
 				*dst++ = b & 15;
 			}
@@ -236,7 +236,7 @@ static void padLineBitsAndWriteAddressOffset(int addressOffsetIndex, int bpp)
 
 void initCelPackerEngine()
 {
-	tempBuff = (ubyte*)AllocMem(TEMP_BUFF_SIZE, MEMTYPE_ANY);
+	tempBuff = (unsigned char*)AllocMem(TEMP_BUFF_SIZE, MEMTYPE_ANY);
 	tempLine = (int*)AllocMem(TEMP_LINE_SIZE * 4, MEMTYPE_ANY);
 	packerIsReady = true;
 }
@@ -248,18 +248,18 @@ void deinitCelPackerEngine()
 	packerIsReady = false;
 }
 
-ubyte* createPackedDataFromUnpackedBmp(int width, int height, int bpp, int type, uint16 *pal, ubyte *unpackedBmp, int transparentColor)
+unsigned char* createPackedDataFromUnpackedBmp(int width, int height, int bpp, int type, uint16 *pal, unsigned char *unpackedBmp, int transparentColor)
 {
 	int x, y;
 	int countBytes = 0;
-	ubyte *packedData = NULL;
+	unsigned char *packedData = NULL;
 
 	if (!packerIsReady) initCelPackerEngine();
 
 	currentBit = 0;
 
 	for (y=0; y<height; ++y) {
-		ubyte *src = &unpackedBmp[(y * width * bpp) >> 3];
+		unsigned char *src = &unpackedBmp[(y * width * bpp) >> 3];
 
 		if (bpp >= 8)
 			currentBit += 16;
@@ -283,7 +283,7 @@ ubyte* createPackedDataFromUnpackedBmp(int width, int height, int bpp, int type,
 		countBytes = currentBit >> 3;
 	}
 
-	packedData = (ubyte*)AllocMem(countBytes, MEMTYPE_ANY);
+	packedData = (unsigned char*)AllocMem(countBytes, MEMTYPE_ANY);
 	memcpy(packedData, tempBuff, countBytes);
 
 	packPercentage = (countBytes * 100) / ((width * height * bpp) >> 3);

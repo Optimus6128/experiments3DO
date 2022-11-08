@@ -80,9 +80,9 @@ static int debugIndex = 0;
 static CCB *textCel[MAX_STRING_LENGTH];
 
 static char sbuffer[MAX_STRING_LENGTH+1];
-static uchar fontsBmp[NUM_TINY_FONTS * TINY_FONT_SIZE];
+static unsigned char fontsBmp[NUM_TINY_FONTS * TINY_FONT_SIZE];
 static uint16 fontsPal[TINY_FONTS_PAL_SIZE];
-static uchar fontsMap[TINY_FONTS_MAP_SIZE];
+static unsigned char fontsMap[TINY_FONTS_MAP_SIZE];
 
 static bool fontsAreReady = false;
 
@@ -119,7 +119,7 @@ static void initTinyFonts()
 	}
 
 	for (i=0; i<TINY_FONTS_MAP_SIZE; ++i) {
-		uchar c = i;
+		unsigned char c = i;
 
 		if (c>31 && c<92)
 			c-=32;

@@ -32,8 +32,8 @@
 static int lintab[VIS_VER_STEPS];
 static int heightScaleTab[VIS_VER_STEPS];
 
-static uint8 *hmap;
-static uint8 *cmap;
+static unsigned char *hmap;
+static unsigned char *cmap;
 
 static CCB *columnCels;
 static uint16 *columnPixels;

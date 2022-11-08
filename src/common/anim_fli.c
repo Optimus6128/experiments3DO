@@ -1,10 +1,10 @@
 #include "anim_fli.h"
 #include "file_utils.h"
 
-static uint8 vga_screen[64000];
+static unsigned char *vga_screen = NULL;
 static uint16 vga_pal[256];
 
-static uint8 *fliPreload;
+static unsigned char *fliPreload;
 static uint32 fliIndex = 0;
 
 static uint32 nextFliIndex = 0;
@@ -84,10 +84,10 @@ void FliBrun()
 	int i, j, y, vi=0;
 
 	for (y=0; y<FLIhdr.height; y++) {
-		const uint8 packets = fliPreload[fliIndex++];
+		const unsigned char packets = fliPreload[fliIndex++];
 		for (i=0; i<packets; i++) {
 			int8 size_count = (int8)fliPreload[fliIndex++];
-			const uint8 data = fliPreload[fliIndex++];
+			const unsigned char data = fliPreload[fliIndex++];
 
 			if (size_count>=0) {
 				for (j=0; j<size_count; j++) {
@@ -117,15 +117,15 @@ void FliLc()
 	vi = yline*(VGA_WIDTH>>1);
 
 	for (i=0; i<lines_chng; i++) {
-		const uint8 packets = fliPreload[fliIndex++];
+		const unsigned char packets = fliPreload[fliIndex++];
 
 		for (n=0; n<packets; n++) {
-			const uint8 skip_count = fliPreload[fliIndex++];
+			const unsigned char skip_count = fliPreload[fliIndex++];
 			int8 size_count = fliPreload[fliIndex++];
 
 			vi+=skip_count;
 			if (size_count<0) {
-				const uint8 data = fliPreload[fliIndex++];
+				const unsigned char data = fliPreload[fliIndex++];
 				size_count = -size_count;
 				for (j=0; j<size_count; j++) {
 					vga_screen[vi++] = data;
@@ -197,6 +197,8 @@ void FLIplayNextFrame(AnimFLI *anim)
 {
 	int i;
 
+	if (vga_screen==NULL) vga_screen = (unsigned char*)AllocMem(64000, MEMTYPE_ANY);
+
 	ReadFrameHDR();
 	yline=0;
 
@@ -242,7 +244,7 @@ void FLIload(AnimFLI *anim)
 {
 	char *filename = anim->filename;
 
-	readBytesFromFileAndStore(filename, 0, sizeof(FLIhdr), (uint8*)&FLIhdr);
+	readBytesFromFileAndStore(filename, 0, sizeof(FLIhdr), (char*)&FLIhdr);
 
 	FLIhdr.size = LONG_ENDIAN_FLIP(FLIhdr.size);
 	FLIhdr.width = SHORT_ENDIAN_FLIP(FLIhdr.width);

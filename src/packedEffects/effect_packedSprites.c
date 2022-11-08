@@ -30,13 +30,13 @@
 
 static Sprite *unpackedSpr4;
 static Sprite *packedSpr4;
-static ubyte unpackedBmp4[SPRITE4_SIZE/2];
+static unsigned char unpackedBmp4[SPRITE4_SIZE/2];
 static uint16 pal4[16];
 static uint16 pal8[32];
 
 static Sprite *unpackedSpr8;
 static Sprite *packedSpr8;
-static ubyte unpackedBmp8[SPRITE8_SIZE];
+static unsigned char unpackedBmp8[SPRITE8_SIZE];
 
 static Sprite *unpackedSpr16;
 static Sprite *packedSpr16;
@@ -155,8 +155,8 @@ static void effectInit16()
 {
 	generateUnpackedBmp16();
 
-	unpackedSpr16 = newSprite(SPRITE16_WIDTH, SPRITE16_HEIGHT, 16, CEL_TYPE_UNCODED, NULL, (ubyte*)unpackedBmp16);
-	packedSpr16 = newPackedSprite(SPRITE16_WIDTH, SPRITE16_HEIGHT, 16, CEL_TYPE_UNCODED, NULL, (ubyte*)unpackedBmp16, NULL, 0);
+	unpackedSpr16 = newSprite(SPRITE16_WIDTH, SPRITE16_HEIGHT, 16, CEL_TYPE_UNCODED, NULL, (unsigned char*)unpackedBmp16);
+	packedSpr16 = newPackedSprite(SPRITE16_WIDTH, SPRITE16_HEIGHT, 16, CEL_TYPE_UNCODED, NULL, (unsigned char*)unpackedBmp16, NULL, 0);
 	packedPer16 = packPercentage;
 }
 
@@ -164,7 +164,7 @@ void effectPackedSpritesInit()
 {
 	initCelPackerEngine();
 
-	loadAndSetBackgroundImage("data/background.img", (ubyte*)getBackBuffer());
+	loadAndSetBackgroundImage("data/background.img", getBackBuffer());
 
 	if (ENABLE_4) effectInit4();
 	if (ENABLE_8) effectInit8();

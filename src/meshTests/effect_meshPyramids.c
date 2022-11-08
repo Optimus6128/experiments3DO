@@ -42,7 +42,7 @@ bool halfSizeBlur = false;
 #define SCANLINES_SPR_HEIGHT 240
 
 static Sprite *scanlinesSpr;
-static ubyte scanlinesBmp[(SCANLINES_SPR_WIDTH * SCANLINES_SPR_HEIGHT) / 8];
+static unsigned char scanlinesBmp[(SCANLINES_SPR_WIDTH * SCANLINES_SPR_HEIGHT) / 8];
 static uint16 scanlinesPal[2];
 
 Camera *camera;
@@ -108,7 +108,7 @@ static void renderTexture()
 static void initScanlinesSprite()
 {
 	int x,y;
-	ubyte *dst = scanlinesBmp;
+	unsigned char *dst = scanlinesBmp;
 	const int transparentColor = MakeRGB15(31,0,31);
 
 	for (y=0; y<SCANLINES_SPR_HEIGHT; ++y) {

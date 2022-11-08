@@ -17,7 +17,7 @@ void displayScreen(void);
 void debugUpdate(void);
 void drawCels(CCB *cels);
 
-void loadAndSetBackgroundImage(char *path, ubyte *screenBuffer);	// if screenBuffer is NULL, one will automatically allocated in VRAM
+void loadAndSetBackgroundImage(char *path, void *screenBuffer);	// if screenBuffer is NULL, one will automatically allocated in VRAM
 void setBackgroundColor(int color);
 void clearAllBuffers(void);
 void clearBackBuffer(void);

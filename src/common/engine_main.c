@@ -39,7 +39,7 @@ static int screenHeight = SCREEN_HEIGHT;
 
 static bool polygonOrderTestCPU = true;
 
-static void(*mapcelFunc)(CCB*, Point*, uint8);
+static void(*mapcelFunc)(CCB*, Point*, unsigned char);
 
 CCB *startPolyCel;
 CCB *endPolyCel;
@@ -50,12 +50,12 @@ int shadeTable[SHADE_TABLE_SIZE] = {
  0x03C103C1,0x07C107C1,0x0BC10BC1,0x0FC10FC1,0x13C113C1,0x17C117C1,0x1BC11B01,0x1FC11FC1
 };
 
-static void slowMapCel(CCB *c, Point *q, uint8 texShifts)
+static void slowMapCel(CCB *c, Point *q, unsigned char texShifts)
 {
 	MapCel(c, q);
 }
 
-static void fasterMapCel(CCB *c, Point *q, uint8 texShifts)
+static void fasterMapCel(CCB *c, Point *q, unsigned char texShifts)
 {
 	const int shrWidth = (int)(texShifts >> 4);
 	const int shrHeight = (int)(texShifts & 15);

@@ -39,7 +39,7 @@ void effectParallaxInit()
 	const int superClippingFlags = (CCB_ACSC | CCB_ALSC);
 
 	setBackgroundColor(0x1F1F1F1F);
-	loadAndSetBackgroundImage("data/flare.img", (ubyte*)getBackBuffer());
+	loadAndSetBackgroundImage("data/flare.img", getBackBuffer());
 
 	fenceSpr = loadSpriteCel("data/fence.cel");
 	grassSpr = loadSpriteCel("data/grass.cel");

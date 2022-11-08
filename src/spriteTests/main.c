@@ -12,11 +12,11 @@ enum { EFFECT_SPRITES_GECKO, EFFECT_LAYERS, EFFECT_PARALLAX, EFFECT_JULIA, EFFEC
 static void(*effectInitFunc[EFFECTS_NUM])() = { effectSpritesGeckoInit, effectLayersInit, effectParallaxInit, effectJuliaInit, effectFliAnimTestInit };
 static void(*effectRunFunc[EFFECTS_NUM])() = { effectSpritesGeckoRun, effectLayersRun, effectParallaxRun, effectJuliaRun, effectFliAnimTestRun };
 
-//static char *effectName[EFFECTS_NUM] = { "1920 gecko sprites", "background layers", "parallax tests", "julia fractal", "fli animation test" };
+static char *effectName[EFFECTS_NUM] = { "1920 gecko sprites", "background layers", "parallax tests", "julia fractal", "fli animation test" };
 
 int main()
 {
-	const int effectIndex = EFFECT_FLI_ANIM_TEST; //runEffectSelector(effectName, EFFECTS_NUM);
+	const int effectIndex = runEffectSelector(effectName, EFFECTS_NUM);
 
 	coreInit(effectInitFunc[effectIndex], CORE_DEFAULT | CORE_SHOW_MEM);
 	coreRun(effectRunFunc[effectIndex]);

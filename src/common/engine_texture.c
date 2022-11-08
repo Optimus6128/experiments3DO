@@ -6,7 +6,7 @@
 
 #include "mathutil.h"
 
-void setupTexture(int width, int height, int bpp, int type, ubyte *bmp, uint16 *pal, ubyte numPals, Texture *tex)
+void setupTexture(int width, int height, int bpp, int type, unsigned char *bmp, uint16 *pal, unsigned char numPals, Texture *tex)
 {
 	// Can't have palettized texture if bpp over 8
 	if (bpp > 8 || numPals == 0) {
@@ -32,13 +32,13 @@ void setupTexture(int width, int height, int bpp, int type, ubyte *bmp, uint16 *
 
 	if (!bmp) {
 		const int size = (width * height * bpp) / 8;
-		tex->bitmap = (ubyte*)AllocMem(size, MEMTYPE_ANY);
+		tex->bitmap = (unsigned char*)AllocMem(size, MEMTYPE_ANY);
 	} else {
 		tex->bitmap = bmp;
 	}
 }
 
-Texture* initTextures(int width, int height, int bpp, int type, ubyte *bmp, uint16 *pal, ubyte numPals, ubyte numTextures)
+Texture* initTextures(int width, int height, int bpp, int type, unsigned char *bmp, uint16 *pal, unsigned char numPals, unsigned char numTextures)
 {
 	int i;
 	Texture *texs = (Texture*)AllocMem(numTextures * sizeof(Texture), MEMTYPE_ANY);
@@ -50,7 +50,7 @@ Texture* initTextures(int width, int height, int bpp, int type, ubyte *bmp, uint
 	return texs;
 }
 
-Texture *initTexture(int width, int height, int bpp, int type, ubyte *bmp, uint16 *pal, ubyte numPals)
+Texture *initTexture(int width, int height, int bpp, int type, unsigned char *bmp, uint16 *pal, unsigned char numPals)
 {
 	return initTextures(width, height, bpp, type, bmp, pal, numPals, 1);
 }
@@ -65,7 +65,7 @@ Texture *initFeedbackTexture(int posX, int posY, int width, int height, int buff
 	tex->type = TEXTURE_TYPE_FEEDBACK;
 
 
-	tex->bitmap = (ubyte*)getBackBufferByIndex(bufferIndex);
+	tex->bitmap = (unsigned char*)getBackBufferByIndex(bufferIndex);
 	tex->bufferIndex = bufferIndex;
 	tex->posX = posX;
 	tex->posY = posY;

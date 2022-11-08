@@ -18,7 +18,7 @@ static void *bg1data, *bg2data, *bg3data;
 static bool show0 = true;
 static bool show1 = false;
 static bool show2 = true;
-static bool show3 = false;
+static bool show3 = true;
 
 static bool blend1 = true;
 static bool blend2 = true;
@@ -53,7 +53,7 @@ static void updateLayers()
 
 void effectLayersInit()
 {
-	loadAndSetBackgroundImage("data/background.img", (ubyte*)getBackBuffer());
+	loadAndSetBackgroundImage("data/background.img", getBackBuffer());
 
 	bg1Cel = LoadCel("data/lamepic.cel", MEMTYPE_ANY);
 	bg2Cel = LoadCel("data/planet.cel", MEMTYPE_ANY);
@@ -124,7 +124,7 @@ void effectLayersRun()
 
 	//updateWindowCel(x1,y1, 320,240, bg1data, bg1Cel);
 	updateWindowCel(x2,y2, 320,240, bg2data, bg2Cel);
-	updateWindowCel(x3,y3, 320,240, bg3data, bg3Cel);
+	//updateWindowCel(x3,y3, 320,240, bg3data, bg3Cel);	// this doesn't work for now, possibly memory is full after adding the anim_fli functions or I broke something
 
 	inputScript();
 

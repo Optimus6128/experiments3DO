@@ -41,10 +41,10 @@ static int heightScaleTab[VIS_VER_STEPS];
 static Point2D *viewNearPosVec;
 static Point2D *viewNearStepVec;
 
-static uint8 *hmap;
+static unsigned char *hmap;
 
 static CCB *columnCels;
-static uint8 *columnPixels;
+static unsigned char *columnPixels;
 static uint16 columnPal[32];
 
 static Vector3D viewPos;
@@ -89,7 +89,7 @@ static void renderScape()
 	const int playerHeight = viewPos.y >> FP_VIEWER;
 	const int viewerOffset = (viewPos.z >> FP_VIEWER) * HMAP_WIDTH + (viewPos.x >> FP_VIEWER);
 
-	uint8 *dstBase = columnPixels;
+	unsigned char *dstBase = columnPixels;
 	for (j=0; j<VIS_HOR_STEPS; ++j) {
 		int yMax = 0;
 
@@ -103,7 +103,7 @@ static void renderScape()
 		const int dvx = viewNearStepVec[j].x;
 		const int dvy = viewNearStepVec[j].y;
 
-		uint8 *dst = dstBase;
+		unsigned char *dst = dstBase;
 		for (i=0; i<VIS_VER_STEPS; ++i) {
 			const int sampleOffset = (vy >> FP_SCAPE) * HMAP_WIDTH + (vx >> FP_SCAPE);
 			const int mapOffset = (viewerOffset + sampleOffset) & (HMAP_SIZE - 1);
@@ -120,17 +120,17 @@ static void renderScape()
 						const int dc = (hm - cPrev) * recZ[hCount];
 
 						do {
-							*dst++ = (uint8)(cc >> (REC_FPSHR + 2));
+							*dst++ = (unsigned char)(cc >> (REC_FPSHR + 2));
 							cc += dc;
 						}while(--hCount > 0);
 					} else {
-						const uint8 cv = hm >> 2;
+						const unsigned char cv = hm >> 2;
 						do {
 							*dst++ = cv;
 						}while(--hCount > 0);
 					}
 				#else
-					const uint8 cv = hm >> 2;
+					const unsigned char cv = hm >> 2;
 					do {
 						*dst++ = cv;
 					}while(--hCount > 0);
@@ -209,7 +209,7 @@ void effectVolumeScapeGradientInit()
 {
 	// alloc various tables
 	hmap = AllocMem(HMAP_SIZE, MEMTYPE_ANY);
-	columnPixels = (uint8*)AllocMem(VIS_HOR_STEPS * SCREEN_HEIGHT, MEMTYPE_ANY);
+	columnPixels = (unsigned char*)AllocMem(VIS_HOR_STEPS * SCREEN_HEIGHT, MEMTYPE_ANY);
 
 	viewNearPosVec = (Point2D*)AllocMem(VIS_HOR_STEPS * sizeof(Point2D), MEMTYPE_TRACKSIZE);
 	viewNearStepVec = (Point2D*)AllocMem(VIS_HOR_STEPS * sizeof(Point2D), MEMTYPE_TRACKSIZE);

@@ -292,7 +292,7 @@ static World *initMyWorld(int worldIndex, Camera *camera)
 void effectMeshWorldInit()
 {
 	int i,x,y,z;
-	static uint8 paramStretch = 4;
+	static unsigned char paramStretch = 4;
 	static uint16 paramCol = 0xFFFF;
 	static uint16 paramCol3 = MakeRGB15(16,16,16);
 	

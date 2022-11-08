@@ -28,7 +28,7 @@ typedef struct FLIheader
     uint16 speed;
     uint32 next;
     uint32 frit;
-    uint8 expand[102];
+    unsigned char expand[102];
 } FLIheader;
 
 typedef struct FRAMEheader
@@ -36,7 +36,7 @@ typedef struct FRAMEheader
     uint32 size;
     uint16 magic;
     uint16 chunks;
-    uint8 expand[8];
+    unsigned char expand[8];
 } FRAMEheader;
 
 typedef struct CHUNKheader

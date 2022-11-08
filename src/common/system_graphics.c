@@ -42,7 +42,7 @@ void initSPORTwriteValue(uint32 value)
 	lastSPORTcolor = value;
 }
 
-void initSPORTcopyImage(ubyte *srcImage)
+void initSPORTcopyImage(unsigned char *srcImage)
 {
 	memset(&ioInfo,0,sizeof(ioInfo));
 	ioInfo.ioi_Command = SPORTCMD_COPY;
@@ -143,7 +143,7 @@ void deInitGraphics()
 	}
 }
 
-void loadAndSetBackgroundImage(char *path, ubyte *screenBuffer)
+void loadAndSetBackgroundImage(char *path, void *screenBuffer)
 {
 	initSPORTcopyImage(LoadImage(path, screenBuffer, (VdlChunk **)NULL, &screen));
 }

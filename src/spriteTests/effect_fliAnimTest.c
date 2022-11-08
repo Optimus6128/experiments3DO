@@ -20,7 +20,7 @@ AnimFLI *fli;
 void effectFliAnimTestInit()
 {
 	fliBmp = (uint16*)AllocMem(2 * FLI_BMP_WIDTH * FLI_BMP_HEIGHT, MEMTYPE_ANY);
-	fliSpr = newSprite(FLI_BMP_WIDTH, FLI_BMP_HEIGHT, 16, CEL_TYPE_UNCODED, NULL, (uint8*)fliBmp);
+	fliSpr = newSprite(FLI_BMP_WIDTH, FLI_BMP_HEIGHT, 16, CEL_TYPE_UNCODED, NULL, (unsigned char*)fliBmp);
 
 	setSpritePosition(fliSpr, 0, (SCREEN_HEIGHT - FLI_BMP_HEIGHT) / 2);
 

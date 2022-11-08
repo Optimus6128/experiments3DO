@@ -30,7 +30,7 @@ Texture *feedbackTex0;
 Texture *draculTex;
 
 static Sprite *bgndSpr;
-ubyte bgndBmp[FB_SIZE];
+unsigned char bgndBmp[FB_SIZE];
 
 static bool flipPolygons = false;
 static bool doFeedback = true;
@@ -46,13 +46,13 @@ static Camera *camera;
 static void genBackgroundTex()
 {
 	int x,y;
-	ubyte *dst = bgndBmp;
+	unsigned char *dst = bgndBmp;
 
 	for (y=0; y<FB_HEIGHT; ++y) {
 		for (x=0; x<FB_WIDTH; ++x) {
-			ubyte r = 2;
-			ubyte g = 1;
-			ubyte b = 1;
+			unsigned char r = 2;
+			unsigned char g = 1;
+			unsigned char b = 1;
 			if (x==0 || x==FB_WIDTH-1 || y==0 || y==FB_HEIGHT-1) b=3;
 			else if (x==1 || x==FB_WIDTH-2 || y==1 || y==FB_HEIGHT-2) b=2;
 			*dst++ = (r << 5) | (g << 2) | b;

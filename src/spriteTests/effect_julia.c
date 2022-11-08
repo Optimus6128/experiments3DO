@@ -59,7 +59,7 @@ static int *powTabPtr = &powTab[POW_TAB_RANGE/2];
 static Sprite *juliaSprUp;
 static Sprite *juliaSprDown;
 static uint16 juliaPal[16];
-static ubyte *juliaBmp;
+static unsigned char *juliaBmp;
 
 
 static void juliaRender(int xp, int yp)
@@ -74,7 +74,7 @@ static void juliaRender(int xp, int yp)
 	const int xp0 = xp;
 	const int yp0 = yp;
 
-	ubyte *dst = juliaBmp;
+	unsigned char *dst = juliaBmp;
 	for (y=0; y<JULIA_HEIGHT/2; ++y) {
 		int xk = xl;
 		for (x=0; x<JULIA_WIDTH/2; ++x) {
@@ -116,7 +116,7 @@ static void initPowTab()
 
 void effectJuliaInit()
 {
-	juliaBmp = (uint8*)AllocMem((JULIA_WIDTH * JULIA_HEIGHT/2) / 2, MEMTYPE_ANY);
+	juliaBmp = (unsigned char*)AllocMem((JULIA_WIDTH * JULIA_HEIGHT/2) / 2, MEMTYPE_ANY);
 	juliaSprUp = newSprite(JULIA_WIDTH, JULIA_HEIGHT/2, 4, CEL_TYPE_CODED, juliaPal, juliaBmp);
 	juliaSprDown = newSprite(JULIA_WIDTH, JULIA_HEIGHT/2, 4, CEL_TYPE_CODED, juliaPal, juliaBmp);
 

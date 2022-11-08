@@ -4,7 +4,7 @@
 #include "cel_helpers.h"
 
 
-Sprite *newSprite(int width, int height, int bpp, int type, uint16 *pal, ubyte *bmp)
+Sprite *newSprite(int width, int height, int bpp, int type, uint16 *pal, unsigned char *bmp)
 {
 	Sprite *spr = (Sprite*)AllocMem(sizeof(Sprite), MEMTYPE_ANY);
 
@@ -45,17 +45,17 @@ Sprite *loadSpriteCel(char *path)
 
 Sprite *newFeedbackSprite(int posX, int posY, int width, int height, int bufferIndex)
 {
-	Sprite *spr = newSprite(width, height, 16, CEL_TYPE_UNCODED, NULL, (ubyte*)getBackBuffer());
+	Sprite *spr = newSprite(width, height, 16, CEL_TYPE_UNCODED, NULL, (unsigned char*)getBackBuffer());
 
 	setupWindowFeedbackCel(posX, posY, width, height, bufferIndex, spr->cel);
 
 	return spr;
 }
 
-Sprite *newPackedSprite(int width, int height, int bpp, int type, uint16 *pal, ubyte *unpackedBmp, ubyte *packedData, int transparentColor)
+Sprite *newPackedSprite(int width, int height, int bpp, int type, uint16 *pal, unsigned char *unpackedBmp, unsigned char *packedData, int transparentColor)
 {
 	Sprite *spr;
-	ubyte *providedPackedData = packedData;
+	unsigned char *providedPackedData = packedData;
 
 	if (type == CEL_TYPE_CODED && !pal) return NULL;   // need palette to know when creating the packed sprite, which indexed color is transparent
 

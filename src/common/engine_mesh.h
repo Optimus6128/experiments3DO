@@ -24,10 +24,10 @@
 
 typedef struct PolyData
 {
-	ubyte numPoints;
-	ubyte textureId;
-	ubyte palId;
-	ubyte texShifts;	// Width/Height bits, WWWWHHHH
+	unsigned char numPoints;
+	unsigned char textureId;
+	unsigned char palId;
+	unsigned char texShifts;	// Width/Height bits, WWWWHHHH
 }PolyData;
 
 typedef struct TexCoords

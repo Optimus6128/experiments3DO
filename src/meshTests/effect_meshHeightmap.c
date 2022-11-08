@@ -55,7 +55,7 @@ static void initHeightmap()
 	const int heightMul = 4;
 
 	int i,j;
-	uint8 *src;
+	unsigned char *src;
 	Vertex *v = heightmapMesh->vertex;
 	PolyData *p = heightmapMesh->poly;
 

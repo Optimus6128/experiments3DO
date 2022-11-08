@@ -3,6 +3,30 @@
 
 #include "types.h"
 
+// Hack for the lame define of uchar as char (broke some code where sign/unsigned mattered)
+// I assume the first compiled files will include core.h which is true for these experiments. All the effect_ files.
+// But this is not perfect. Depends on the order of compilation.
+// Alternatively I could either replace all uchar/ubyte/uint8 in the code with unsigned char and remember to only use that
+// OR define some U8 type and remember to use that. But I don't like that I have to do this.
+//#define uchar uchar_
+//#define ubyte ubyte_
+//#define uint8 uint8_
+//typedef unsigned char uchar_;
+//typedef unsigned char ubyte_;
+//typedef unsigned char uint8_;
+
+// UPDATE! I keep the old solution but I comment out because I think it's dangerous.
+// What if some 3DO libary functions expect uchar to be signed char?
+// Best solution unfortunatelly, in all my code, I'll replace uint8/ubyte/uchar when I use it, with unsigned char and remember to not use these types.
+// And keep uint8 where it makes sense, for example in the fileutils I pass a uint8 somewhere that feeds into the API FILE functions that expects that. The defines above would give me an error of type missmatch.
+// So, use "unsigned char" when you really want unsigned char, and avoid the defined types for this one. But you have to remember, that's the problem! You could sneak in something wrong oneday.
+// Also I cannot avoid including types.h and include mine, because include other 3DO API headers will include types already.
+
+// I considered a 3rd solution I won't write here, but thinking again this will change types passed to the API functions, so in your code never use uint8/ubyte/uchar, just type unsigned char.
+
+// I might delete this rant..
+
+
 #include "displayutils.h"
 #include "debug.h"
 #include "nodes.h"

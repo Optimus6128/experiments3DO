@@ -88,7 +88,7 @@ static int perlinOctave(int x, int y)
 	return c;
 }
 
-static void genCloudTexture(int width, int height, int rangeMin, int rangeMax, ImggenParams *params, ubyte *imgData)
+static void genCloudTexture(int width, int height, int rangeMin, int rangeMax, ImggenParams *params, unsigned char *imgData)
 {
 	int x, y;
 
@@ -108,7 +108,7 @@ static void genCloudTexture(int width, int height, int rangeMin, int rangeMax, I
 	}
 }
 
-static void genGridTexture(int width, int height, int rangeMin, int rangeMax, ubyte *imgData)
+static void genGridTexture(int width, int height, int rangeMin, int rangeMax, unsigned char *imgData)
 {
 	int x, y;
 	int xc, yc;
@@ -125,7 +125,7 @@ static void genGridTexture(int width, int height, int rangeMin, int rangeMax, ub
 	}
 }
 
-static void genBlobTexture(int width, int height, int rangeMin, int rangeMax, ubyte *imgData)
+static void genBlobTexture(int width, int height, int rangeMin, int rangeMax, unsigned char *imgData)
 {
 	int x, y;
 	int xc, yc;
@@ -142,7 +142,7 @@ static void genBlobTexture(int width, int height, int rangeMin, int rangeMax, ub
 	}
 }
 
-void generateImage(int imggenId, ImggenParams *params, ubyte *imgPtr)
+void generateImage(int imggenId, ImggenParams *params, unsigned char *imgPtr)
 {
 	const int width = params->width;
 	const int height = params->height;

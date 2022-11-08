@@ -40,7 +40,7 @@ static int blobWaveZ[NUM_BLOBS];
 static Vertex tv[DOTS_NUM];
 static Vertex mv[DOTS_NUM];
 
-static ubyte dotTexBmp[TEX_SIZE];
+static unsigned char dotTexBmp[TEX_SIZE];
 static uint16 dotTexPal[32];
 static CCB *dotCel[DOTS_DEPTH];
 
@@ -57,7 +57,7 @@ static int fsin2[NUM_SINES];
 static int fsin3[NUM_SINES];
 static int ftab[TEX_SIZE_2D];
 
-static ubyte blob[BLOB_SIZE];
+static unsigned char blob[BLOB_SIZE];
 
 static int mouseTravelZ = 0;
 
@@ -72,7 +72,7 @@ Camera *camera;
 
 #define RANDTAB_SIZE 1024
 
-static ubyte randbase[RANDTAB_SIZE];
+static unsigned char randbase[RANDTAB_SIZE];
 static Mesh *torchMesh;
 static Object3D *torchObj;
 
@@ -157,8 +157,8 @@ static void updateMaria()
 /*static void drawMetaBall(int px, int py, int pz)
 {
 	int x,y,z;
-	ubyte *src = blob;
-	ubyte *dst;
+	unsigned char *src = blob;
+	unsigned char *dst;
 
 	const int ix = px - BLOB_WIDTH / 2;
 	const int iy = py - BLOB_HEIGHT / 2;
@@ -206,8 +206,8 @@ static void updateFire()
 	int x,y,z;
 
 	const int randOffset = getRand(0, RANDTAB_SIZE - (TEX_WIDTH * TEX_DEPTH));
-	ubyte *src = &randbase[randOffset];
-	ubyte *dst;
+	unsigned char *src = &randbase[randOffset];
+	unsigned char *dst;
 
 	// Base
 	for (y=0; y<2; ++y) {

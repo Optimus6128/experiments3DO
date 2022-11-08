@@ -13,7 +13,7 @@ typedef struct ImggenParams
 
 enum { IMGGEN_BLOB, IMGGEN_GRID, IMGGEN_CLOUDS };
 
-void generateImage(int imggenId, ImggenParams *params, ubyte *imgPtr);
+void generateImage(int imggenId, ImggenParams *params, unsigned char *imgPtr);
 
 ImggenParams generateImageParamsDefault(int width, int height, int rangeMin, int rangeMax);
 ImggenParams generateImageParamsCloud(int width, int height, int rangeMin, int rangeMax, int hashX, int hashY, int hashZ, int shrStart, int iterations);

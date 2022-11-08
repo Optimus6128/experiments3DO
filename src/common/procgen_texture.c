@@ -19,7 +19,7 @@ static void eraseHalfTextureTriangleArea(Texture *tex, int eraseTriangleOrientat
 	const int height = tex->height;
 
 	// very specific works only for 8bpp (32 pal colors) now
-	ubyte *dst = tex->bitmap;
+	unsigned char *dst = tex->bitmap;
 	for (y=0; y<height; ++y) {
 		for (x=0; x<width; ++x) {
 			bool erase = false;
@@ -60,9 +60,9 @@ void squishTextureToTriangleArea(Texture *tex, int eraseTriangleOrientation)
 	const int width = tex->width;
 	const int height = tex->height;
 
-	ubyte *src = tex->bitmap;
-	ubyte *dst = tex->bitmap;
-	ubyte *tempBuff = (ubyte*)AllocMem(width, MEMTYPE_TRACKSIZE);
+	unsigned char *src = tex->bitmap;
+	unsigned char *dst = tex->bitmap;
+	unsigned char *tempBuff = (unsigned char*)AllocMem(width, MEMTYPE_TRACKSIZE);
 
 	// I will do one triangle orientation for now
 	for (y=0; y<height; ++y) {
@@ -84,14 +84,14 @@ static void expand8bppTo16bpp(Texture *tex, int rs, int gs, int bs, bool ri, boo
 	const int height = tex->height;
 	int numPixels = width * height;
 
-	uint8 *src8 = (uint8*)tex->bitmap;
+	unsigned char *src8 = (unsigned char*)tex->bitmap;
 	uint16 *dst16 = (uint16*)tex->bitmap;
 
 	src8 += numPixels-1;
 	dst16 += numPixels-1;
 	do {
 		int r,g,b;
-		const uint8 c = *src8--;
+		const unsigned char c = *src8--;
 
 		if (ri) r = c>>rs; else r = (31-c)>>rs;
 		if (gi) g = c>>gs; else g = (31-c)>>gs;
@@ -112,7 +112,7 @@ static void genTexture(int texgenId, void *params, Texture *tex)
 
 	ImggenParams paramsDefault = generateImageParamsDefault(width,height,0,31);
 
-	ubyte *dst = tex->bitmap;
+	unsigned char *dst = tex->bitmap;
 	uint16 *dst16 = (uint16*)dst;
 
 	// Right now, these are suitable for 8bpp with 32 color palette, no check is happening whether the texture is in other bpp modes
@@ -128,7 +128,7 @@ static void genTexture(int texgenId, void *params, Texture *tex)
 		case TEXGEN_FLAT:
 		{
 			if (tex->bpp<=8) {
-				const ubyte color = *((ubyte*)params);
+				const unsigned char color = *((unsigned char*)params);
 				memset(dst, color, size);
 			} else {
 				const uint16 color = *((uint16*)params);
@@ -148,8 +148,8 @@ static void genTexture(int texgenId, void *params, Texture *tex)
 
 		case TEXGEN_XOR:
 		{
-			ubyte stretch = 0;
-			if (params) stretch = *((ubyte*)params);
+			unsigned char stretch = 0;
+			if (params) stretch = *((unsigned char*)params);
 			for (y=0; y<height; y++) {
 				for (x=0; x<width; x++) {
 					if (stretch==0) {
@@ -231,7 +231,7 @@ static void copyAndShadeTextureData(Texture *src, Texture *dst, int shade, int b
 	}
 }
 
-static Texture* initGenTextures(int width, int height, int bpp, uint16 *pal, ubyte numPals, ubyte numTextures, int texgenId, bool shade, void *params)
+static Texture* initGenTextures(int width, int height, int bpp, uint16 *pal, unsigned char numPals, unsigned char numTextures, int texgenId, bool shade, void *params)
 {
 	int i;
 	Texture *tex;
@@ -253,17 +253,17 @@ static Texture* initGenTextures(int width, int height, int bpp, uint16 *pal, uby
 	return tex;
 }
 
-Texture* initGenTexture(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, void *params)
+Texture* initGenTexture(int width, int height, int bpp, uint16 *pal, unsigned char numPals, int texgenId, void *params)
 {
 	return initGenTextures(width, height, bpp, pal, numPals, 1, texgenId, false, params);
 }
 
-Texture* initGenTextureShades(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, int numShades, void *params)
+Texture* initGenTextureShades(int width, int height, int bpp, uint16 *pal, unsigned char numPals, int texgenId, int numShades, void *params)
 {
 	return initGenTextures(width, height, bpp, pal, numPals, numShades, texgenId, true, params);
 }
 
-Texture *initGenTexturesTriangleHack(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, void *params)
+Texture *initGenTexturesTriangleHack(int width, int height, int bpp, uint16 *pal, unsigned char numPals, int texgenId, void *params)
 {
 	Texture *tex;
 
@@ -274,7 +274,7 @@ Texture *initGenTexturesTriangleHack(int width, int height, int bpp, uint16 *pal
 	return tex;
 }
 
-Texture *initGenTexturesTriangleHack2(int width, int height, int bpp, uint16 *pal, ubyte numPals, int texgenId, void *params)
+Texture *initGenTexturesTriangleHack2(int width, int height, int bpp, uint16 *pal, unsigned char numPals, int texgenId, void *params)
 {
 	Texture *tex;
 

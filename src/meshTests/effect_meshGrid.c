@@ -52,7 +52,7 @@ static void updatePolyDataTextureShifts(int newWidth, int newHeight)
 {
 	const int texShrX = getShr(newWidth);
 	const int texShrY = getShr(newHeight);
-	const uint8 texShifts = (texShrX << 4) | texShrY;
+	const unsigned char texShifts = (texShrX << 4) | texShrY;
 
 	PolyData *dstPoly = gridMesh->poly;
 	int count = gridMesh->polysNum;
@@ -67,7 +67,7 @@ static void switchGridTexture()
 {
 	int x,y;
 
-	uint8 *cloudTexBmp = (uint8*)cloudTex->bitmap;
+	unsigned char *cloudTexBmp = (unsigned char*)cloudTex->bitmap;
 	int dx = cloudTex->width / WATER_SIZE;
 	int dy = cloudTex->height / WATER_SIZE;
 
@@ -136,7 +136,7 @@ static void waterRun()
 {
 	int x,y,c;
 	int *b1=wb1,*b2=wb2,*bc;
-	uint8 *dst = (uint8*)waterTex->bitmap + WATER_SIZE + 1;
+	unsigned char *dst = (unsigned char*)waterTex->bitmap + WATER_SIZE + 1;
 
 	//int t = getTicks();
 	//int tx,ty;
@@ -174,7 +174,7 @@ static void waterRun()
 static void plasmaRun()
 {
 	int x,y,c;
-	uint8 *dst = (uint8*)waterTex->bitmap + WATER_SIZE + 1;
+	unsigned char *dst = (unsigned char*)waterTex->bitmap + WATER_SIZE + 1;
 	int t = getTicks()>>5;
 
 	for (y=1; y<WATER_SIZE-1; ++y) {
@@ -195,7 +195,7 @@ static void applyWaterBufferToGrid()
 {
 	int x,y;
 	Vertex *dstVertex = gridMesh->vertex + WATER_SIZE + 2;
-	uint8 *src = (uint8*)waterTex->bitmap + WATER_SIZE + 1;
+	unsigned char *src = (unsigned char*)waterTex->bitmap + WATER_SIZE + 1;
 	CCB *cel = gridMesh->cel + WATER_SIZE + 1;
 
 	for (y=1; y<WATER_SIZE-1; ++y) {

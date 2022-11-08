@@ -271,7 +271,7 @@ Mesh *loadMesh(char *path, int loadOptions, int meshOptions, Texture *tex)
 	int verticesNum, polysNum, linesNum, tempBuffSize;
 
 	char *tempBuffSrc;
-	uint8 *tempBuff8;
+	unsigned char *tempBuff8;
 	uint16 *tempBuff16;
 
 	Mesh *ms = NULL;
@@ -295,7 +295,7 @@ Mesh *loadMesh(char *path, int loadOptions, int meshOptions, Texture *tex)
 	ms->tex = tex;
 
 	tempBuffSrc = readSequentialBytesFromFile(tempBuffSize);
-	tempBuff8 = (uint8*)tempBuffSrc;
+	tempBuff8 = (unsigned char*)tempBuffSrc;
 	for (i=0; i<verticesNum; ++i) {
 		ms->vertex[i].x = 127 - *tempBuff8++;
 		ms->vertex[i].y = 127 - *tempBuff8++;

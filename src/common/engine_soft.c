@@ -27,7 +27,7 @@ static CCB **currentScanlineCel8;
 #define GRADIENT_SHADES 32
 #define GRADIENT_LENGTH GRADIENT_SHADES
 #define GRADIENT_GROUP_SIZE (GRADIENT_SHADES * GRADIENT_LENGTH)
-static uint8 *gourGrads;
+static unsigned char *gourGrads;
 
 static bool fastGouraud = true;
 
@@ -45,7 +45,7 @@ typedef struct SoftBuffer
 	int height;
 	int stride;
 	int currentIndex;
-	uint8 *data;
+	unsigned char *data;
 	CCB *cel;
 }SoftBuffer;
 
@@ -117,10 +117,10 @@ static void initDivs()
 static void initSemiSoftGouraud()
 {
 	int i;
-	uint8 *dst;
+	unsigned char *dst;
 	int c0,c1,x;
 
-	gourGrads = (uint8*)AllocMem(GRADIENT_SHADES * GRADIENT_GROUP_SIZE, MEMTYPE_ANY);
+	gourGrads = (unsigned char*)AllocMem(GRADIENT_SHADES * GRADIENT_GROUP_SIZE, MEMTYPE_ANY);
 	scanlineCel8 = (CCB**)AllocMem(MAX_SCANLINES * sizeof(CCB*), MEMTYPE_ANY);
 	currentScanlineCel8 = scanlineCel8;
 
@@ -470,7 +470,7 @@ static void fillGouraudEdges8_SemiSoft(int y0, int y1)
 static void fillGouraudEdges8(int y0, int y1)
 {
 	const int stride8 = softBuffer.stride;
-	uint8 *vram8 = (uint8*)softBufferCurrentPtr + y0 * stride8;
+	unsigned char *vram8 = (unsigned char*)softBufferCurrentPtr + y0 * stride8;
 
 	int count = y1 - y0 + 1;
 	Edge *le = &leftEdge[y0];
@@ -480,7 +480,7 @@ static void fillGouraudEdges8(int y0, int y1)
 		const int cl = le->c;
 		const int cr = re->c;
 		int length = re->x - xl;
-		uint8 *dst = vram8 + xl;
+		unsigned char *dst = vram8 + xl;
 		uint32 *dst32;
 
 		const int repDiv = divTab[length + DIV_TAB_SIZE / 2];
@@ -519,7 +519,7 @@ static void fillGouraudEdges8(int y0, int y1)
 			length-=4;
 		};
 
-		dst = (uint8*)dst32;
+		dst = (unsigned char*)dst32;
 		while (length-- > 0) {
 			int c = FIXED_TO_INT(fc, FP_BASE);
 			fc += dc;
@@ -598,14 +598,14 @@ static void fillGouraudEdges16(int y0, int y1)
 static void fillEnvmapEdges8(int y0, int y1)
 {
 	const int stride8 = softBuffer.stride;
-	uint8 *vram8 = (uint8*)softBufferCurrentPtr + y0 * stride8;
+	unsigned char *vram8 = (unsigned char*)softBufferCurrentPtr + y0 * stride8;
 
 	int count = y1 - y0 + 1;
 	Edge *le = &leftEdge[y0];
 	Edge *re = &rightEdge[y0];
 
 	const int texHeightShift = activeTexture->hShift;
-	uint8* texData = (uint8*)activeTexture->bitmap;
+	unsigned char* texData = (unsigned char*)activeTexture->bitmap;
 
 	do {
 		const int xl = le->x;
@@ -615,7 +615,7 @@ static void fillEnvmapEdges8(int y0, int y1)
 		const int vr = re->v;
 		int length = re->x - xl;
 
-		uint8 *dst = vram8 + xl;
+		unsigned char *dst = vram8 + xl;
 		uint32 *dst32;
 
 		const int repDiv = divTab[length + DIV_TAB_SIZE / 2];
@@ -661,7 +661,7 @@ static void fillEnvmapEdges8(int y0, int y1)
 			length-=4;
 		};
 
-		dst = (uint8*)dst32;
+		dst = (unsigned char*)dst32;
 		while (length-- > 0) {
 			*dst++ = texData[(FIXED_TO_INT(fv, FP_BASE) << texHeightShift) + FIXED_TO_INT(fu, FP_BASE)];
 			fu += du;
@@ -750,14 +750,14 @@ static void fillGouraudEnvmapEdges8(int y0, int y1)
 {
 	const int stride8 = softBuffer.stride;
 
-	uint8 *vram8 = (uint8*)softBufferCurrentPtr + y0 * stride8;
+	unsigned char *vram8 = (unsigned char*)softBufferCurrentPtr + y0 * stride8;
 
 	int count = y1 - y0 + 1;
 	Edge *le = &leftEdge[y0];
 	Edge *re = &rightEdge[y0];
 
 	const int texHeightShift = activeTexture->hShift;
-	uint8* texData = (uint8*)activeTexture->bitmap;
+	unsigned char* texData = (unsigned char*)activeTexture->bitmap;
 
 	do {
 		const int xl = le->x;
@@ -768,7 +768,7 @@ static void fillGouraudEnvmapEdges8(int y0, int y1)
 		const int vl = le->v;
 		const int vr = re->v;
 		int length = re->x - xl;
-		uint8 *dst = vram8 + xl;
+		unsigned char *dst = vram8 + xl;
 		uint32 *dst32;
 
 		const int repDiv = divTab[length + DIV_TAB_SIZE / 2];
@@ -825,7 +825,7 @@ static void fillGouraudEnvmapEdges8(int y0, int y1)
 			length-=4;
 		};
 
-		dst = (uint8*)dst32;
+		dst = (unsigned char*)dst32;
 		while (length-- > 0) {
 			c = (texData[(FIXED_TO_INT(fv, FP_BASE) << texHeightShift) + FIXED_TO_INT(fu, FP_BASE)] * FIXED_TO_INT(fc, FP_BASE)) >> COLOR_ENVMAP_SHR;
 			*dst++ = c + 1;
