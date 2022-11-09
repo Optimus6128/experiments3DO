@@ -21,16 +21,40 @@ static CHUNKheader CHKhdr;
 
 static uint16 readU16()
 {
-	const uint16 value = *((uint16*)&fliPreload[fliIndex]);
+	uint16 value;
+
+	if ((fliIndex & 1) == 0) {
+		value = *((uint16*)&fliPreload[fliIndex]);
+		value = SHORT_ENDIAN_FLIP(value);
+	} else {
+		const uint32 u0 = fliPreload[fliIndex];
+		const uint32 u1 = fliPreload[fliIndex+1];
+
+		value = (uint16)( (u1 << 8) | u0 );
+	}
 	fliIndex += 2;
-	return SHORT_ENDIAN_FLIP(value);
+
+	return value;
 }
 
 static uint32 readU32()
 {
-	const uint32 value = *((uint32*)&fliPreload[fliIndex]);
+	uint32 value;
+
+	if ((fliIndex & 3) == 0) {
+		value = *((uint32*)&fliPreload[fliIndex]);
+		value = LONG_ENDIAN_FLIP(value);
+	} else {
+		const uint32 u0 = fliPreload[fliIndex];
+		const uint32 u1 = fliPreload[fliIndex+1];
+		const uint32 u2 = fliPreload[fliIndex+2];
+		const uint32 u3 = fliPreload[fliIndex+3];
+
+		value = (uint32)( (u3 << 24) | (u2 << 16) | (u1 << 8) | u0 );
+	}
 	fliIndex += 4;
-	return LONG_ENDIAN_FLIP(value);
+
+	return value;
 }
 
 void ReadFrameHDR()
