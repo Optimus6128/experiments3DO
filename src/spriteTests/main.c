@@ -17,7 +17,12 @@ static void(*effectRunFunc[EFFECTS_NUM])() = { effectSpritesGeckoRun, effectLaye
 int main()
 {
 	const int effectIndex = EFFECT_FLI_ANIM_TEST;//runEffectSelector(effectName, EFFECTS_NUM);
+	int coreFlags = CORE_DEFAULT;
 
-	coreInit(effectInitFunc[effectIndex], CORE_DEFAULT | CORE_SHOW_MEM);
+	if (effectIndex == EFFECT_FLI_ANIM_TEST) {
+		coreFlags = CORE_SHOW_FPS | CORE_NO_VSYNC | CORE_NO_CLEAR_FRAME;
+	}
+
+	coreInit(effectInitFunc[effectIndex], coreFlags);
 	coreRun(effectRunFunc[effectIndex]);
 }

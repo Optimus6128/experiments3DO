@@ -50,12 +50,12 @@ typedef struct CHUNKheader
 typedef struct AnimFLI
 {
 	char *filename;
+	uint16 *bmp;
 } AnimFLI;
 
-AnimFLI *newAnimFLI(char *filename);
+AnimFLI *newAnimFLI(char *filename, uint16 *bmp);
 void FLIload(AnimFLI *anim);
 
-void FLIshow(AnimFLI *anim, uint16 *dst);
 void FLIplayNextFrame(AnimFLI *anim);
 
 #endif

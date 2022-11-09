@@ -17,26 +17,20 @@ static uint16 *fliBmp;
 AnimFLI *fli;
 
 
+static char *filenames[] = { "acid.fli", "apple.fli", "birdsh01.fli", "clowns.fli", "loom.fli", "robo01.fli", "rrhood.fli", "wavelogo.fli", "watrfall.fli", "catnap.fli", "robotrk.fli" };
+
 void effectFliAnimTestInit()
 {
+	static char fliFilePath[32];
+
 	fliBmp = (uint16*)AllocMem(2 * FLI_BMP_WIDTH * FLI_BMP_HEIGHT, MEMTYPE_ANY);
 	fliSpr = newSprite(FLI_BMP_WIDTH, FLI_BMP_HEIGHT, 16, CEL_TYPE_UNCODED, NULL, (unsigned char*)fliBmp);
+	fliSpr->cel->ccb_Flags |= CCB_BGND;
 
-	setSpritePosition(fliSpr, 0, (SCREEN_HEIGHT - FLI_BMP_HEIGHT) / 2);
+	//setSpritePosition(fliSpr, 0, (SCREEN_HEIGHT - FLI_BMP_HEIGHT) / 2);
 
-	//fli = newAnimFLI("data/acid.fli");
-	//fli = newAnimFLI("data/apple.fli");
-	//fli = newAnimFLI("data/birdsh01.fli");
-	fli = newAnimFLI("data/clowns.fli");
-	//fli = newAnimFLI("data/loom.fli");
-	//fli = newAnimFLI("data/robo01.fli");
-	//fli = newAnimFLI("data/rrhood.fli");
-	//fli = newAnimFLI("data/wavelogo.fli");
-	//fli = newAnimFLI("data/watrfall.fli");
-
-
-	//fli = newAnimFLI("data/catnap.fli");
-	//fli = newAnimFLI("data/robotrk.fli");
+	sprintf(fliFilePath, "data/%s", filenames[0]);
+	fli = newAnimFLI(fliFilePath, fliBmp);
 
 	FLIload(fli);
 }
@@ -44,7 +38,6 @@ void effectFliAnimTestInit()
 void effectFliAnimTestRun()
 {
 	FLIplayNextFrame(fli);
-	FLIshow(fli, fliBmp);
 
 	drawSprite(fliSpr);
 
