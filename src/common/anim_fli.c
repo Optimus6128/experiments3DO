@@ -6,21 +6,15 @@
 static bool shouldUpdateFullFrame;
 
 
-static uint16 readU16(AnimFLI *anim)
+static uint32 readU16backTo32(AnimFLI *anim)
 {
-	uint16 value;
 	const uint32 fliIndex = anim->fliIndex;
 	unsigned char *fliPreload = anim->fliPreload;
 
-	if ((fliIndex & 1) == 0) {
-		value = *((uint16*)&fliPreload[fliIndex]);
-		value = SHORT_ENDIAN_FLIP(value);
-	} else {
-		const uint32 u0 = fliPreload[fliIndex];
-		const uint32 u1 = fliPreload[fliIndex+1];
+	const uint32 u0 = fliPreload[fliIndex];
+	const uint32 u1 = fliPreload[fliIndex+1];
+	const uint32 value = (u1 << 8) | u0;
 
-		value = (uint16)( (u1 << 8) | u0 );
-	}
 	anim->fliIndex += 2;
 
 	return value;
@@ -41,7 +35,7 @@ static uint32 readU32(AnimFLI *anim)
 		const uint32 u2 = fliPreload[fliIndex+2];
 		const uint32 u3 = fliPreload[fliIndex+3];
 
-		value = (uint32)( (u3 << 24) | (u2 << 16) | (u1 << 8) | u0 );
+		value = (u3 << 24) | (u2 << 16) | (u1 << 8) | u0;
 	}
 	anim->fliIndex += 4;
 
@@ -50,13 +44,14 @@ static uint32 readU32(AnimFLI *anim)
 
 void ReadFrameHDR(AnimFLI *anim)
 {
+	uint32 temp;
+
 	anim->FRMhdr.size = readU32(anim);
 	anim->nextFrameIndex = anim->fliIndex - 4 + anim->FRMhdr.size;
 
-	anim->FRMhdr.magic = readU16(anim);
-	anim->FRMhdr.chunks = readU16(anim);
+	anim->FRMhdr.magic = readU16backTo32(anim);
+	anim->FRMhdr.chunks = readU16backTo32(anim);
 
-	memcpy(anim->FRMhdr.expand, anim->fliPreload, 8);
 	anim->fliIndex += 8;
 }
 
@@ -64,7 +59,7 @@ void ReadChunkHDR(AnimFLI *anim)
 {
 	anim->CHKhdr.size = readU32(anim);
 	anim->nextchunk = anim->fliIndex - 4 + anim->CHKhdr.size;
-	anim->CHKhdr.type = readU16(anim);
+	anim->CHKhdr.type = readU16backTo32(anim);
 }
 
 
@@ -74,7 +69,7 @@ void FliColor(AnimFLI *anim)
 	unsigned char *fliPreload = anim->fliPreload;
 	uint32 *vga_pal = anim->vga_pal;
 
-	const uint16 packets = readU16(anim);
+	const int packets = readU16backTo32(anim);
 
 	for (i=0; i<packets; i++)
 	{
@@ -133,8 +128,8 @@ void FliLc(AnimFLI *anim)
 	unsigned char *vga_screen = anim->vga_screen;
 	uint32 *vga_pal = anim->vga_pal;
 
-	const uint16 lines_skip = readU16(anim);
-	const uint16 lines_chng = readU16(anim);
+	const uint32 lines_skip = readU16backTo32(anim);
+	const uint32 lines_chng = readU16backTo32(anim);
 
 	anim->yline += lines_skip;
 	vi = anim->yline * VGA_WIDTH;
@@ -185,7 +180,7 @@ void FliBlack(AnimFLI *anim)
 
 void DoType(AnimFLI *anim)
 {
-	const uint16 type = anim->CHKhdr.type;
+	const uint32 type = anim->CHKhdr.type;
 
 	switch(type)
 	{
@@ -259,7 +254,7 @@ void FLIplayNextFrame(AnimFLI *anim)
 	}
 	anim->fliIndex = anim->nextFrameIndex;
 
-	if (anim->fliIndex >= anim->FLIhdr.size-sizeof(anim->FLIhdr)) {
+	if (anim->fliIndex >= anim->FLIhdr.size-ORIG_FLI_HEADER_SIZE) {
 		anim->nextFrameIndex = anim->fliIndex = anim->after_first_frame;
 	}
 
@@ -270,27 +265,29 @@ void FLIplayNextFrame(AnimFLI *anim)
 
 void FLIload(AnimFLI *anim)
 {
+	OrigFLIheader origFliHdr;
+
 	char *filename = anim->filename;
 
-	readBytesFromFileAndStore(filename, 0, sizeof(anim->FLIhdr), (char*)&anim->FLIhdr);
+	readBytesFromFileAndStore(filename, 0, sizeof(OrigFLIheader), (char*)&origFliHdr);
 
-	anim->FLIhdr.size = LONG_ENDIAN_FLIP(anim->FLIhdr.size);
-	anim->FLIhdr.width = SHORT_ENDIAN_FLIP(anim->FLIhdr.width);
-	anim->FLIhdr.height = SHORT_ENDIAN_FLIP(anim->FLIhdr.height);
+	anim->FLIhdr.size = LONG_ENDIAN_FLIP(origFliHdr.size);
+	anim->FLIhdr.width = SHORT_ENDIAN_FLIP(origFliHdr.width);
+	anim->FLIhdr.height = SHORT_ENDIAN_FLIP(origFliHdr.height);
 
-    anim->FLIhdr.magic = SHORT_ENDIAN_FLIP(anim->FLIhdr.magic);
-    anim->FLIhdr.frames = SHORT_ENDIAN_FLIP(anim->FLIhdr.frames);
+    anim->FLIhdr.magic = SHORT_ENDIAN_FLIP(origFliHdr.magic);
+    anim->FLIhdr.frames = SHORT_ENDIAN_FLIP(origFliHdr.frames);
 
-    anim->FLIhdr.depth = SHORT_ENDIAN_FLIP(anim->FLIhdr.depth);
-    anim->FLIhdr.flags = SHORT_ENDIAN_FLIP(anim->FLIhdr.flags);
-    anim->FLIhdr.speed = SHORT_ENDIAN_FLIP(anim->FLIhdr.speed);
+    anim->FLIhdr.depth = SHORT_ENDIAN_FLIP(origFliHdr.depth);
+    anim->FLIhdr.flags = SHORT_ENDIAN_FLIP(origFliHdr.flags);
+    anim->FLIhdr.speed = SHORT_ENDIAN_FLIP(origFliHdr.speed);
 
-    anim->FLIhdr.next = LONG_ENDIAN_FLIP(anim->FLIhdr.next);
-    anim->FLIhdr.frit = LONG_ENDIAN_FLIP(anim->FLIhdr.frit);
+    anim->FLIhdr.next = LONG_ENDIAN_FLIP(origFliHdr.next);
+    anim->FLIhdr.frit = LONG_ENDIAN_FLIP(origFliHdr.frit);
 
 	anim->fliPreload = AllocMem(anim->FLIhdr.size, MEMTYPE_ANY);
 
-	readBytesFromFileAndStore(filename, sizeof(anim->FLIhdr), anim->FLIhdr.size - sizeof(anim->FLIhdr), anim->fliPreload);
+	readBytesFromFileAndStore(filename, ORIG_FLI_HEADER_SIZE, anim->FLIhdr.size - ORIG_FLI_HEADER_SIZE, anim->fliPreload);
 }
 
 AnimFLI *newAnimFLI(char *filename, uint16 *bmp)

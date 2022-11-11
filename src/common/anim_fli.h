@@ -19,33 +19,59 @@
 #define VGA_PAL_SIZE 256
 #define PAL_PAD_BITS 16
 
+#define ORIG_FLI_HEADER_SIZE 128
+#define ORIG_FRAME_HEADER_SIZE 16
+#define ORIG_CHUNK_HEADER_SIZE 6
+
+typedef struct OrigFLIheader
+{
+    uint32 size;
+	
+    uint16 magic;
+    uint16 frames;
+	
+    uint16 width;
+    uint16 height;
+	
+    uint16 depth;
+    uint16 flags;
+	
+    uint16 speed;
+	// This was padded with an extra 16bit at this point from the compiler, so not sure if next and frit weren loaded correctly
+	// Not sure, it works for now
+
+    uint32 next;
+    uint32 frit;
+    // unsigned char expand[98];	// no need to store these bytes
+	// Or maybe the padding was happening at this point.
+} OrigFLIheader;
+
 typedef struct FLIheader
 {
     uint32 size;
-    uint16 magic;
-    uint16 frames;
-    uint16 width;
-    uint16 height;
-    uint16 depth;
-    uint16 flags;
-    uint16 speed;
+    uint32 magic;	// was 16bit
+    uint32 frames;	// was 16bit
+    uint32 width;	// was 16bit
+    uint32 height;	// was 16bit
+    uint32 depth;	// was 16bit
+    uint32 flags;	// was 16bit
+    uint32 speed;	// was 16bit
     uint32 next;
     uint32 frit;
-    unsigned char expand[98];	// was 102 but because of word aligment it brought size to 132 and broke the offset of 128 (crazy bug that lost my time)
 } FLIheader;
 
 typedef struct FRAMEheader
 {
     uint32 size;
-    uint16 magic;
-    uint16 chunks;
-    unsigned char expand[8];
+    uint32 magic;	// was 16bit
+    uint32 chunks;	// was 16bit
+    // unsigned char expand[8];	// no need to store these bytes
 } FRAMEheader;
 
 typedef struct CHUNKheader
 {
     uint32 size;
-    uint16 type;
+    uint32 type;	// was 16bit
 } CHUNKheader;
 
 typedef struct AnimFLI
