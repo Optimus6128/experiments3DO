@@ -229,7 +229,8 @@ void DoType(AnimFLI *anim)
 }
 
 
-void FLIupdateFullFrame(uint16 *dst, uint32 *vga_pal, uint32 *vga32)
+void FLIupdateFullFrame(uint16 *dst, uint32 *vga_pal, uint32 *vga32);
+/*void FLIupdateFullFrame(uint16 *dst, uint32 *vga_pal, uint32 *vga32)
 {
 	int count = (VGA_WIDTH * VGA_HEIGHT) / 4;
 	uint32 *dst32 = (uint32*)dst;
@@ -239,7 +240,7 @@ void FLIupdateFullFrame(uint16 *dst, uint32 *vga_pal, uint32 *vga32)
 		*dst32++ = vga_pal[(c >> 24) & 255] | (vga_pal[(c >> 16) & 255] >> PAL_PAD_BITS);
 		*dst32++ = vga_pal[(c >> 8) & 255] | (vga_pal[c & 255] >> PAL_PAD_BITS);
 	} while(--count > 0);
-}
+}*/
 
 void FLIplayNextFrame(AnimFLI *anim)
 {
