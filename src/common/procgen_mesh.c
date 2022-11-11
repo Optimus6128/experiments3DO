@@ -447,7 +447,8 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			addVertex( s,  s, 0);
 			addVertex(-s,  s, 0);
 
-			addQuadIndices(0,1,2,3);
+			//addQuadIndices(0,1,2,3);
+			addQuadIndices(3,2,1,0);
 
 			setAllPolyData(ms,4,0,0);
 		}

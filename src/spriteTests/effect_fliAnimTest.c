@@ -29,7 +29,7 @@ void effectFliAnimTestInit()
 
 	//setSpritePosition(fliSpr, 0, (SCREEN_HEIGHT - FLI_BMP_HEIGHT) / 2);
 
-	sprintf(fliFilePath, "data/%s", filenames[0]);
+	sprintf(fliFilePath, "data/%s", filenames[8]);
 	fli = newAnimFLI(fliFilePath, fliBmp);
 
 	FLIload(fli);

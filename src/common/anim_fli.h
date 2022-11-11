@@ -51,6 +51,23 @@ typedef struct AnimFLI
 {
 	char *filename;
 	uint16 *bmp;
+
+	unsigned char *vga_screen;
+	uint16 *vga_pal;
+
+	unsigned char *fliPreload;
+	uint32 fliIndex;
+
+	uint32 nextFrameIndex;
+	uint32 nextchunk;
+	uint32 after_first_frame;
+
+	uint32 yline;
+
+	FLIheader FLIhdr;
+	FRAMEheader FRMhdr;
+	CHUNKheader CHKhdr;
+
 } AnimFLI;
 
 AnimFLI *newAnimFLI(char *filename, uint16 *bmp);
