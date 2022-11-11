@@ -17,6 +17,7 @@
 #define VGA_HEIGHT 200
 #define VGA_SIZE (VGA_WIDTH * VGA_HEIGHT)
 #define VGA_PAL_SIZE 256
+#define PAL_PAD_BITS 16
 
 typedef struct FLIheader
 {
@@ -53,7 +54,7 @@ typedef struct AnimFLI
 	uint16 *bmp;
 
 	unsigned char *vga_screen;
-	uint16 *vga_pal;
+	uint32 *vga_pal;	// padded 16bit 0x**00
 
 	unsigned char *fliPreload;
 	uint32 fliIndex;

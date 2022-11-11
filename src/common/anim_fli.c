@@ -72,7 +72,7 @@ void FliColor(AnimFLI *anim)
 {
 	int i, j, ci=0;
 	unsigned char *fliPreload = anim->fliPreload;
-	uint16 *vga_pal = anim->vga_pal;
+	uint32 *vga_pal = anim->vga_pal;
 
 	const uint16 packets = readU16(anim);
 
@@ -88,7 +88,7 @@ void FliColor(AnimFLI *anim)
 			const int r = (fliPreload[anim->fliIndex++]>>1);
 			const int g = (fliPreload[anim->fliIndex++]>>1);
 			const int b = (fliPreload[anim->fliIndex++]>>1);
-			vga_pal[ci++] = (r<<10) | (g<<5) | b;
+			vga_pal[ci++] = (r<<(10+PAL_PAD_BITS)) | (g<<(5+PAL_PAD_BITS)) | (b << PAL_PAD_BITS);
 		}
 	}
 }
@@ -131,7 +131,7 @@ void FliLc(AnimFLI *anim)
 	uint16 *dst = anim->bmp;
 	unsigned char *fliPreload = anim->fliPreload;
 	unsigned char *vga_screen = anim->vga_screen;
-	uint16 *vga_pal = anim->vga_pal;
+	uint32 *vga_pal = anim->vga_pal;
 
 	const uint16 lines_skip = readU16(anim);
 	const uint16 lines_chng = readU16(anim);
@@ -149,17 +149,19 @@ void FliLc(AnimFLI *anim)
 			vi+=skip_count;
 			if (size_count<0) {
 				const unsigned char data = fliPreload[anim->fliIndex++];
+				const uint16 col = vga_pal[data] >> PAL_PAD_BITS;
 				size_count = -size_count;
 				for (j=0; j<size_count; j++) {
 					vga_screen[vi] = data;
-					dst[vi] = vga_pal[data];
+					dst[vi] = col;
 					vi++;
 				}
 			} else {
 				for (j=0; j<size_count; j++) {
 					const unsigned char data = fliPreload[anim->fliIndex++];
+					const uint16 col = vga_pal[data] >> PAL_PAD_BITS;
 					vga_screen[vi] = data;
-					dst[vi] = vga_pal[data];
+					dst[vi] = col;
 					vi++;
 				}
 			}
@@ -178,7 +180,7 @@ void FliCopy(AnimFLI *anim)
 void FliBlack(AnimFLI *anim)
 {
 	memset(anim->vga_screen, 0, VGA_SIZE);
-	memset(anim->vga_pal, 0, 2*VGA_PAL_SIZE);
+	memset(anim->vga_pal, 0, 4*VGA_PAL_SIZE);
 }
 
 void DoType(AnimFLI *anim)
@@ -226,20 +228,16 @@ void DoType(AnimFLI *anim)
 	}
 }
 
-void FLIupdateFullFrame(AnimFLI *anim)
+
+void FLIupdateFullFrame(uint16 *dst, uint32 *vga_pal, uint32 *vga32)
 {
 	int count = (VGA_WIDTH * VGA_HEIGHT) / 4;
-
-	uint16 *dst = anim->bmp;
-	uint32 *vga32 = (uint32*)anim->vga_screen;
-	uint16 *vga_pal = anim->vga_pal;
+	uint32 *dst32 = (uint32*)dst;
 	do {
 		const uint32 c = *vga32++;
 
-		*dst++ = vga_pal[(c >> 24) & 255];
-		*dst++ = vga_pal[(c >> 16) & 255];
-		*dst++ = vga_pal[(c >> 8) & 255];
-		*dst++ = vga_pal[c & 255];
+		*dst32++ = vga_pal[(c >> 24) & 255] | (vga_pal[(c >> 16) & 255] >> PAL_PAD_BITS);
+		*dst32++ = vga_pal[(c >> 8) & 255] | (vga_pal[c & 255] >> PAL_PAD_BITS);
 	} while(--count > 0);
 }
 
@@ -265,7 +263,7 @@ void FLIplayNextFrame(AnimFLI *anim)
 	}
 
 	if (shouldUpdateFullFrame) {
-		FLIupdateFullFrame(anim);
+		FLIupdateFullFrame(anim->bmp, anim->vga_pal, (uint32*)anim->vga_screen);
 	}
 }
 
@@ -307,7 +305,7 @@ AnimFLI *newAnimFLI(char *filename, uint16 *bmp)
 	anim->after_first_frame = 0;
 
 	anim->vga_screen = (unsigned char*)AllocMem(VGA_SIZE, MEMTYPE_ANY);
-	anim->vga_pal = (uint16*)AllocMem(2*VGA_PAL_SIZE, MEMTYPE_ANY);
+	anim->vga_pal = (uint32*)AllocMem(4*VGA_PAL_SIZE, MEMTYPE_ANY);
 
 	return anim;
 }

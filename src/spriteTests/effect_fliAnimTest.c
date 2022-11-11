@@ -17,7 +17,7 @@ static uint16 *fliBmp;
 AnimFLI *fli;
 
 
-static char *filenames[] = { "acid.fli", "apple.fli", "birdsh01.fli", "clowns.fli", "loom.fli", "robo01.fli", "rrhood.fli", "wavelogo.fli", "watrfall.fli", "catnap.fli", "robotrk.fli" };
+static char *filenames[] = { "acid.fli", "apple.fli", "birdsh01.fli", "clowns.fli", "loom.fli", "robo01.fli", "rrhood.fli", "wavelogo.fli", "watrfall.fli", "cycle.fli", "catnap.fli", "robotrk.fli" };
 
 void effectFliAnimTestInit()
 {
