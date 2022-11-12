@@ -23,6 +23,8 @@
 #define ORIG_FRAME_HEADER_SIZE 16
 #define ORIG_CHUNK_HEADER_SIZE 6
 
+#define STREAM_BLOCK_SIZE 65536
+
 typedef struct OrigFLIheader
 {
     uint32 size;
@@ -82,14 +84,16 @@ typedef struct AnimFLI
 	unsigned char *vga_screen;
 	uint32 *vga_pal;	// padded 16bit 0x**00
 
-	unsigned char *fliPreload;
-	uint32 fliIndex;
+	unsigned char *fliBuffer;
+	uint32 dataIndex;
+	uint32 fileIndex;
 
-	uint32 nextFrameIndex;
+	uint32 nextFrameDataIndex;
 	uint32 nextchunk;
-	uint32 after_first_frame;
+	uint32 firstFrameSize;
 
 	uint32 yline;
+	bool streaming;
 
 	FLIheader FLIhdr;
 	FRAMEheader FRMhdr;
@@ -98,7 +102,7 @@ typedef struct AnimFLI
 } AnimFLI;
 
 AnimFLI *newAnimFLI(char *filename, uint16 *bmp);
-void FLIload(AnimFLI *anim);
+void FLIload(AnimFLI *anim, bool preLoad);
 
 void FLIplayNextFrame(AnimFLI *anim);
 

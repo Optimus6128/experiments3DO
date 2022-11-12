@@ -2,87 +2,67 @@
 #include "file_utils.h"
 #include "tools.h"
 
+void FLIupdateFullFrame(uint16 *dst, uint32 *vga_pal, uint32 *vga32);
 
 static bool shouldUpdateFullFrame;
 
 
 static uint32 readU16backTo32(AnimFLI *anim)
 {
-	const uint32 fliIndex = anim->fliIndex;
-	unsigned char *fliPreload = anim->fliPreload;
+	const uint32 dataIndex = anim->dataIndex;
+	unsigned char *fliBuffer = anim->fliBuffer;
 
-	const uint32 u0 = fliPreload[fliIndex];
-	const uint32 u1 = fliPreload[fliIndex+1];
+	const uint32 u0 = fliBuffer[dataIndex];
+	const uint32 u1 = fliBuffer[dataIndex+1];
 	const uint32 value = (u1 << 8) | u0;
 
-	anim->fliIndex += 2;
+	anim->dataIndex += 2;
 
 	return value;
 }
 
-static uint32 readU32(AnimFLI *anim)
+static uint32 readU32(AnimFLI *anim, bool advance)
 {
 	uint32 value;
-	const uint32 fliIndex = anim->fliIndex;
-	unsigned char *fliPreload = anim->fliPreload;
+	const uint32 dataIndex = anim->dataIndex;
+	unsigned char *fliBuffer = anim->fliBuffer;
 
-	if ((fliIndex & 3) == 0) {
-		value = *((uint32*)&fliPreload[fliIndex]);
+	if ((dataIndex & 3) == 0) {
+		value = *((uint32*)&fliBuffer[dataIndex]);
 		value = LONG_ENDIAN_FLIP(value);
 	} else {
-		const uint32 u0 = fliPreload[fliIndex];
-		const uint32 u1 = fliPreload[fliIndex+1];
-		const uint32 u2 = fliPreload[fliIndex+2];
-		const uint32 u3 = fliPreload[fliIndex+3];
+		const uint32 u0 = fliBuffer[dataIndex];
+		const uint32 u1 = fliBuffer[dataIndex+1];
+		const uint32 u2 = fliBuffer[dataIndex+2];
+		const uint32 u3 = fliBuffer[dataIndex+3];
 
 		value = (u3 << 24) | (u2 << 16) | (u1 << 8) | u0;
 	}
-	anim->fliIndex += 4;
+	if (advance) anim->dataIndex += 4;
 
 	return value;
 }
-
-void ReadFrameHDR(AnimFLI *anim)
-{
-	uint32 temp;
-
-	anim->FRMhdr.size = readU32(anim);
-	anim->nextFrameIndex = anim->fliIndex - 4 + anim->FRMhdr.size;
-
-	anim->FRMhdr.magic = readU16backTo32(anim);
-	anim->FRMhdr.chunks = readU16backTo32(anim);
-
-	anim->fliIndex += 8;
-}
-
-void ReadChunkHDR(AnimFLI *anim)
-{
-	anim->CHKhdr.size = readU32(anim);
-	anim->nextchunk = anim->fliIndex - 4 + anim->CHKhdr.size;
-	anim->CHKhdr.type = readU16backTo32(anim);
-}
-
 
 void FliColor(AnimFLI *anim)
 {
 	int i, j, ci=0;
-	unsigned char *fliPreload = anim->fliPreload;
+	unsigned char *fliBuffer = anim->fliBuffer;
 	uint32 *vga_pal = anim->vga_pal;
 
 	const int packets = readU16backTo32(anim);
 
 	for (i=0; i<packets; i++)
 	{
-		const int colors2skip = fliPreload[anim->fliIndex++];
-		int colors2chng = fliPreload[anim->fliIndex++];
+		const int colors2skip = fliBuffer[anim->dataIndex++];
+		int colors2chng = fliBuffer[anim->dataIndex++];
 
 		if (colors2chng==0) colors2chng = VGA_PAL_SIZE;
 		ci+=colors2skip;
 		for (j=0; j<colors2chng; j++)
 		{
-			const int r = (fliPreload[anim->fliIndex++]>>1);
-			const int g = (fliPreload[anim->fliIndex++]>>1);
-			const int b = (fliPreload[anim->fliIndex++]>>1);
+			const int r = (fliBuffer[anim->dataIndex++]>>1);
+			const int g = (fliBuffer[anim->dataIndex++]>>1);
+			const int b = (fliBuffer[anim->dataIndex++]>>1);
 			vga_pal[ci++] = (r<<(10+PAL_PAD_BITS)) | (g<<(5+PAL_PAD_BITS)) | (b << PAL_PAD_BITS);
 		}
 	}
@@ -92,16 +72,16 @@ void FliColor(AnimFLI *anim)
 void FliBrun(AnimFLI *anim)
 {
 	int i, j, y, vi=0;
-	unsigned char *fliPreload = anim->fliPreload;
+	unsigned char *fliBuffer = anim->fliBuffer;
 	unsigned char *vga_screen = anim->vga_screen;
 
-	anim->after_first_frame = anim->nextFrameIndex;
+	anim->firstFrameSize = anim->FRMhdr.size;
 
 	for (y=0; y<anim->FLIhdr.height; y++) {
-		const unsigned char packets = fliPreload[anim->fliIndex++];
+		const unsigned char packets = fliBuffer[anim->dataIndex++];
 		for (i=0; i<packets; i++) {
-			int8 size_count = (int8)fliPreload[anim->fliIndex++];
-			const unsigned char data = fliPreload[anim->fliIndex++];
+			int8 size_count = (int8)fliBuffer[anim->dataIndex++];
+			const unsigned char data = fliBuffer[anim->dataIndex++];
 
 			if (size_count>=0) {
 				for (j=0; j<size_count; j++) {
@@ -112,7 +92,7 @@ void FliBrun(AnimFLI *anim)
 
 				vga_screen[vi++] = data;
 				for (j=1; j<size_count; j++) {
-					vga_screen[vi++] = fliPreload[anim->fliIndex++];
+					vga_screen[vi++] = fliBuffer[anim->dataIndex++];
 				}
 			}
 		}
@@ -124,7 +104,7 @@ void FliLc(AnimFLI *anim)
 	int i, j, n, vi=0;
 
 	uint16 *dst = anim->bmp;
-	unsigned char *fliPreload = anim->fliPreload;
+	unsigned char *fliBuffer = anim->fliBuffer;
 	unsigned char *vga_screen = anim->vga_screen;
 	uint32 *vga_pal = anim->vga_pal;
 
@@ -135,15 +115,15 @@ void FliLc(AnimFLI *anim)
 	vi = anim->yline * VGA_WIDTH;
 
 	for (i=0; i<lines_chng; i++) {
-		const unsigned char packets = fliPreload[anim->fliIndex++];
+		const unsigned char packets = fliBuffer[anim->dataIndex++];
 
 		for (n=0; n<packets; n++) {
-			const unsigned char skip_count = fliPreload[anim->fliIndex++];
-			int8 size_count = fliPreload[anim->fliIndex++];
+			const unsigned char skip_count = fliBuffer[anim->dataIndex++];
+			int8 size_count = fliBuffer[anim->dataIndex++];
 
 			vi+=skip_count;
 			if (size_count<0) {
-				const unsigned char data = fliPreload[anim->fliIndex++];
+				const unsigned char data = fliBuffer[anim->dataIndex++];
 				const uint16 col = vga_pal[data] >> PAL_PAD_BITS;
 				size_count = -size_count;
 				for (j=0; j<size_count; j++) {
@@ -153,7 +133,7 @@ void FliLc(AnimFLI *anim)
 				}
 			} else {
 				for (j=0; j<size_count; j++) {
-					const unsigned char data = fliPreload[anim->fliIndex++];
+					const unsigned char data = fliBuffer[anim->dataIndex++];
 					const uint16 col = vga_pal[data] >> PAL_PAD_BITS;
 					vga_screen[vi] = data;
 					dst[vi] = col;
@@ -168,8 +148,8 @@ void FliLc(AnimFLI *anim)
 
 void FliCopy(AnimFLI *anim)
 {
-	memcpy(anim->vga_screen, &anim->fliPreload[anim->fliIndex], VGA_SIZE);
-	anim->fliIndex+=VGA_SIZE;
+	memcpy(anim->vga_screen, &anim->fliBuffer[anim->dataIndex], VGA_SIZE);
+	anim->dataIndex+=VGA_SIZE;
 }
 
 void FliBlack(AnimFLI *anim)
@@ -224,52 +204,86 @@ void DoType(AnimFLI *anim)
 }
 
 
-void FLIupdateFullFrame(uint16 *dst, uint32 *vga_pal, uint32 *vga32);
-/*void FLIupdateFullFrame(uint16 *dst, uint32 *vga_pal, uint32 *vga32)
+void ReadFrameHDR(AnimFLI *anim)
 {
-	int count = (VGA_WIDTH * VGA_HEIGHT) / 4;
-	uint32 *dst32 = (uint32*)dst;
-	do {
-		const uint32 c = *vga32++;
+	anim->FRMhdr.size = readU32(anim, true);
 
-		*dst32++ = vga_pal[(c >> 24) & 255] | (vga_pal[(c >> 16) & 255] >> PAL_PAD_BITS);
-		*dst32++ = vga_pal[(c >> 8) & 255] | (vga_pal[c & 255] >> PAL_PAD_BITS);
-	} while(--count > 0);
-}*/
+	anim->FRMhdr.magic = readU16backTo32(anim);
+	anim->FRMhdr.chunks = readU16backTo32(anim);
+
+	anim->dataIndex += 8;
+}
+
+void ReadChunkHDR(AnimFLI *anim)
+{
+	anim->CHKhdr.size = readU32(anim, true);
+	anim->nextchunk = anim->dataIndex - 4 + anim->CHKhdr.size;
+	anim->CHKhdr.type = readU16backTo32(anim);
+}
+
+static bool shouldStreamNextBlock(AnimFLI *anim)
+{
+	const int frameSize = readU32(anim, false);
+
+	return (anim->dataIndex + frameSize > STREAM_BLOCK_SIZE);
+}
+
+static void streamNextBlock(AnimFLI *anim)
+{
+	anim->dataIndex = anim->nextFrameDataIndex = 0;
+	readBytesFromFileAndStore(anim->filename, anim->fileIndex, STREAM_BLOCK_SIZE, anim->fliBuffer);
+}
 
 void FLIplayNextFrame(AnimFLI *anim)
 {
 	int i;
 
-	shouldUpdateFullFrame = false;
-
+	// Check if need to stream next block and read Frame Header
+	if (anim->streaming && shouldStreamNextBlock(anim)) {
+		streamNextBlock(anim);
+	}
 	ReadFrameHDR(anim);
-	anim->yline=0;
+	anim->nextFrameDataIndex += anim->FRMhdr.size;
 
+
+	// Main chunk decoding loop
+	anim->yline=0;
+	shouldUpdateFullFrame = false;
 	for (i=0; i<anim->FRMhdr.chunks; i++)
 	{
 		ReadChunkHDR(anim);
 		DoType(anim);
-		anim->fliIndex = anim->nextchunk;
+		anim->dataIndex = anim->nextchunk;
 	}
-	anim->fliIndex = anim->nextFrameIndex;
+	anim->fileIndex += anim->FRMhdr.size;
+	anim->dataIndex = anim->nextFrameDataIndex;
 
-	if (anim->fliIndex >= anim->FLIhdr.size-ORIG_FLI_HEADER_SIZE) {
-		anim->nextFrameIndex = anim->fliIndex = anim->after_first_frame;
+
+	// Check if at end of animation and reset
+	if (anim->fileIndex >= anim->FLIhdr.size) {
+		anim->fileIndex = ORIG_FLI_HEADER_SIZE + anim->firstFrameSize;
+		if (anim->streaming) {
+			streamNextBlock(anim);
+		} else {
+			anim->dataIndex = anim->nextFrameDataIndex = anim->firstFrameSize;
+		}
 	}
 
+	// Make a full frame copy from vga buffer to 16bpp CEL if necessary
 	if (shouldUpdateFullFrame) {
 		FLIupdateFullFrame(anim->bmp, anim->vga_pal, (uint32*)anim->vga_screen);
 	}
 }
 
-void FLIload(AnimFLI *anim)
+void FLIload(AnimFLI *anim, bool preLoad)
 {
 	OrigFLIheader origFliHdr;
+	int loadSize;
 
 	char *filename = anim->filename;
 
 	readBytesFromFileAndStore(filename, 0, sizeof(OrigFLIheader), (char*)&origFliHdr);
+	anim->fileIndex = ORIG_FLI_HEADER_SIZE;
 
 	anim->FLIhdr.size = LONG_ENDIAN_FLIP(origFliHdr.size);
 	anim->FLIhdr.width = SHORT_ENDIAN_FLIP(origFliHdr.width);
@@ -285,9 +299,14 @@ void FLIload(AnimFLI *anim)
     anim->FLIhdr.next = LONG_ENDIAN_FLIP(origFliHdr.next);
     anim->FLIhdr.frit = LONG_ENDIAN_FLIP(origFliHdr.frit);
 
-	anim->fliPreload = AllocMem(anim->FLIhdr.size, MEMTYPE_ANY);
+	loadSize = STREAM_BLOCK_SIZE;
+	if (preLoad) {
+		loadSize = anim->FLIhdr.size - ORIG_FLI_HEADER_SIZE;
+	}
+	anim->fliBuffer = AllocMem(loadSize, MEMTYPE_ANY);
+	readBytesFromFileAndStore(filename, ORIG_FLI_HEADER_SIZE, loadSize, anim->fliBuffer);
 
-	readBytesFromFileAndStore(filename, ORIG_FLI_HEADER_SIZE, anim->FLIhdr.size - ORIG_FLI_HEADER_SIZE, anim->fliPreload);
+	anim->streaming = !preLoad;
 }
 
 AnimFLI *newAnimFLI(char *filename, uint16 *bmp)
@@ -297,10 +316,8 @@ AnimFLI *newAnimFLI(char *filename, uint16 *bmp)
 	anim->filename = filename;
 	anim->bmp = bmp;
 
-	anim->fliIndex = 0;
-	anim->nextFrameIndex = 0;
+	anim->dataIndex = anim->nextFrameDataIndex = 0;
 	anim->nextchunk = 0;
-	anim->after_first_frame = 0;
 
 	anim->vga_screen = (unsigned char*)AllocMem(VGA_SIZE, MEMTYPE_ANY);
 	anim->vga_pal = (uint32*)AllocMem(4*VGA_PAL_SIZE, MEMTYPE_ANY);

@@ -93,11 +93,11 @@ void effectMeshFliInit()
 	}
 
 	fli[0] = newAnimFLI("data/fly.fli", (uint16*)screenTex[0]->bitmap);
-	FLIload(fli[0]);
+	FLIload(fli[0], true);
 	fli[1] = newAnimFLI("data/toyman01.fli", (uint16*)screenTex[1]->bitmap);
-	FLIload(fli[1]);
+	FLIload(fli[1], true);
 	fli[2] = newAnimFLI("data/apple.fli", (uint16*)screenTex[2]->bitmap);
-	FLIload(fli[2]);
+	FLIload(fli[2], true);
 }
 
 static void inputScript(int dt)
