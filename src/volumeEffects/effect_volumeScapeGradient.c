@@ -215,7 +215,7 @@ void effectVolumeScapeGradientInit()
 	viewNearStepVec = (Point2D*)AllocMem(VIS_HOR_STEPS * sizeof(Point2D), MEMTYPE_TRACKSIZE);
 
 	// load heightmap and colormap
-	readBytesFromFileAndStore("data/hmap1.bin", 0, HMAP_SIZE, hmap);
+	readBytesFromFileAndClose("data/hmap1.bin", 0, HMAP_SIZE, hmap);
 
 	setPlayerPos(3*HMAP_WIDTH/4, V_PLAYER_HEIGHT, HMAP_HEIGHT/6);
 	setVector3D(&viewAngle, 0,128,0);

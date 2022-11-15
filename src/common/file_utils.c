@@ -3,60 +3,57 @@
 #include "filestream.h"
 #include "filestreamfunctions.h"
 
-#define FILE_BUFF_SIZE 65536
 
-static char fileBuff[FILE_BUFF_SIZE];
-Stream *CDstream = NULL;
-
-void openFileStream(char *path)
+Stream *openFileStream(char *path)
 {
-	CDstream = OpenDiskStream(path, 0);
+	Stream *CDstream = OpenDiskStream(path, 0);
+
+	return CDstream;
 }
 
-void moveFilePointer(int offset)
+void moveFileStreamPointer(int offset, Stream *CDstream)
 {
 	if (CDstream) {
 		SeekDiskStream(CDstream, offset, SEEK_SET);
 	}
 }
 
-void moveFilePointerRelative(int offset)
+void moveFileStreamPointerRelative(int offset, Stream *CDstream)
 {
 	if (CDstream) {
 		SeekDiskStream(CDstream, offset, SEEK_CUR);
 	}
 }
 
-char *readSequentialBytesFromFile(int size)
+void readSequentialBytesFromFileStream(int size, void *dst, Stream *CDstream)
 {
-	if (!CDstream) return NULL;
-
-	ReadDiskStream(CDstream, fileBuff, size);
-
-	return fileBuff;
+	if (CDstream) {
+		ReadDiskStream(CDstream, dst, size);
+	}
 }
 
-char *readBytesFromFile(int offset, int size)
+void readBytesFromFileStream(int offset, int size, void *dst, Stream *CDstream)
 {
-	if (!CDstream) return NULL;
-
-	SeekDiskStream(CDstream, offset, SEEK_SET);
-	ReadDiskStream(CDstream, fileBuff, size);
-
-	return fileBuff;
+	if (CDstream) {
+		SeekDiskStream(CDstream, offset, SEEK_SET);
+		ReadDiskStream(CDstream, dst, size);
+	}
 }
 
-void closeFileStream()
+void closeFileStream(Stream *CDstream)
 {
-	if (CDstream) CloseDiskStream(CDstream);
+	if (CDstream) {
+		CloseDiskStream(CDstream);
+	}
 }
 
-void readBytesFromFileAndStore(char *path, int offset, int size, void *dst)
+void readBytesFromFileAndClose(char *path, int offset, int size, void *dst)
 {
-	CDstream = OpenDiskStream(path, 0);
+	Stream *CDstream = OpenDiskStream(path, 0);
 
-	SeekDiskStream(CDstream, offset, SEEK_SET);
-	ReadDiskStream(CDstream, dst, size);
-	
-	if (CDstream) CloseDiskStream(CDstream);
+	if (CDstream) {
+		SeekDiskStream(CDstream, offset, SEEK_SET);
+		ReadDiskStream(CDstream, dst, size);
+		CloseDiskStream(CDstream);
+	}
 }

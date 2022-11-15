@@ -7,15 +7,15 @@
 #define SHORT_ENDIAN_FLIP(v) (uint16)( (((v) >> 8) & 255) | ((v) << 8) )
 #define LONG_ENDIAN_FLIP(v) (uint32)( (((v) >> 24) & 0x000000FF) | (((v) >> 8) & 0x0000FF00) | (((v) << 8) & 0x00FF0000) | ((v) << 24) )
 
-void openFileStream(char *path);
-void closeFileStream(void);
+Stream *openFileStream(char *path);
+void closeFileStream(Stream *CDstream);
 
-void moveFilePointer(int offset);
-void moveFilePointerRelative(int offset);
+void moveFileStreamPointer(int offset, Stream *CDstream);
+void moveFileStreamPointerRelative(int offset, Stream *CDstream);
 
-char *readBytesFromFile(int offset, int size);
-char *readSequentialBytesFromFile(int size);
+void readBytesFromFileStream(int offset, int size, void *dst, Stream *CDstream);
+void readSequentialBytesFromFileStream(int size, void *dst, Stream *CDstream);
 
-void readBytesFromFileAndStore(char *path, int offset, int size, void *dst);
+void readBytesFromFileAndClose(char *path, int offset, int size, void *dst);
 
 #endif

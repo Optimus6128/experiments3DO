@@ -221,17 +221,19 @@ void ReadChunkHDR(AnimFLI *anim)
 	anim->CHKhdr.type = readU16backTo32(anim);
 }
 
-static bool shouldStreamNextBlock(AnimFLI *anim)
+static void streamNextBlock(AnimFLI *anim, int size)
+{
+	anim->dataIndex = anim->nextFrameDataIndex = 0;
+	readBytesFromFileStream(anim->fileIndex, size, anim->fliBuffer, anim->fileStream);
+}
+
+static void streamNextBlockIfNeeded(AnimFLI *anim)
 {
 	const int frameSize = readU32(anim, false);
 
-	return (anim->dataIndex + frameSize > STREAM_BLOCK_SIZE);
-}
-
-static void streamNextBlock(AnimFLI *anim)
-{
-	anim->dataIndex = anim->nextFrameDataIndex = 0;
-	readBytesFromFileAndStore(anim->filename, anim->fileIndex, STREAM_BLOCK_SIZE, anim->fliBuffer);
+	if (anim->dataIndex + frameSize > STREAM_BLOCK_SIZE) {
+		streamNextBlock(anim, STREAM_BLOCK_SIZE);
+	}
 }
 
 void FLIplayNextFrame(AnimFLI *anim)
@@ -239,9 +241,11 @@ void FLIplayNextFrame(AnimFLI *anim)
 	int i;
 
 	// Check if need to stream next block and read Frame Header
-	if (anim->streaming && shouldStreamNextBlock(anim)) {
-		streamNextBlock(anim);
-	}
+	//streamNextBlockIfNeeded(anim);
+
+	// Or alternative test, stream each frame individually
+	if (anim->streaming) streamNextBlock(anim, readU32(anim, false) + 4);
+
 	ReadFrameHDR(anim);
 	anim->nextFrameDataIndex += anim->FRMhdr.size;
 
@@ -263,7 +267,7 @@ void FLIplayNextFrame(AnimFLI *anim)
 	if (anim->fileIndex >= anim->FLIhdr.size) {
 		anim->fileIndex = ORIG_FLI_HEADER_SIZE + anim->firstFrameSize;
 		if (anim->streaming) {
-			streamNextBlock(anim);
+			streamNextBlock(anim, STREAM_BLOCK_SIZE);
 		} else {
 			anim->dataIndex = anim->nextFrameDataIndex = anim->firstFrameSize;
 		}
@@ -278,11 +282,11 @@ void FLIplayNextFrame(AnimFLI *anim)
 void FLIload(AnimFLI *anim, bool preLoad)
 {
 	OrigFLIheader origFliHdr;
-	int loadSize;
+	int loadSize = STREAM_BLOCK_SIZE;
 
-	char *filename = anim->filename;
+	anim->fileStream = openFileStream(anim->filename);
 
-	readBytesFromFileAndStore(filename, 0, sizeof(OrigFLIheader), (char*)&origFliHdr);
+	readBytesFromFileStream(0, sizeof(OrigFLIheader), (char*)&origFliHdr, anim->fileStream);
 	anim->fileIndex = ORIG_FLI_HEADER_SIZE;
 
 	anim->FLIhdr.size = LONG_ENDIAN_FLIP(origFliHdr.size);
@@ -299,14 +303,16 @@ void FLIload(AnimFLI *anim, bool preLoad)
     anim->FLIhdr.next = LONG_ENDIAN_FLIP(origFliHdr.next);
     anim->FLIhdr.frit = LONG_ENDIAN_FLIP(origFliHdr.frit);
 
-	loadSize = STREAM_BLOCK_SIZE;
 	if (preLoad) {
 		loadSize = anim->FLIhdr.size - ORIG_FLI_HEADER_SIZE;
 	}
 	anim->fliBuffer = AllocMem(loadSize, MEMTYPE_ANY);
-	readBytesFromFileAndStore(filename, ORIG_FLI_HEADER_SIZE, loadSize, anim->fliBuffer);
+	readBytesFromFileStream(ORIG_FLI_HEADER_SIZE, loadSize, anim->fliBuffer, anim->fileStream);
 
 	anim->streaming = !preLoad;
+
+	//again crashes, wtf
+	if (preLoad) closeFileStream(anim->fileStream);
 }
 
 AnimFLI *newAnimFLI(char *filename, uint16 *bmp)

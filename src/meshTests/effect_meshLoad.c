@@ -89,9 +89,6 @@ void effectMeshLoadInit()
 	addCameraToWorld(viewer->camera, myWorld);
 	addLightToWorld(light, myWorld);
 	addObjectToWorld(loadedObj, 1, true, myWorld);
-
-	// Commented out this in loadMesh as it broke things (unknown API/compiler bugs?) but here it's ok although maybe not necessary
-	closeFileStream();
 }
 
 static void inputScript(int dt)

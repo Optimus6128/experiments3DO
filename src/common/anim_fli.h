@@ -99,6 +99,7 @@ typedef struct AnimFLI
 	FRAMEheader FRMhdr;
 	CHUNKheader CHKhdr;
 
+	Stream *fileStream;
 } AnimFLI;
 
 AnimFLI *newAnimFLI(char *filename, uint16 *bmp);

@@ -92,12 +92,26 @@ void effectMeshFliInit()
 		addObjectToWorld(screenObj[i], 1, true, myWorld);
 	}
 
-	fli[0] = newAnimFLI("data/fly.fli", (uint16*)screenTex[0]->bitmap);
+	/*fli[0] = newAnimFLI("data/fly.fli", (uint16*)screenTex[0]->bitmap);
 	FLIload(fli[0], true);
 	fli[1] = newAnimFLI("data/toyman01.fli", (uint16*)screenTex[1]->bitmap);
 	FLIload(fli[1], true);
 	fli[2] = newAnimFLI("data/apple.fli", (uint16*)screenTex[2]->bitmap);
-	FLIload(fli[2], true);
+	FLIload(fli[2], true);*/
+
+	/*fli[0] = newAnimFLI("data/robotrk.fli", (uint16*)screenTex[0]->bitmap);
+	FLIload(fli[0], true);
+	fli[1] = newAnimFLI("data/toyman01.fli", (uint16*)screenTex[1]->bitmap);
+	FLIload(fli[1], false);
+	fli[2] = newAnimFLI("data/apple.fli", (uint16*)screenTex[2]->bitmap);
+	FLIload(fli[2], true);*/
+
+	fli[0] = newAnimFLI("data/robotrk.fli", (uint16*)screenTex[0]->bitmap);
+	FLIload(fli[0], false);
+	fli[1] = newAnimFLI("data/colin.fli", (uint16*)screenTex[1]->bitmap);
+	FLIload(fli[1], false);
+	fli[2] = newAnimFLI("data/catnap.fli", (uint16*)screenTex[2]->bitmap);
+	FLIload(fli[2], false);
 }
 
 static void inputScript(int dt)

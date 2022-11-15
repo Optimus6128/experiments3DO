@@ -208,8 +208,8 @@ void effectVolumeScapeInit()
 	viewFarPoints = (Point2D*)AllocMem(VIS_HOR_STEPS * sizeof(Point2D), MEMTYPE_ANY);
 
 	// load heightmap and colormap
-	readBytesFromFileAndStore("data/hmap1.bin", 0, HMAP_SIZE, hmap);
-	readBytesFromFileAndStore("data/cmap1.bin", 0, cmapSize, cmap);
+	readBytesFromFileAndClose("data/hmap1.bin", 0, HMAP_SIZE, hmap);
+	readBytesFromFileAndClose("data/cmap1.bin", 0, cmapSize, cmap);
 
 	setVector3D(&viewPos, 3*HMAP_WIDTH/4, V_PLAYER_HEIGHT, HMAP_HEIGHT/6);
 	setVector3D(&viewAngle, 0,128,0);

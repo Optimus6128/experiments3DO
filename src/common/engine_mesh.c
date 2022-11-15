@@ -265,12 +265,13 @@ Mesh* initMesh(int verticesNum, int polysNum, int indicesNum, int linesNum, int 
 	return ms;
 }
 
+static char tempBuffSrc[65536];	// will alloc later, changed things in file utils and so I forgot about this. Afraid to do AllocMem inside now because compiler issues might emerge again.
+
 Mesh *loadMesh(char *path, int loadOptions, int meshOptions, Texture *tex)
 {
 	int i;
 	int verticesNum, polysNum, linesNum, tempBuffSize;
 
-	char *tempBuffSrc;
 	unsigned char *tempBuff8;
 	uint16 *tempBuff16;
 
@@ -279,10 +280,9 @@ Mesh *loadMesh(char *path, int loadOptions, int meshOptions, Texture *tex)
 	bool loadLines = !(loadOptions & MESH_LOAD_SKIP_LINES);
 	bool flipPolyOrder = loadOptions & MESH_LOAD_FLIP_POLYORDER;
 
+	Stream *CDstream = openFileStream(path); 
 
-	openFileStream(path); 
-
-	tempBuffSrc = readSequentialBytesFromFile(6);
+	readSequentialBytesFromFileStream(6, tempBuffSrc, CDstream);
 	tempBuff16 = (uint16*)tempBuffSrc;
 
 	verticesNum = SHORT_ENDIAN_FLIP(tempBuff16[0]);
@@ -294,7 +294,7 @@ Mesh *loadMesh(char *path, int loadOptions, int meshOptions, Texture *tex)
 	ms = initMesh(verticesNum, polysNum, 3*polysNum, linesNum * (int)loadLines, meshOptions);
 	ms->tex = tex;
 
-	tempBuffSrc = readSequentialBytesFromFile(tempBuffSize);
+	readSequentialBytesFromFileStream(tempBuffSize, tempBuffSrc, CDstream);
 	tempBuff8 = (unsigned char*)tempBuffSrc;
 	for (i=0; i<verticesNum; ++i) {
 		ms->vertex[i].x = 127 - *tempBuff8++;
@@ -304,17 +304,17 @@ Mesh *loadMesh(char *path, int loadOptions, int meshOptions, Texture *tex)
 
 	tempBuffSize = 2*linesNum * sizeof(uint16);
 	if (loadLines) {
-		tempBuffSrc = readSequentialBytesFromFile(tempBuffSize);
+		readSequentialBytesFromFileStream(tempBuffSize, tempBuffSrc, CDstream);
 		tempBuff16 = (uint16*)tempBuffSrc;
 		for (i=0; i<2*linesNum; ++i) {
 			ms->lineIndex[i] = SHORT_ENDIAN_FLIP(tempBuff16[i]);
 		}
 	} else {
-		moveFilePointerRelative(tempBuffSize);
+		moveFileStreamPointerRelative(tempBuffSize, CDstream);
 	}
 
 	tempBuffSize = 3*polysNum * sizeof(uint16);
-	tempBuffSrc = readSequentialBytesFromFile(tempBuffSize);
+	readSequentialBytesFromFileStream(tempBuffSize, tempBuffSrc, CDstream);
 	tempBuff16 = (uint16*)tempBuffSrc;
 	for (i=0; i<3*polysNum; ++i) {
 		ms->index[i] = SHORT_ENDIAN_FLIP(tempBuff16[i]);
@@ -327,7 +327,7 @@ Mesh *loadMesh(char *path, int loadOptions, int meshOptions, Texture *tex)
 	prepareCelList(ms);
 
 	// Commenting out this will make things fail for uknown reasons
-	//closeFileStream();
+	//closeFileStream(CDstream);
 	
 	return ms;
 }
