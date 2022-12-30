@@ -3,17 +3,18 @@
 
 #include "effect_packedSprites.h"
 #include "effect_packedRain.h"
+#include "effect_packedRadial.h"
 
-enum { EFFECT_PACKED_SPRITES, EFFECT_PACKED_RAIN, EFFECTS_NUM };
+enum { EFFECT_PACKED_SPRITES, EFFECT_PACKED_RAIN, EFFECT_PACKED_RADIAL, EFFECTS_NUM };
 
-static void(*effectInitFunc[EFFECTS_NUM])() = { effectPackedSpritesInit, effectPackedRainInit };
-static void(*effectRunFunc[EFFECTS_NUM])() = { effectPackedSpritesRun, effectPackedRainRun };
+static void(*effectInitFunc[EFFECTS_NUM])() = { effectPackedSpritesInit, effectPackedRainInit, effectPackedRadialInit };
+static void(*effectRunFunc[EFFECTS_NUM])() = { effectPackedSpritesRun, effectPackedRainRun, effectPackedRadialRun };
 
-static char *effectName[EFFECTS_NUM] = { "packed sprites", "packed rain" };
+static char *effectName[EFFECTS_NUM] = { "packed sprites", "packed rain", "packed radial" };
 
 int main()
 {
-	const int effectIndex = runEffectSelector(effectName, EFFECTS_NUM);
+	const int effectIndex = EFFECT_PACKED_RADIAL;//runEffectSelector(effectName, EFFECTS_NUM);
 
 	coreInit(effectInitFunc[effectIndex], CORE_DEFAULT);
 	coreRun(effectRunFunc[effectIndex]);
