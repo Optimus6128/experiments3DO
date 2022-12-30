@@ -11,12 +11,16 @@
 #include "cel_helpers.h"
 #include "cel_packer.h"
 
+enum { EFFECT_RADIAL_TEX, EFFECT_ANGLE_TEX, EFFECT_RADIAL_COL, EFFECT_ANGLE_COL };
+
+static int effectType = EFFECT_ANGLE_TEX;
 
 static Sprite *draculSpr;
 static Sprite *unpackedSpr;
 static unsigned char *unpackedBmp;
 
-static Sprite **packedSpr;
+static Sprite **packedSprRad;
+static Sprite **packedSprAng;
 
 static unsigned char *angle;
 static unsigned char *radius;
@@ -42,14 +46,42 @@ static void initRadialSpriteBmp(int r)
 	}while(--count > 0);
 }
 
+static void initAngleSpriteBmp(int a)
+{
+	int count = draculSpr->width * draculSpr->height;
+
+	unsigned char *ang = angle;
+	unsigned char *src = (unsigned char*)draculSpr->data;
+	unsigned char *dst = unpackedBmp;
+
+	do {
+		unsigned char aa = *ang++;
+		if (aa==a || aa==a+1) {
+			*dst++ = *src;
+		} else {
+			*dst++ = 0;
+		}
+		++src;
+	}while(--count > 0);
+}
+
 static void initRadialPackedSprites()
 {
 	int i;
-
 	for (i=0; i<maxRadius; ++i) {
 		initRadialSpriteBmp(i);
-		packedSpr[i] = newPackedSprite(unpackedSpr->width, unpackedSpr->height, 8, CEL_TYPE_UNCODED, NULL, unpackedBmp, NULL, 0);
-		if (i > 0) linkCel(packedSpr[i-1]->cel, packedSpr[i]->cel);
+		packedSprRad[i] = newPackedSprite(unpackedSpr->width, unpackedSpr->height, 8, CEL_TYPE_UNCODED, NULL, unpackedBmp, NULL, 0);
+		if (i > 0) linkCel(packedSprRad[i-1]->cel, packedSprRad[i]->cel);
+	}
+}
+
+static void initAnglePackedSprites()
+{
+	int i;
+	for (i=0; i<256; ++i) {
+		initAngleSpriteBmp(i);
+		packedSprAng[i] = newPackedSprite(unpackedSpr->width, unpackedSpr->height, 8, CEL_TYPE_UNCODED, NULL, unpackedBmp, NULL, 0);
+		if (i > 0) linkCel(packedSprAng[i-1]->cel, packedSprAng[i]->cel);
 	}
 }
 
@@ -63,7 +95,8 @@ static void initRadialSprites()
 	maxRadius = width / 2;
 	if (height < width) maxRadius = height / 2;
 
-	packedSpr = (Sprite**)AllocMem(maxRadius * sizeof(Sprite*), MEMTYPE_ANY);
+	packedSprRad = (Sprite**)AllocMem(maxRadius * sizeof(Sprite*), MEMTYPE_ANY);
+	packedSprAng = (Sprite**)AllocMem(256 * sizeof(Sprite*), MEMTYPE_ANY);
 
 	radius = (unsigned char*)AllocMem(width * height, MEMTYPE_ANY);
 	angle = (unsigned char*)AllocMem(width * height, MEMTYPE_ANY);
@@ -84,15 +117,22 @@ static void initRadialSprites()
 	}
 }
 
-static void animateRadial()
+static void animateRadial(int t)
 {
 	int i;
-	const int t = getTicks();
-
 	for (i=0; i<maxRadius; ++i) {
 		const int a = SinF16((i<<16) + (t<<12)) >> 2;
 		const int r = 512;//448 + (SinF16((i<<20) + (t<<14)) >> 12);
-		setSpritePositionZoomRotate(packedSpr[i], SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, r, a);
+		setSpritePositionZoomRotate(packedSprRad[i], SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, r, a);
+	}
+}
+
+static void animateAngle(int t)
+{
+	int i;
+	for (i=0; i<256; ++i) {
+		const int s = 384 + (SinF16((i<<19) + (t<<14)) >> 11);
+		setSpritePositionZoom(packedSprAng[i], SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, s);
 	}
 }
 
@@ -109,13 +149,38 @@ void effectPackedRadialInit()
 
 	initRadialSprites();
 	initRadialPackedSprites();
+	initAnglePackedSprites();
 
 	deinitCelPackerEngine();
 }
 
 void effectPackedRadialRun()
 {
-	animateRadial();
+	const int t = getTicks();
 
-	drawSprite(packedSpr[0]);
+	switch(effectType) {
+		case EFFECT_RADIAL_TEX:
+		{
+			animateRadial(t);
+			drawSprite(packedSprRad[0]);
+		}
+		break;
+
+		case EFFECT_ANGLE_TEX:
+		{
+			animateAngle(t);
+			drawSprite(packedSprAng[0]);
+		}
+		break;
+
+		case EFFECT_RADIAL_COL:
+		{
+		}
+		break;
+
+		case EFFECT_ANGLE_COL:
+		{
+		}
+		break;
+	}
 }
