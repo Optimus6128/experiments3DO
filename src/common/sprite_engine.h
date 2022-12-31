@@ -28,7 +28,7 @@ Sprite *newFeedbackSprite(int posX, int posY, int width, int height, int bufferI
 Sprite *loadSpriteCel(char *path);
 
 void setPalette(Sprite *spr, uint16* pal);
-void setSpriteAlpha(Sprite *spr, bool enable);
+void setSpriteAlpha(Sprite *spr, bool enable, bool average);
 void setSpriteDottedDisplay(Sprite *spr, bool enable);
 
 void setSpritePosition(Sprite *spr, int px, int py);

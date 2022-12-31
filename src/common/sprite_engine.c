@@ -73,12 +73,17 @@ void setPalette(Sprite *spr, uint16* pal)
 	spr->cel->ccb_PLUTPtr = pal;
 }
 
-void setSpriteAlpha(Sprite *spr, bool enable)
+void setSpriteAlpha(Sprite *spr, bool enable, bool average)
 {
-	if (enable)
-		spr->cel->ccb_PIXC = 0x1F801F80;
-	else
+	if (enable) {
+		if (average) {
+			spr->cel->ccb_PIXC = TRANSLUCENT_CEL;
+		} else {
+			spr->cel->ccb_PIXC = 0x1F801F80;
+		}
+	} else {
 		spr->cel->ccb_PIXC = SOLID_CEL;
+	}
 }
 
 void setSpriteDottedDisplay(Sprite *spr, bool enable)
