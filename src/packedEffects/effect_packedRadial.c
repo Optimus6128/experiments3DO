@@ -35,6 +35,43 @@ static int maxAngle = FULL_ANGLE / ANGLE_SKIP;
 
 static Point2D **posRad;
 static Point2D **posAng;
+static int *occurrencesRad;
+static int *occurrencesAng;
+
+
+static void initUnpackedSpriteBmp(int a, int b, bool radial)
+{
+	int i;
+
+	int *occur;
+	Point2D **pos;
+
+	unsigned char *src = (unsigned char*)draculSpr->data;
+	unsigned char *dst = unpackedBmp;
+
+	const int sprWidth = draculSpr->width;
+	const int sprHeight = draculSpr->height;
+
+	memset(unpackedBmp, 0, sprWidth * sprHeight);
+
+	if (radial) {
+		occur = occurrencesRad;
+		pos = posRad;
+	} else {
+		occur = occurrencesAng;
+		pos = posAng;
+	}
+
+	for (i=a; i<=b; ++i) {
+		int count = occur[i];
+		Point2D *p = pos[i];
+		do {
+			const int index = p->y * sprWidth + p->x;
+			dst[index] = src[index];
+			++p;
+		} while(--count > 0);
+	}
+}
 
 static void initRadialSpriteBmp(int r)
 {
@@ -78,7 +115,8 @@ static void initRadialPackedSprites()
 {
 	int i;
 	for (i=0; i<maxRadius; ++i) {
-		initRadialSpriteBmp(i);
+		//initRadialSpriteBmp(i);
+		initUnpackedSpriteBmp(i-1, i+1, true);
 		packedSprRad[i] = newPackedSprite(unpackedSpr->width, unpackedSpr->height, 8, CEL_TYPE_UNCODED, NULL, unpackedBmp, NULL, 0);
 		//setSpriteAlpha(packedSprRad[i], true, true);
 		if (i > 0) linkCel(packedSprRad[i-1]->cel, packedSprRad[i]->cel);
@@ -89,7 +127,8 @@ static void initAnglePackedSprites()
 {
 	int i,j=0;
 	for (i=0; i<FULL_ANGLE; i+=ANGLE_SKIP) {
-		initAngleSpriteBmp(i, i+ANGLE_SKIP);
+		//initAngleSpriteBmp(i, i+ANGLE_SKIP);
+		initUnpackedSpriteBmp(i-1, i+ANGLE_SKIP+1, false);
 		packedSprAng[j] = newPackedSprite(unpackedSpr->width, unpackedSpr->height, 8, CEL_TYPE_UNCODED, NULL, unpackedBmp, NULL, 0);
 		//setSpriteAlpha(packedSprAng[i], true, true);
 		if (j > 0) linkCel(packedSprAng[j-1]->cel, packedSprAng[j]->cel);
@@ -105,8 +144,6 @@ static void initRadialSprites()
 	const int height = draculSpr->height;
 	const int size = width * height;
 
-	int *occurrencesRad;
-	int *occurrencesAng;
 	int *radIndex;
 	int *angIndex;
 
@@ -135,13 +172,15 @@ static void initRadialSprites()
 		for (x=0; x<width; ++x) {
 			const int xc = x - width / 2;
 
-			const int r = isqrt(xc * xc + yc * yc);
+			const int r = isqrt(xc * xc + yc * yc);	// it returns negative numbers??? That's a bug!
+			//const int r = (int)sqrt((double)(xc * xc + yc * yc));
 			const unsigned char a = (unsigned char)(Atan2F16(xc,yc) >> 16);
 
-			if (r < maxRadius) {
-				++occurrencesRad[r];
+			if (r > 0 && r < maxRadius) {
+			//if (r < maxRadius) {
+				occurrencesRad[r]++;
+				occurrencesAng[a]++;
 			}
-			++occurrencesAng[a];
 
 			angle[i] = a;
 			radius[i] = r;
@@ -163,8 +202,8 @@ static void initRadialSprites()
 
 	for (y=0; y<height; ++y) {
 		for (x=0; x<width; ++x) {
-			unsigned char r = radius[i];
-			unsigned char a = angle[i];
+			const unsigned char r = radius[i];
+			const unsigned char a = angle[i];
 
 			if (r < maxRadius) {
 				Point2D *pr = posRad[r];
@@ -176,16 +215,15 @@ static void initRadialSprites()
 				pr[ri].y = y;
 				pa[ai].x = x;
 				pa[ai].y = y;
-				++radIndex[r];
-				++angIndex[a];
+				radIndex[r]++;
+				angIndex[a]++;
 			}
+			++i;
 		}
 	}
 
-	FreeMem(occurrencesRad, maxRadius * sizeof(int));
-	FreeMem(occurrencesAng, maxRadius * sizeof(int));
 	FreeMem(radIndex, maxRadius * sizeof(int));
-	FreeMem(angIndex, maxRadius * sizeof(int));
+	FreeMem(angIndex, maxAngle * sizeof(int));
 }
 
 static void animateRadial(int t)
@@ -237,6 +275,9 @@ void effectPackedRadialInit()
 	initAnglePackedSprites();
 
 	deinitCelPackerEngine();
+
+	FreeMem(occurrencesRad, maxRadius * sizeof(int));
+	FreeMem(occurrencesAng, maxAngle * sizeof(int));
 }
 
 void effectPackedRadialRun()
