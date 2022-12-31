@@ -172,12 +172,10 @@ static void initRadialSprites()
 		for (x=0; x<width; ++x) {
 			const int xc = x - width / 2;
 
-			const int r = isqrt(xc * xc + yc * yc);	// it returns negative numbers??? That's a bug!
-			//const int r = (int)sqrt((double)(xc * xc + yc * yc));
+			const int r = isqrt(xc * xc + yc * yc);
 			const unsigned char a = (unsigned char)(Atan2F16(xc,yc) >> 16);
 
 			if (r > 0 && r < maxRadius) {
-			//if (r < maxRadius) {
 				occurrencesRad[r]++;
 				occurrencesAng[a]++;
 			}
