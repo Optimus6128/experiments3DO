@@ -11,21 +11,22 @@
 #include "cel_helpers.h"
 #include "cel_packer.h"
 
-//48
 
 enum { EFFECT_RADIAL_TEX, EFFECT_ANGLE_TEX, EFFECT_RADIAL_COL, EFFECT_ANGLE_COL, EFFECT_TOTAL_NUM };
 
 #define FULL_ANGLE 256
 #define ANGLE_SKIP 1
 
-static int effectType = EFFECT_RADIAL_TEX;
+static int effectType = EFFECT_ANGLE_TEX;
 
 static Sprite *draculSpr;
 static Sprite *unpackedSpr;
 static unsigned char *unpackedBmp;
 
-static Sprite **packedSprRad;
-static Sprite **packedSprAng;
+static Sprite **packedSprRadTex;
+static Sprite **packedSprAngTex;
+static Sprite **packedSprRadTex;
+static Sprite **packedSprAngTex;
 
 static unsigned char *angle;
 static unsigned char *radius;
@@ -73,7 +74,7 @@ static void initUnpackedSpriteBmp(int a, int b, bool radial)
 	}
 }
 
-static void initRadialSpriteBmp(int r)
+/*static void initRadialSpriteBmp(int r)
 {
 	int count = draculSpr->width * draculSpr->height;
 
@@ -90,9 +91,9 @@ static void initRadialSpriteBmp(int r)
 		}
 		++src;
 	}while(--count > 0);
-}
+}*/
 
-static void initAngleSpriteBmp(int a, int b)
+/*static void initAngleSpriteBmp(int a, int b)
 {
 	int count = draculSpr->width * draculSpr->height;
 
@@ -109,35 +110,43 @@ static void initAngleSpriteBmp(int a, int b)
 		}
 		++src;
 	}while(--count > 0);
-}
+}*/
 
-static void initRadialPackedSprites()
+static void initRadialPackedSpritesTex()
 {
 	int i;
 	for (i=0; i<maxRadius; ++i) {
 		//initRadialSpriteBmp(i);
 		initUnpackedSpriteBmp(i-1, i+1, true);
-		packedSprRad[i] = newPackedSprite(unpackedSpr->width, unpackedSpr->height, 8, CEL_TYPE_UNCODED, NULL, unpackedBmp, NULL, 0);
-		//setSpriteAlpha(packedSprRad[i], true, true);
-		if (i > 0) linkCel(packedSprRad[i-1]->cel, packedSprRad[i]->cel);
+		packedSprRadTex[i] = newPackedSprite(unpackedSpr->width, unpackedSpr->height, 8, CEL_TYPE_UNCODED, NULL, unpackedBmp, NULL, 0);
+		//setSpriteAlpha(packedSprRadTex[i], true, true);
+		if (i > 0) linkCel(packedSprRadTex[i-1]->cel, packedSprRadTex[i]->cel);
 		
 		updateLoadingBar(0, i, maxRadius-1);
 	}
 }
 
-static void initAnglePackedSprites()
+static void initAnglePackedSpritesTex()
 {
 	int i,j=0;
 	for (i=0; i<FULL_ANGLE; i+=ANGLE_SKIP) {
 		//initAngleSpriteBmp(i, i+ANGLE_SKIP);
 		initUnpackedSpriteBmp(i-1, i+ANGLE_SKIP+1, false);
-		packedSprAng[j] = newPackedSprite(unpackedSpr->width, unpackedSpr->height, 8, CEL_TYPE_UNCODED, NULL, unpackedBmp, NULL, 0);
-		//setSpriteAlpha(packedSprAng[i], true, true);
-		if (j > 0) linkCel(packedSprAng[j-1]->cel, packedSprAng[j]->cel);
+		packedSprAngTex[j] = newPackedSprite(unpackedSpr->width, unpackedSpr->height, 8, CEL_TYPE_UNCODED, NULL, unpackedBmp, NULL, 0);
+		//setSpriteAlpha(packedSprAngTex[i], true, true);
+		if (j > 0) linkCel(packedSprAngTex[j-1]->cel, packedSprAngTex[j]->cel);
 
 		updateLoadingBar(1, j, maxAngle-1);
 		++j;
 	}
+}
+
+static void initRadialPackedSpritesCol()
+{
+}
+
+static void initAnglePackedSpritesCol()
+{
 }
 
 static void initRadialSprites()
@@ -154,8 +163,8 @@ static void initRadialSprites()
 	maxRadius = width / 2;
 	if (height < width) maxRadius = height / 2;
 
-	packedSprRad = (Sprite**)AllocMem(maxRadius * sizeof(Sprite*), MEMTYPE_ANY);
-	packedSprAng = (Sprite**)AllocMem(maxAngle* sizeof(Sprite*), MEMTYPE_ANY);
+	packedSprRadTex = (Sprite**)AllocMem(maxRadius * sizeof(Sprite*), MEMTYPE_ANY);
+	packedSprAngTex = (Sprite**)AllocMem(maxAngle* sizeof(Sprite*), MEMTYPE_ANY);
 
 	occurrencesRad = (int*)AllocMem(maxRadius * sizeof(int), MEMTYPE_ANY);
 	occurrencesAng = (int*)AllocMem(maxAngle * sizeof(int), MEMTYPE_ANY);
@@ -234,7 +243,7 @@ static void animateRadial(int t)
 	for (i=0; i<maxRadius; ++i) {
 		const int a = SinF16((i<<16) + (t<<12)) >> 2;
 		const int r = 512;//448 + (SinF16((i<<20) + (t<<14)) >> 12);
-		setSpritePositionZoomRotate(packedSprRad[i], SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, r, a);
+		setSpritePositionZoomRotate(packedSprRadTex[i], SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, r, a);
 	}
 }
 
@@ -243,19 +252,23 @@ static void animateAngle(int t)
 	int i,j=0;
 	for (i=0; i<FULL_ANGLE; i+=ANGLE_SKIP) {
 		const int s = 384 + (SinF16(((ANGLE_SKIP*j)<<19) + (t<<14)) >> 11);
-		setSpritePositionZoom(packedSprAng[j], SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, s);
+		setSpritePositionZoom(packedSprAngTex[j], SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, s);
 		++j;
 	}
 }
 
 static void inputScript()
 {
-	if (isJoyButtonPressedOnce(JOY_BUTTON_A)) {
+	// For now, I will test effects separately, so no init/switch between all of them in one compile.
+	// Because of consideration of not being able to fit all packed CELs for four effects in memory and very long precalc time.
+	// So I disable the input script and only init one of four each compile.
+
+	/*if (isJoyButtonPressedOnce(JOY_BUTTON_A)) {
 		effectType++;
 		if (effectType == EFFECT_TOTAL_NUM) {
 			effectType = 0;
 		}
-	}
+	}*/
 }
 
 void effectPackedRadialInit()
@@ -273,8 +286,24 @@ void effectPackedRadialInit()
 	unpackedSpr = newSprite(draculSpr->width, draculSpr->height, 8, CEL_TYPE_UNCODED, NULL, unpackedBmp);
 
 	initRadialSprites();
-	initRadialPackedSprites();
-	initAnglePackedSprites();
+
+	switch(effectType) {
+		case EFFECT_RADIAL_TEX:
+			initRadialPackedSpritesTex();
+		break;
+
+		case EFFECT_ANGLE_TEX:
+			initAnglePackedSpritesTex();
+		break;
+
+		case EFFECT_RADIAL_COL:
+			initRadialPackedSpritesCol();
+		break;
+
+		case EFFECT_ANGLE_COL:
+			initAnglePackedSpritesCol();
+		break;
+	}
 
 	deinitCelPackerEngine();
 
@@ -290,27 +319,19 @@ void effectPackedRadialRun()
 
 	switch(effectType) {
 		case EFFECT_RADIAL_TEX:
-		{
 			animateRadial(t);
-			drawSprite(packedSprRad[0]);
-		}
+			drawSprite(packedSprRadTex[0]);
 		break;
 
 		case EFFECT_ANGLE_TEX:
-		{
 			animateAngle(t);
-			drawSprite(packedSprAng[0]);
-		}
+			drawSprite(packedSprAngTex[0]);
 		break;
 
 		case EFFECT_RADIAL_COL:
-		{
-		}
 		break;
 
 		case EFFECT_ANGLE_COL:
-		{
-		}
 		break;
 	}
 }
