@@ -111,4 +111,6 @@ void setShowBuffers(bool on);
 void vramCpy(void* bufferSrc, void* bufferDst, int length);
 void vramSet(uint32 c, void* bufferDst, int length);
 
+void updateLoadingBar(int bar, int status, int max);
+
 #endif

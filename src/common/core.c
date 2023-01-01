@@ -14,6 +14,9 @@ static bool showBuffers = false;
 static bool defaultInput = false;
 static bool menu = false;
 
+#define MAX_LOADING_BARS 8
+static CCB *loadingBarCel[MAX_LOADING_BARS] = { NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL };
+
 static void initSystem()
 {
 	static bool systemIsInit = false;
@@ -43,6 +46,49 @@ static void initGraphicsOptions(uint32 flags)
 	setClearFrame(!(flags & CORE_NO_CLEAR_FRAME));
 }
 
+static void renderLoadingBars()
+{
+	int i;
+
+	for (i=0; i<MAX_LOADING_BARS; ++i) {
+		if (loadingBarCel[i]) {
+			drawCels(loadingBarCel[i]);
+		}
+	}
+
+	displayScreen();
+}
+
+static void freeLoadingBars()
+{
+	int i;
+	for (i=0; i<MAX_LOADING_BARS; ++i) {
+		if (loadingBarCel[i]) {
+			DeleteCel(loadingBarCel[i]);
+		}
+	}
+}
+
+void updateLoadingBar(int bar, int status, int max)
+{
+	int length;
+
+	if (bar < 0 || bar >= MAX_LOADING_BARS || status<=0) return;
+
+	if (max < status) max = status;
+	length = (status * SCREEN_WIDTH) / max;
+
+	if (!loadingBarCel[bar]) {
+		loadingBarCel[bar] = CreateBackdropCel(SCREEN_WIDTH, 8, 0x7FFF, 100);
+	}
+
+	loadingBarCel[bar]->ccb_XPos = 0;
+	loadingBarCel[bar]->ccb_YPos = (2 + bar * 10) << 16;
+	loadingBarCel[bar]->ccb_HDX = length << 20;
+
+	renderLoadingBars();
+}
+
 void coreInit(void(*initFunc)(), uint32 flags)
 {
 	bool mustInitEngine3D = (flags & CORE_INIT_3D_ENGINE) != 0;
@@ -58,13 +104,17 @@ void coreInit(void(*initFunc)(), uint32 flags)
 		initEngine(mustInitEngine3D_soft);
 	}
 
-	if (initFunc) initFunc();
+	if (initFunc) {
+		initFunc();
+	}
 
 	showFps = (flags & CORE_SHOW_FPS);
 	showMem = (flags & CORE_SHOW_MEM);
 	showBuffers = (flags & CORE_SHOW_BUFFERS);
 	
 	defaultInput = (flags & CORE_DEFAULT_INPUT);
+
+	freeLoadingBars();
 }
 
 static void defaultInputScript()

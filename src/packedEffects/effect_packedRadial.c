@@ -120,6 +120,8 @@ static void initRadialPackedSprites()
 		packedSprRad[i] = newPackedSprite(unpackedSpr->width, unpackedSpr->height, 8, CEL_TYPE_UNCODED, NULL, unpackedBmp, NULL, 0);
 		//setSpriteAlpha(packedSprRad[i], true, true);
 		if (i > 0) linkCel(packedSprRad[i-1]->cel, packedSprRad[i]->cel);
+		
+		updateLoadingBar(0, i, maxRadius-1);
 	}
 }
 
@@ -132,6 +134,8 @@ static void initAnglePackedSprites()
 		packedSprAng[j] = newPackedSprite(unpackedSpr->width, unpackedSpr->height, 8, CEL_TYPE_UNCODED, NULL, unpackedBmp, NULL, 0);
 		//setSpriteAlpha(packedSprAng[i], true, true);
 		if (j > 0) linkCel(packedSprAng[j-1]->cel, packedSprAng[j]->cel);
+
+		updateLoadingBar(1, j, maxAngle-1);
 		++j;
 	}
 }
