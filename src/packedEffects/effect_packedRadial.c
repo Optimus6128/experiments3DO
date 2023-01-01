@@ -25,8 +25,8 @@ static unsigned char *unpackedBmp;
 
 static Sprite **packedSprRadTex;
 static Sprite **packedSprAngTex;
-static Sprite **packedSprRadTex;
-static Sprite **packedSprAngTex;
+static Sprite **packedSprRadCol;
+static Sprite **packedSprAngCol;
 
 static unsigned char *angle;
 static unsigned char *radius;
