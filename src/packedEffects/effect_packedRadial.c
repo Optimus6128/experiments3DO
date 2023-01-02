@@ -16,8 +16,10 @@ enum { EFFECT_RADIAL_TEX, EFFECT_ANGLE_TEX, EFFECT_RADIAL_COL, EFFECT_ANGLE_COL,
 
 #define FULL_ANGLE 256
 #define ANGLE_SKIP 1
+#define RADIAL_COL_SECTIONS 4
+#define ANGLE_COL_SECTIONS 1
 
-static int effectType = EFFECT_ANGLE_TEX;
+static int effectType = EFFECT_RADIAL_COL;
 
 static Sprite *draculSpr;
 static Sprite *unpackedSpr;
@@ -27,6 +29,9 @@ static Sprite **packedSprRadTex;
 static Sprite **packedSprAngTex;
 static Sprite **packedSprRadCol;
 static Sprite **packedSprAngCol;
+
+static uint16 radCol[RADIAL_COL_SECTIONS * 32 * 2];
+static uint16 angCol[ANGLE_COL_SECTIONS * 32 * 2];
 
 static unsigned char *angle;
 static unsigned char *radius;
@@ -48,7 +53,6 @@ static void initUnpackedSpriteBmp(int a, int b, bool radial)
 	Point2D **pos;
 
 	unsigned char *src = (unsigned char*)draculSpr->data;
-	unsigned char *dst = unpackedBmp;
 
 	const int sprWidth = draculSpr->width;
 	const int sprHeight = draculSpr->height;
@@ -68,58 +72,56 @@ static void initUnpackedSpriteBmp(int a, int b, bool radial)
 		Point2D *p = pos[i];
 		do {
 			const int index = p->y * sprWidth + p->x;
-			dst[index] = src[index];
+			unpackedBmp[index] = src[index];
 			++p;
 		} while(--count > 0);
 	}
 }
 
-/*static void initRadialSpriteBmp(int r)
+static void initRadialSpriteCol(int a0, int a1, int r)
 {
-	int count = draculSpr->width * draculSpr->height;
+	const int sprWidth = draculSpr->width;
+	const int sprHeight = draculSpr->height;
+	
+	const int count = occurrencesRad[r];
+	Point2D *p = posRad[r];
 
-	unsigned char *rad = radius;
-	unsigned char *src = (unsigned char*)draculSpr->data;
-	unsigned char *dst = unpackedBmp;
+	memset(unpackedBmp, 0, sprWidth * sprHeight);
 
 	do {
-		unsigned char rr = *rad++;
-		if (rr>=r-1 && rr<=r+1) {	// one rad more to overlap and avoid gaps
-			*dst++ = *src;
-		} else {
-			*dst++ = 0;
+		const int index = p->y * sprWidth + p->x;
+		const int a = angle[index];
+		if (a>=a0 && a<=a1) {
+			unpackedBmp[index] = a & 31;
 		}
-		++src;
-	}while(--count > 0);
-}*/
+	} while(--count > 0);
+}
 
-/*static void initAngleSpriteBmp(int a, int b)
+static void initAngleSpriteCol(int r0, int r1, int a)
 {
-	int count = draculSpr->width * draculSpr->height;
+	const int sprWidth = draculSpr->width;
+	const int sprHeight = draculSpr->height;
 
-	unsigned char *ang = angle;
-	unsigned char *src = (unsigned char*)draculSpr->data;
-	unsigned char *dst = unpackedBmp;
+	const int count = occurrencesAng[a];
+	Point2D *p = posAng[a];
+
+	memset(unpackedBmp, 0, sprWidth * sprHeight);
 
 	do {
-		unsigned char aa = *ang++;
-		if (aa>=a-1 && aa<=b+1) {
-			*dst++ = *src;
-		} else {
-			*dst++ = 0;
+		const int index = p->y * sprWidth + p->x;
+		const int r = radius[index];
+		if (r>=r0 && r<=r1) {
+			unpackedBmp[index] = r & 31;
 		}
-		++src;
-	}while(--count > 0);
-}*/
+	} while(--count > 0);
+}
 
 static void initRadialPackedSpritesTex()
 {
 	int i;
 	for (i=0; i<maxRadius; ++i) {
-		//initRadialSpriteBmp(i);
 		initUnpackedSpriteBmp(i-1, i+1, true);
 		packedSprRadTex[i] = newPackedSprite(unpackedSpr->width, unpackedSpr->height, 8, CEL_TYPE_UNCODED, NULL, unpackedBmp, NULL, 0);
-		//setSpriteAlpha(packedSprRadTex[i], true, true);
 		if (i > 0) linkCel(packedSprRadTex[i-1]->cel, packedSprRadTex[i]->cel);
 		
 		updateLoadingBar(0, i, maxRadius-1);
@@ -130,10 +132,8 @@ static void initAnglePackedSpritesTex()
 {
 	int i,j=0;
 	for (i=0; i<FULL_ANGLE; i+=ANGLE_SKIP) {
-		//initAngleSpriteBmp(i, i+ANGLE_SKIP);
 		initUnpackedSpriteBmp(i-1, i+ANGLE_SKIP+1, false);
 		packedSprAngTex[j] = newPackedSprite(unpackedSpr->width, unpackedSpr->height, 8, CEL_TYPE_UNCODED, NULL, unpackedBmp, NULL, 0);
-		//setSpriteAlpha(packedSprAngTex[i], true, true);
 		if (j > 0) linkCel(packedSprAngTex[j-1]->cel, packedSprAngTex[j]->cel);
 
 		updateLoadingBar(1, j, maxAngle-1);
@@ -143,10 +143,34 @@ static void initAnglePackedSpritesTex()
 
 static void initRadialPackedSpritesCol()
 {
+	int i,j;
+	for (j=0; j<maxRadius; ++j) {
+		for (i=0; i<RADIAL_COL_SECTIONS; ++i) {
+			const int a0 = i * (FULL_ANGLE/RADIAL_COL_SECTIONS);
+			const int a1 = (i+1) * (FULL_ANGLE/RADIAL_COL_SECTIONS) - 1;
+			initRadialSpriteCol(a0, a1, j)
+		}
+		packedSprRadCol[j] = newPackedSprite(unpackedSpr->width, unpackedSpr->height, 8, CEL_TYPE_CODED, radCol, unpackedBmp, NULL, 0);
+		if (j > 0) linkCel(packedSprRadCol[j-1]->cel, packedSprRadCol[j]->cel);
+		
+		updateLoadingBar(2, j, maxRadius-1);
+	}
 }
 
 static void initAnglePackedSpritesCol()
 {
+	int i,j;
+	for (j=0; j<maxAngle; ++j) {
+		for (i=0; i<ANGLE_COL_SECTIONS; ++i) {
+			const int r0 = i * FULL_ANGLE;
+			const int r1 = (i+1) * FULL_ANGLE - 1;
+			initAngleSpriteCol(r0, r1, j)
+		}
+		packedSprAngCol[j] = newPackedSprite(unpackedSpr->width, unpackedSpr->height, 8, CEL_TYPE_CODED, angCol, unpackedBmp, NULL, 0);
+		if (j > 0) linkCel(packedSprAngCol[j-1]->cel, packedSprAngCol[j]->cel);
+		
+		updateLoadingBar(3, j, maxAngle-1);
+	}
 }
 
 static void initRadialSprites()
@@ -164,7 +188,9 @@ static void initRadialSprites()
 	if (height < width) maxRadius = height / 2;
 
 	packedSprRadTex = (Sprite**)AllocMem(maxRadius * sizeof(Sprite*), MEMTYPE_ANY);
-	packedSprAngTex = (Sprite**)AllocMem(maxAngle* sizeof(Sprite*), MEMTYPE_ANY);
+	packedSprAngTex = (Sprite**)AllocMem(maxAngle * sizeof(Sprite*), MEMTYPE_ANY);
+	packedSprRadCol = (Sprite**)AllocMem(maxRadius * RADIAL_COL_SECTIONS * sizeof(Sprite*), MEMTYPE_ANY);
+	packedSprAngCol = (Sprite**)AllocMem(maxAngle * ANGLE_COL_SECTIONS * sizeof(Sprite*), MEMTYPE_ANY);
 
 	occurrencesRad = (int*)AllocMem(maxRadius * sizeof(int), MEMTYPE_ANY);
 	occurrencesAng = (int*)AllocMem(maxAngle * sizeof(int), MEMTYPE_ANY);
