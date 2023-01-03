@@ -17,9 +17,9 @@ enum { EFFECT_RADIAL_TEX, EFFECT_ANGLE_TEX, EFFECT_RADIAL_COL, EFFECT_ANGLE_COL,
 #define FULL_ANGLE 256
 #define ANGLE_SKIP 1
 #define RADIAL_COL_SECTIONS 4
-#define ANGLE_COL_SECTIONS 1
+#define ANGLE_COL_SECTIONS 2
 
-static int effectType = EFFECT_RADIAL_COL;
+static int effectType = EFFECT_ANGLE_COL;
 
 static Sprite *draculSpr;
 static Sprite *unpackedSpr;
@@ -30,8 +30,8 @@ static Sprite **packedSprAngTex;
 static Sprite **packedSprRadCol;
 static Sprite **packedSprAngCol;
 
-static uint16 radCol[RADIAL_COL_SECTIONS * 32 * 2];
-static uint16 angCol[ANGLE_COL_SECTIONS * 32 * 2];
+static uint16 radPal[RADIAL_COL_SECTIONS * 32 * 2];
+static uint16 angPal[ANGLE_COL_SECTIONS * 32 * 2];
 
 static unsigned char *angle;
 static unsigned char *radius;
@@ -83,7 +83,7 @@ static void initRadialSpriteCol(int a0, int a1, int r)
 	const int sprWidth = draculSpr->width;
 	const int sprHeight = draculSpr->height;
 	
-	const int count = occurrencesRad[r];
+	int count = occurrencesRad[r];
 	Point2D *p = posRad[r];
 
 	memset(unpackedBmp, 0, sprWidth * sprHeight);
@@ -94,6 +94,7 @@ static void initRadialSpriteCol(int a0, int a1, int r)
 		if (a>=a0 && a<=a1) {
 			unpackedBmp[index] = a & 31;
 		}
+		++p;
 	} while(--count > 0);
 }
 
@@ -102,7 +103,7 @@ static void initAngleSpriteCol(int r0, int r1, int a)
 	const int sprWidth = draculSpr->width;
 	const int sprHeight = draculSpr->height;
 
-	const int count = occurrencesAng[a];
+	int count = occurrencesAng[a];
 	Point2D *p = posAng[a];
 
 	memset(unpackedBmp, 0, sprWidth * sprHeight);
@@ -111,8 +112,9 @@ static void initAngleSpriteCol(int r0, int r1, int a)
 		const int index = p->y * sprWidth + p->x;
 		const int r = radius[index];
 		if (r>=r0 && r<=r1) {
-			unpackedBmp[index] = r & 31;
+			unpackedBmp[index] = (r / ANGLE_COL_SECTIONS) & 31;
 		}
+		++p;
 	} while(--count > 0);
 }
 
@@ -143,32 +145,34 @@ static void initAnglePackedSpritesTex()
 
 static void initRadialPackedSpritesCol()
 {
-	int i,j;
+	int i,j,k=0;
 	for (j=0; j<maxRadius; ++j) {
 		for (i=0; i<RADIAL_COL_SECTIONS; ++i) {
 			const int a0 = i * (FULL_ANGLE/RADIAL_COL_SECTIONS);
 			const int a1 = (i+1) * (FULL_ANGLE/RADIAL_COL_SECTIONS) - 1;
-			initRadialSpriteCol(a0, a1, j)
+			initRadialSpriteCol(a0, a1, j);
+
+			packedSprRadCol[k] = newPackedSprite(unpackedSpr->width, unpackedSpr->height, 8, CEL_TYPE_CODED, radPal, unpackedBmp, NULL, 0);
+			if (k > 0) linkCel(packedSprRadCol[k-1]->cel, packedSprRadCol[k]->cel);
+			++k;
 		}
-		packedSprRadCol[j] = newPackedSprite(unpackedSpr->width, unpackedSpr->height, 8, CEL_TYPE_CODED, radCol, unpackedBmp, NULL, 0);
-		if (j > 0) linkCel(packedSprRadCol[j-1]->cel, packedSprRadCol[j]->cel);
-		
 		updateLoadingBar(2, j, maxRadius-1);
 	}
 }
 
 static void initAnglePackedSpritesCol()
 {
-	int i,j;
+	int i,j,k=0;
 	for (j=0; j<maxAngle; ++j) {
 		for (i=0; i<ANGLE_COL_SECTIONS; ++i) {
-			const int r0 = i * FULL_ANGLE;
-			const int r1 = (i+1) * FULL_ANGLE - 1;
-			initAngleSpriteCol(r0, r1, j)
+			const int r0 = i * (maxRadius / ANGLE_COL_SECTIONS);
+			const int r1 = (i+1) * (maxRadius / ANGLE_COL_SECTIONS) - 1;
+			initAngleSpriteCol(r0, r1, j);
+
+			packedSprAngCol[k] = newPackedSprite(unpackedSpr->width, unpackedSpr->height, 8, CEL_TYPE_CODED, angPal, unpackedBmp, NULL, 0);
+			if (k > 0) linkCel(packedSprAngCol[k-1]->cel, packedSprAngCol[k]->cel);
+			++k;
 		}
-		packedSprAngCol[j] = newPackedSprite(unpackedSpr->width, unpackedSpr->height, 8, CEL_TYPE_CODED, angCol, unpackedBmp, NULL, 0);
-		if (j > 0) linkCel(packedSprAngCol[j-1]->cel, packedSprAngCol[j]->cel);
-		
 		updateLoadingBar(3, j, maxAngle-1);
 	}
 }
@@ -299,7 +303,7 @@ static void inputScript()
 
 void effectPackedRadialInit()
 {
-	int size;
+	int size, i;
 
 	initCelPackerEngine();
 
@@ -310,6 +314,16 @@ void effectPackedRadialInit()
 	memset(unpackedBmp, 0, size);
 
 	unpackedSpr = newSprite(draculSpr->width, draculSpr->height, 8, CEL_TYPE_UNCODED, NULL, unpackedBmp);
+
+	for (i=0; i<RADIAL_COL_SECTIONS * 2; ++i) {
+		setPal(0, 0,0,0, &radPal[i * 32]);
+		setPalGradient(1,15, 4,2,6, 31,28,24, &radPal[i * 32]);
+		setPalGradient(16,31, 31,28,24, 4,2,6, &radPal[i * 32]);
+	}
+	for (i=0; i<ANGLE_COL_SECTIONS * 2; ++i) {
+		setPal(0, 0,0,0, &angPal[i * 32]);
+		setPalGradient(1,31, 31,28,24, 4,2,6, &angPal[i * 32]);
+	}
 
 	initRadialSprites();
 
@@ -355,9 +369,11 @@ void effectPackedRadialRun()
 		break;
 
 		case EFFECT_RADIAL_COL:
+			drawSprite(packedSprRadCol[0]);
 		break;
 
 		case EFFECT_ANGLE_COL:
+			drawSprite(packedSprAngCol[0]);
 		break;
 	}
 }
