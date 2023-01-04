@@ -12,14 +12,15 @@
 #include "cel_packer.h"
 
 
-enum { EFFECT_RADIAL_TEX, EFFECT_ANGLE_TEX, EFFECT_RADIAL_COL, EFFECT_ANGLE_COL, EFFECT_TOTAL_NUM };
+enum { EFFECT_RADIAL_TEX, EFFECT_ANGLE_TEX, EFFECT_RADIAL_COL, EFFECT_ANGLE_COL };
 
 #define FULL_ANGLE 256
 #define ANGLE_SKIP 1
 #define RADIAL_COL_SECTIONS 4
 #define ANGLE_COL_SECTIONS 2
 
-static int effectType = EFFECT_ANGLE_COL;
+static bool colEffects = false;
+static int effectType = EFFECT_ANGLE_TEX;
 
 static Sprite *draculSpr;
 static Sprite *unpackedSpr;
@@ -67,6 +68,8 @@ static void initUnpackedSpriteBmp(int a, int b, bool radial)
 		pos = posAng;
 	}
 
+	CLAMP(a,0,255);
+	CLAMP(b,0,255);
 	for (i=a; i<=b; ++i) {
 		int count = occur[i];
 		Point2D *p = pos[i];
@@ -191,10 +194,13 @@ static void initRadialSprites()
 	maxRadius = width / 2;
 	if (height < width) maxRadius = height / 2;
 
-	packedSprRadTex = (Sprite**)AllocMem(maxRadius * sizeof(Sprite*), MEMTYPE_ANY);
-	packedSprAngTex = (Sprite**)AllocMem(maxAngle * sizeof(Sprite*), MEMTYPE_ANY);
-	packedSprRadCol = (Sprite**)AllocMem(maxRadius * RADIAL_COL_SECTIONS * sizeof(Sprite*), MEMTYPE_ANY);
-	packedSprAngCol = (Sprite**)AllocMem(maxAngle * ANGLE_COL_SECTIONS * sizeof(Sprite*), MEMTYPE_ANY);
+	if (colEffects) {
+		packedSprRadCol = (Sprite**)AllocMem(maxRadius * RADIAL_COL_SECTIONS * sizeof(Sprite*), MEMTYPE_ANY);
+		packedSprAngCol = (Sprite**)AllocMem(maxAngle * ANGLE_COL_SECTIONS * sizeof(Sprite*), MEMTYPE_ANY);
+	} else {
+		packedSprRadTex = (Sprite**)AllocMem(maxRadius * sizeof(Sprite*), MEMTYPE_ANY);
+		packedSprAngTex = (Sprite**)AllocMem(maxAngle * sizeof(Sprite*), MEMTYPE_ANY);
+	}
 
 	occurrencesRad = (int*)AllocMem(maxRadius * sizeof(int), MEMTYPE_ANY);
 	occurrencesAng = (int*)AllocMem(maxAngle * sizeof(int), MEMTYPE_ANY);
@@ -215,10 +221,11 @@ static void initRadialSprites()
 		for (x=0; x<width; ++x) {
 			const int xc = x - width / 2;
 
-			const int r = isqrt(xc * xc + yc * yc);
+			int r = isqrt(xc * xc + yc * yc);
 			const unsigned char a = (unsigned char)(Atan2F16(xc,yc) >> 16);
 
-			if (r > 0 && r < maxRadius) {
+			if (r <= 0) r = 1;
+			if (r < maxRadius) {
 				occurrencesRad[r]++;
 				occurrencesAng[a]++;
 			}
@@ -267,7 +274,7 @@ static void initRadialSprites()
 	FreeMem(angIndex, maxAngle * sizeof(int));
 }
 
-static void animateRadial(int t)
+static void animateRadialTex(int t)
 {
 	int i;
 	for (i=0; i<maxRadius; ++i) {
@@ -277,7 +284,7 @@ static void animateRadial(int t)
 	}
 }
 
-static void animateAngle(int t)
+static void animateAngleTex(int t)
 {
 	int i,j=0;
 	for (i=0; i<FULL_ANGLE; i+=ANGLE_SKIP) {
@@ -287,18 +294,55 @@ static void animateAngle(int t)
 	}
 }
 
+static void animateRadialCol(int t)
+{
+	int i,j,k=0;
+	for (j=0; j<maxRadius; ++j) {
+		const int a = (SinF16((j<<16) + (t<<12)) >> 10) & 31;
+		const int palSwitch = a & 1;
+		for (i=0; i<RADIAL_COL_SECTIONS; ++i) {
+			setPalette(packedSprRadCol[k], &radPal[2*a + palSwitch * RADIAL_COL_SECTIONS]);
+			++k;
+		}
+	}
+}
+
+static void animateAngleCol(int t)
+{
+	int i,j,k=0;
+	for (j=0; j<maxAngle; ++j) {
+		const int s = 8 + (SinF16((j<<17) + (t<<13)) >> 12);
+		const int palSwitch = s & 1;
+		for (i=0; i<ANGLE_COL_SECTIONS; ++i) {
+			setPalette(packedSprAngCol[k], &angPal[2*s + i*32 + palSwitch * ANGLE_COL_SECTIONS]);
+			++k;
+		}
+	}
+}
+
+static void switchEffect()
+{
+	if (colEffects) {
+		if (effectType == EFFECT_ANGLE_COL) {
+			effectType = EFFECT_RADIAL_COL;
+		} else {
+			effectType = EFFECT_ANGLE_COL;
+		}
+	} else {
+		if (effectType == EFFECT_ANGLE_TEX) {
+			effectType = EFFECT_RADIAL_TEX;
+		} else {
+			effectType = EFFECT_ANGLE_TEX;
+		}
+	}
+}
+
+
 static void inputScript()
 {
-	// For now, I will test effects separately, so no init/switch between all of them in one compile.
-	// Because of consideration of not being able to fit all packed CELs for four effects in memory and very long precalc time.
-	// So I disable the input script and only init one of four each compile.
-
-	/*if (isJoyButtonPressedOnce(JOY_BUTTON_A)) {
-		effectType++;
-		if (effectType == EFFECT_TOTAL_NUM) {
-			effectType = 0;
-		}
-	}*/
+	if (isJoyButtonPressedOnce(JOY_BUTTON_A)) {
+		switchEffect();
+	}
 }
 
 void effectPackedRadialInit()
@@ -315,40 +359,36 @@ void effectPackedRadialInit()
 
 	unpackedSpr = newSprite(draculSpr->width, draculSpr->height, 8, CEL_TYPE_UNCODED, NULL, unpackedBmp);
 
-	for (i=0; i<RADIAL_COL_SECTIONS * 2; ++i) {
+	for (i=0; i<RADIAL_COL_SECTIONS; ++i) {
 		setPal(0, 0,0,0, &radPal[i * 32]);
 		setPalGradient(1,15, 4,2,6, 31,28,24, &radPal[i * 32]);
 		setPalGradient(16,31, 31,28,24, 4,2,6, &radPal[i * 32]);
 	}
-	for (i=0; i<ANGLE_COL_SECTIONS * 2; ++i) {
+	memcpy(&radPal[RADIAL_COL_SECTIONS * 32+1], &radPal[0], RADIAL_COL_SECTIONS * 32);
+
+	for (i=0; i<ANGLE_COL_SECTIONS; ++i) {
 		setPal(0, 0,0,0, &angPal[i * 32]);
 		setPalGradient(1,31, 31,28,24, 4,2,6, &angPal[i * 32]);
 	}
+	memcpy(&angPal[ANGLE_COL_SECTIONS * 32+1], &angPal[0], ANGLE_COL_SECTIONS * 32);
+
 
 	initRadialSprites();
 
-	switch(effectType) {
-		case EFFECT_RADIAL_TEX:
-			initRadialPackedSpritesTex();
-		break;
-
-		case EFFECT_ANGLE_TEX:
-			initAnglePackedSpritesTex();
-		break;
-
-		case EFFECT_RADIAL_COL:
-			initRadialPackedSpritesCol();
-		break;
-
-		case EFFECT_ANGLE_COL:
-			initAnglePackedSpritesCol();
-		break;
+	if (colEffects) {
+		initRadialPackedSpritesCol();
+		initAnglePackedSpritesCol();
+	} else {
+		initRadialPackedSpritesTex();
+		initAnglePackedSpritesTex();
 	}
 
 	deinitCelPackerEngine();
 
 	FreeMem(occurrencesRad, maxRadius * sizeof(int));
 	FreeMem(occurrencesAng, maxAngle * sizeof(int));
+
+	switchEffect();
 }
 
 void effectPackedRadialRun()
@@ -357,23 +397,29 @@ void effectPackedRadialRun()
 
 	inputScript();
 
-	switch(effectType) {
-		case EFFECT_RADIAL_TEX:
-			animateRadial(t);
-			drawSprite(packedSprRadTex[0]);
-		break;
+	if (colEffects) {
+		switch(effectType) {
+			case EFFECT_RADIAL_COL:
+				animateRadialCol(t);
+				drawSprite(packedSprRadCol[0]);
+			break;
 
-		case EFFECT_ANGLE_TEX:
-			animateAngle(t);
-			drawSprite(packedSprAngTex[0]);
-		break;
+			case EFFECT_ANGLE_COL:
+				animateAngleCol(t);
+				drawSprite(packedSprAngCol[0]);
+			break;
+		}
+	} else {
+		switch(effectType) {
+			case EFFECT_RADIAL_TEX:
+				animateRadialTex(t);
+				drawSprite(packedSprRadTex[0]);
+			break;
 
-		case EFFECT_RADIAL_COL:
-			drawSprite(packedSprRadCol[0]);
-		break;
-
-		case EFFECT_ANGLE_COL:
-			drawSprite(packedSprAngCol[0]);
-		break;
+			case EFFECT_ANGLE_TEX:
+				animateAngleTex(t);
+				drawSprite(packedSprAngTex[0]);
+			break;
+		}
 	}
 }
