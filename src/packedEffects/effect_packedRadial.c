@@ -52,32 +52,42 @@ static void initUnpackedSpriteBmp(int a, int b, bool radial)
 
 	int *occur;
 	Point2D **pos;
+	int maxRange;
 
 	unsigned char *src = (unsigned char*)draculSpr->data;
 
 	const int sprWidth = draculSpr->width;
 	const int sprHeight = draculSpr->height;
+	const int sprSize = sprWidth * sprHeight;
 
 	memset(unpackedBmp, 0, sprWidth * sprHeight);
 
 	if (radial) {
 		occur = occurrencesRad;
 		pos = posRad;
+		maxRange = maxRadius;
 	} else {
 		occur = occurrencesAng;
 		pos = posAng;
+		maxRange = maxAngle;
 	}
 
-	CLAMP(a,0,255);
-	CLAMP(b,0,255);
+	CLAMP(a,0,maxRange-1);
+	CLAMP(b,0,maxRange-1);
+
 	for (i=a; i<=b; ++i) {
 		int count = occur[i];
 		Point2D *p = pos[i];
-		do {
-			const int index = p->y * sprWidth + p->x;
-			unpackedBmp[index] = src[index];
-			++p;
-		} while(--count > 0);
+
+		if (count > 0) {
+			do {
+				const int index = p->y * sprWidth + p->x;
+				if (index >= 0 && index < sprSize) {
+					unpackedBmp[index] = src[index];
+				}
+				++p;
+			} while(--count > 0);
+		}
 	}
 }
 
@@ -125,7 +135,7 @@ static void initRadialPackedSpritesTex()
 {
 	int i;
 	for (i=0; i<maxRadius; ++i) {
-		initUnpackedSpriteBmp(i-1, i+1, true);
+		initUnpackedSpriteBmp(i, i+1, true);
 		packedSprRadTex[i] = newPackedSprite(unpackedSpr->width, unpackedSpr->height, 8, CEL_TYPE_UNCODED, NULL, unpackedBmp, NULL, 0);
 		if (i > 0) linkCel(packedSprRadTex[i-1]->cel, packedSprRadTex[i]->cel);
 		
@@ -137,7 +147,7 @@ static void initAnglePackedSpritesTex()
 {
 	int i,j=0;
 	for (i=0; i<FULL_ANGLE; i+=ANGLE_SKIP) {
-		initUnpackedSpriteBmp(i-1, i+ANGLE_SKIP+1, false);
+		initUnpackedSpriteBmp(i, i+ANGLE_SKIP+1, false);
 		packedSprAngTex[j] = newPackedSprite(unpackedSpr->width, unpackedSpr->height, 8, CEL_TYPE_UNCODED, NULL, unpackedBmp, NULL, 0);
 		if (j > 0) linkCel(packedSprAngTex[j-1]->cel, packedSprAngTex[j]->cel);
 
@@ -348,6 +358,8 @@ static void inputScript()
 void effectPackedRadialInit()
 {
 	int size, i;
+
+	//setBackgroundColor(0x12341234);
 
 	initCelPackerEngine();
 
