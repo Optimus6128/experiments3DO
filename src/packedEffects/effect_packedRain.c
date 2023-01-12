@@ -87,13 +87,6 @@ static void updateFromInput()
 	if (isJoyButtonPressedOnce(JOY_BUTTON_START)) showPackInfo = !showPackInfo;
 }
 
-static void renderZoomRotateRainLayerSprite(Sprite *spr, int offsetX, int offsetY, int zoom, int angle)
-{
-	setSpritePositionZoomRotate(spr, SCREEN_WIDTH / 2 + offsetX, SCREEN_HEIGHT / 2 + offsetY, zoom, angle);
-
-	drawSprite(spr);
-}
-
 static void renderText()
 {
 	if (showPackedRain)

@@ -14,7 +14,7 @@ static char *effectName[EFFECTS_NUM] = { "packed sprites", "packed rain", "packe
 
 int main()
 {
-	const int effectIndex = EFFECT_PACKED_RADIAL;//runEffectSelector(effectName, EFFECTS_NUM);
+	const int effectIndex = runEffectSelector(effectName, EFFECTS_NUM);
 
 	coreInit(effectInitFunc[effectIndex], CORE_DEFAULT | CORE_SHOW_MEM);
 	coreRun(effectRunFunc[effectIndex]);
