@@ -71,6 +71,10 @@ void effectPackedRainInit()
 	for (i=0; i<RAIN_LAYERS_NUM; ++i) {
 		unpackedRain[i] = newSprite(RAIN_LAYER_WIDTH, RAIN_LAYER_HEIGHT, 2, CEL_TYPE_CODED, pal2, unpackedRainBmp[i]);
 		packedRain[i] = newPackedSprite(RAIN_LAYER_WIDTH, RAIN_LAYER_HEIGHT, 2, CEL_TYPE_CODED, pal2, unpackedRainBmp[i], NULL, 0);
+		if (i > 0) {
+			linkCel(unpackedRain[i-1]->cel, unpackedRain[i]->cel);
+			linkCel(packedRain[i-1]->cel, packedRain[i]->cel);
+		}
 		totalPackedPercentage += packPercentage;
 	}
 
@@ -113,12 +117,18 @@ static void renderRain()
 
 		if (showPackedRain) {
 			packedRain[i]->cel->ccb_PIXC = fade;
-			renderZoomRotateRainLayerSprite(packedRain[i], 0, 0, zoom, angle);
+			setSpritePositionZoomRotate(packedRain[i], SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, zoom, angle);
 		}
 		else {
 			unpackedRain[i]->cel->ccb_PIXC = fade;
-			renderZoomRotateRainLayerSprite(unpackedRain[i], 0, 0, zoom, angle);
+			setSpritePositionZoomRotate(unpackedRain[i], SCREEN_WIDTH / 2, SCREEN_HEIGHT / 2, zoom, angle);
 		}
+	}
+
+	if (showPackedRain) {
+		drawSprite(packedRain[0]);
+	} else {
+		drawSprite(unpackedRain[0]);
 	}
 }
 
