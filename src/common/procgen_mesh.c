@@ -732,15 +732,15 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			resetAllCurrentPointers(ms);
 
 			for (i=0; i<starsNum; ++i) {
-				const int phi = getRand(0, 255);
+				const int phi = (int)((acos(1 - 2 * ((float)getRand(0, 4096) / 4096.0f)) / PI) * 127);
 				const int theta = getRand(0, 255);
 				const int sinPhi = SinF16(phi<<16) >> FP_BASE_TO_CORE;
 				const int cosPhi = CosF16(phi<<16) >> FP_BASE_TO_CORE;
 				const int sinTheta = SinF16(theta<<16) >> FP_BASE_TO_CORE;
 				const int cosTheta = CosF16(theta<<16) >> FP_BASE_TO_CORE;
-				const int x = (distance * FIXED_MUL(cosPhi, sinTheta, FP_BASE)) >> FP_BASE;
-				const int y = (distance * FIXED_MUL(sinPhi, sinTheta, FP_BASE)) >> FP_BASE;
-				const int z = (distance * cosTheta) >> FP_BASE;
+				const int x = (distance * FIXED_MUL(sinPhi, cosTheta, FP_BASE)) >> FP_BASE;
+				const int z = (distance * FIXED_MUL(sinPhi, sinTheta, FP_BASE)) >> FP_BASE;
+				const int y = (distance * cosPhi) >> FP_BASE;
 
 				addVertex(x, y, z);
 			}
