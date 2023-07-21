@@ -307,7 +307,7 @@ void effectMeshWorldInit()
 	MeshgenParams columnSmallParams = initColumnParams(false);
 	MeshgenParams gridTempleParams = makeMeshgenGridParams(456, 7);
 	MeshgenParams columnBaseParams = initBaseParams();
-	MeshgenParams starsParams = makeMeshgenStarsParams(NUM_REC_Z, 256);
+	MeshgenParams starsParams = makeMeshgenStarsParams(NUM_REC_Z/4, 256);
 
 	setPalGradient(0,31, 1,3,7, 31,27,23, gridPal);
 	

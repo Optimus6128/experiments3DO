@@ -470,7 +470,7 @@ static void renderTransformedBillboards(Mesh *mesh)
 	}
 }
 
-static void renderTransformedPoints(Mesh *mesh, Camera *cam)
+static void renderTransformedPoints(Mesh *mesh)
 {
 	int i;
 	const int c = 31;
@@ -480,9 +480,7 @@ static void renderTransformedPoints(Mesh *mesh, Camera *cam)
 	ScreenElement *sc = screenElements;
 	for (i=0; i<numVertices; ++i) {
 		if (!sc->outside) {
-			if (sc->x >= 0 && sc->x < SCREEN_WIDTH && sc->y >= 0 && sc->y < SCREEN_HEIGHT) {	// for extra safety to not write outside boundaries (even though we discard before)
-				drawPixel(sc->x, sc->y, col);
-			}
+			drawPixel(sc->x, sc->y, col);
 		}
 		++sc;
 	}
@@ -497,7 +495,7 @@ void renderObject3D(Object3D *obj, Camera *cam, Light **lights, int lightsNum)
 	transformMesh(obj, cam);
 
 	if (mesh->renderType & MESH_OPTION_RENDER_POINTS) {
-		renderTransformedPoints(mesh, cam);
+		renderTransformedPoints(mesh);
 	} else if (mesh->renderType & MESH_OPTION_RENDER_BILLBOARDS) {
 		renderTransformedBillboards(mesh);
 	} else {
