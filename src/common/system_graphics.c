@@ -223,8 +223,11 @@ void clearBackBuffer()
 
 void drawPixel(int px, int py, uint16 c)
 {
-	uint16 *dst = (uint16*)(Bitmaps[screenPage]->bm_Buffer) + (py >> 1) * SCREEN_WIDTH * 2 + (py & 1) + (px << 1);
-	*dst = c;
+	const int offset = (py >> 1) * SCREEN_WIDTH * 2 + (py & 1) + (px << 1);
+	if (offset >= 0 && offset < SCREEN_WIDTH * SCREEN_HEIGHT) {
+		uint16 *dst = (uint16*)(Bitmaps[screenPage]->bm_Buffer) + offset;
+		*dst = c;
+	}
 }
 
 void drawThickPixel(int px, int py, uint16 c)
