@@ -330,7 +330,7 @@ void effectMeshWorldInit()
 	flatGridTex[0] = initGenTexture(4,4, 16, NULL, 0, TEXGEN_FLAT, &paramCol1);
 	flatGridTex[1] = initGenTexture(4,4, 16, NULL, 0, TEXGEN_FLAT, &paramCol2);
 	
-	starsMesh = initGenMesh(MESH_STARS, starsParams, MESH_OPTION_RENDER_POINTS, NULL);
+	starsMesh = initGenMesh(MESH_STARS, starsParams, MESH_OPTION_RENDER_POINTS | MESH_OPTION_NO_TRANSLATE, NULL);
 	starsObj = initObject3D(starsMesh);
 
 	gridMesh = initGenMesh(MESH_GRID, gridParams, MESH_OPTIONS_DEFAULT | MESH_OPTION_NO_POLYSORT, gridTex);
