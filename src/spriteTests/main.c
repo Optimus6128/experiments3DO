@@ -6,18 +6,19 @@
 #include "effect_parallax.h"
 #include "effect_julia.h"
 #include "effect_water.h"
+#include "effect_sphere.h"
 #include "effect_fliAnimTest.h"
 
-enum { EFFECT_SPRITES_GECKO, EFFECT_LAYERS, EFFECT_PARALLAX, EFFECT_JULIA, EFFECT_WATER, EFFECT_FLI_ANIM_TEST, EFFECTS_NUM };
+enum { EFFECT_SPRITES_GECKO, EFFECT_LAYERS, EFFECT_PARALLAX, EFFECT_JULIA, EFFECT_WATER, EFFECT_SPHERE, EFFECT_FLI_ANIM_TEST, EFFECTS_NUM };
 
-static void(*effectInitFunc[EFFECTS_NUM])() = { effectSpritesGeckoInit, effectLayersInit, effectParallaxInit, effectJuliaInit, effectWaterInit, effectFliAnimTestInit };
-static void(*effectRunFunc[EFFECTS_NUM])() = { effectSpritesGeckoRun, effectLayersRun, effectParallaxRun, effectJuliaRun, effectWaterRun, effectFliAnimTestRun };
+static void(*effectInitFunc[EFFECTS_NUM])() = { effectSpritesGeckoInit, effectLayersInit, effectParallaxInit, effectJuliaInit, effectWaterInit, effectSphereInit, effectFliAnimTestInit };
+static void(*effectRunFunc[EFFECTS_NUM])() = { effectSpritesGeckoRun, effectLayersRun, effectParallaxRun, effectJuliaRun, effectWaterRun, effectSphereRun, effectFliAnimTestRun };
 
-//static char *effectName[EFFECTS_NUM] = { "1920 gecko sprites", "background layers", "parallax tests", "julia fractal", "water ripples", "fli animation test" };
+//static char *effectName[EFFECTS_NUM] = { "1920 gecko sprites", "background layers", "parallax tests", "julia fractal", "water ripples", "sphere mapping", "fli animation test" };
 
 int main()
 {
-	const int effectIndex = EFFECT_WATER; //runEffectSelector(effectName, EFFECTS_NUM);
+	const int effectIndex = EFFECT_SPHERE; //runEffectSelector(effectName, EFFECTS_NUM);
 	int coreFlags = CORE_DEFAULT;
 
 	if (effectIndex == EFFECT_FLI_ANIM_TEST) {
