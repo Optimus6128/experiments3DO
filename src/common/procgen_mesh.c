@@ -722,6 +722,32 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 		}
 		break;
 
+		case MESH_SKYBOX:
+		{
+			ms = initMesh(8,6,24,12, optionsFlags);
+
+			resetAllCurrentPointers(ms);
+
+			initCubeVertices(s);
+			initCubePolyNormals(n);
+
+			addQuadIndices(0,1,2,3);
+			addQuadIndices(1,4,7,2);
+			addQuadIndices(4,5,6,7);
+			addQuadIndices(5,0,3,6);
+			addQuadIndices(3,2,7,6);
+			addQuadIndices(5,4,1,0);
+
+			initCubeLineIndices();
+
+			for (i=0; i<ms->polysNum; i++) {
+				ms->poly[i].numPoints = 4;
+				ms->poly[i].textureId = i;
+				ms->poly[i].palId = 0;
+			}
+		}
+		break;
+
 		case MESH_STARS:
 		{
 			const int starsNum = params.numProcPoints;

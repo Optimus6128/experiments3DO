@@ -138,7 +138,7 @@ static void moveViewer(int forward, int right, int up, int dt, Viewer *viewer)
 	prevPosY = viewer->pos.y;
 	viewer->pos.y += (up << (FP_VPOS - 2)) * viewer->flySpeed * dt;
 	feetPosY = (viewer->pos.y >> FP_VPOS) + viewer->bbox.center.y - viewer->bbox.halfSize.y;
-	if (feetPosY <0) viewer->pos.y = prevPosY;
+	//if (feetPosY <0) viewer->pos.y = prevPosY;
 }
 
 void viewerInputFPS(Viewer *viewer, int dt)

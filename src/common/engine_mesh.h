@@ -80,7 +80,9 @@ void setMeshTexture(Mesh *ms, Texture *tex);
 void setMeshPaletteIndex(Mesh *ms, int palIndex);
 
 void setAllPolyData(Mesh *ms, int numPoints, int textureId, int palId);
-void flipPolyOrder(Mesh *ms);
+void flipMeshPolyOrder(Mesh *ms);
+void scaleMesh(Mesh *ms, int scaleX, int scaleY, int scaleZ);
+void flipMeshVerticesIfNeg(Mesh *ms, bool flipX, int flipY, bool flipZ);
 
 void updateMeshCELs(Mesh *ms);
 

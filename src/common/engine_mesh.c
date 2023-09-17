@@ -224,6 +224,30 @@ void flipMeshPolyOrder(Mesh *ms)
 	}
 }
 
+void scaleMesh(Mesh *ms, int scaleX, int scaleY, int scaleZ)
+{
+	int i;
+	Vertex *vrtx = ms->vertex;
+	for (i=0; i<ms->verticesNum; ++i) {
+		vrtx->x *= scaleX;
+		vrtx->y *= scaleY;
+		vrtx->z *= scaleZ;
+		++vrtx;
+	}
+}
+
+void flipMeshVerticesIfNeg(Mesh *ms, bool flipX, int flipY, bool flipZ)
+{
+	int i;
+	Vertex *vrtx = ms->vertex;
+	for (i=0; i<ms->verticesNum; ++i) {
+		if (flipX && vrtx->x < 0) vrtx->x = -vrtx->x;
+		if (flipY && vrtx->y < 0) vrtx->y = -vrtx->y;
+		if (flipZ && vrtx->z < 0) vrtx->z = -vrtx->z;
+		++vrtx;
+	}
+}
+
 Mesh* initMesh(int verticesNum, int polysNum, int indicesNum, int linesNum, int renderType)
 {
 	Mesh *ms = (Mesh*)AllocMem(sizeof(Mesh), MEMTYPE_ANY);
