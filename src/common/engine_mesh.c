@@ -16,14 +16,15 @@ void updateMeshCELs(Mesh *ms)
 	if (!(ms->renderType & MESH_OPTION_RENDER_SOFT)) {
 		int i;
 		for (i=0; i<ms->polysNum; i++) {
-			Texture *tex = &ms->tex[ms->poly[i].textureId];
+			PolyData *poly = &ms->poly[i];
+			Texture *tex = &ms->tex[poly->textureId];
 			int woffset;
 			int vcnt;
 			CCB *cel = &ms->cel[i];
 
-			const int texShrX = getShr(tex->width);
-			const int texShrY = getShr(tex->height);
-			ms->poly[i].texShifts = (texShrX << 4) | texShrY;
+			int texShrX = getShr(poly->subtexWidth);
+			int texShrY = getShr(poly->subtexHeight);
+			poly->texShifts = (texShrX << 4) | texShrY;
 
 			// In the future, also take account of offscreen buffer position too
 			if (tex->type & TEXTURE_TYPE_FEEDBACK) {
@@ -33,17 +34,24 @@ void updateMeshCELs(Mesh *ms)
 				woffset = SCREEN_WIDTH - 2;
 				vcnt = (tex->height / 2) - 1;
 			} else {
+				const int xPos32 = (poly->offsetU * tex->bpp) >> 5;
+				const int lineSize32 = (tex->width * tex->bpp) >> 5;
+
 				cel->ccb_Flags |= (CCB_ACSC | CCB_ALSC);
 				cel->ccb_PRE1 &= ~PRE1_LRFORM;
-				cel->ccb_SourcePtr = (CelData*)tex->bitmap;
-				woffset = tex->width / 2 - 2;
-				vcnt = tex->height - 1;
+				cel->ccb_SourcePtr = (CelData*)&tex->bitmap[poly->offsetV * lineSize32 + xPos32];
+				woffset = lineSize32 - 2;
+				vcnt = poly->subtexHeight - 1;
 			}
 
 			// Should spare the magic numbers at some point
 			cel->ccb_PRE0 = (cel->ccb_PRE0 & ~(((1<<10) - 1)<<6)) | (vcnt << 6);
-			cel->ccb_PRE1 = (cel->ccb_PRE1 & (65536 - 1024)) | (woffset << 16) | (tex->width-1);
-			cel->ccb_PLUTPtr = (uint16*)&tex->pal[ms->poly[i].palId << getCelPaletteColorsRealBpp(tex->bpp)];
+			cel->ccb_PRE1 = (cel->ccb_PRE1 & (65536 - 1024)) | (woffset << 16) | (poly->subtexWidth-1);
+
+			// Update the CEL palette too
+			if (tex->pal) {
+				cel->ccb_PLUTPtr = (uint16*)&tex->pal[poly->palId << getCelPaletteColorsRealBpp(tex->bpp)];
+			}
 		}
 	}
 }
@@ -57,6 +65,7 @@ void prepareCelList(Mesh *ms)
 		if (isBillBoards) celsNum = ms->verticesNum;
 
 		for (i=0; i<celsNum; i++) {
+			PolyData *poly = &ms->poly[i];
 			Texture *tex = ms->tex;
 			uint16 *pal = (uint16*)tex->pal;
 
@@ -66,12 +75,14 @@ void prepareCelList(Mesh *ms)
 			if (!isBillBoards) {
 				int texShrX, texShrY;
 
-				tex = &ms->tex[ms->poly[i].textureId];
+				tex = &ms->tex[poly->textureId];
 				texShrX = getShr(tex->width);
 				texShrY = getShr(tex->height);
-				ms->poly[i].texShifts = (texShrX << 4) | texShrY;
+				poly->texShifts = (texShrX << 4) | texShrY;
 
-				pal = (uint16*)&tex->pal[ms->poly[i].palId << getCelPaletteColorsRealBpp(tex->bpp)];
+				if (tex->pal) {
+					pal = (uint16*)&tex->pal[poly->palId << getCelPaletteColorsRealBpp(tex->bpp)];
+				}
 			}
 
 			if (tex->type & TEXTURE_TYPE_PALLETIZED) {
@@ -194,6 +205,22 @@ void setMeshDottedDisplay(Mesh *ms, bool enable)
 	}
 }
 
+void updatePolyTexData(Mesh *ms)
+{
+	PolyData *poly = ms->poly;	
+
+	int i;
+	for (i=0; i<ms->polysNum; i++) {
+		Texture *tex = &ms->tex[poly->textureId];
+
+		poly->offsetU = 0;
+		poly->offsetV = 0;
+		poly->subtexWidth = tex->width;
+		poly->subtexHeight = tex->height;
+		++poly;
+	}
+}
+
 void setAllPolyData(Mesh *ms, int numPoints, int textureId, int palId)
 {
 	PolyData *poly = ms->poly;
@@ -205,6 +232,8 @@ void setAllPolyData(Mesh *ms, int numPoints, int textureId, int palId)
 		poly->palId = palId;
 		++poly;
 	}
+
+	updatePolyTexData(ms);
 }
 
 void flipMeshPolyOrder(Mesh *ms)
@@ -248,7 +277,7 @@ void flipMeshVerticesIfNeg(Mesh *ms, bool flipX, int flipY, bool flipZ)
 	}
 }
 
-Mesh* initMesh(int verticesNum, int polysNum, int indicesNum, int linesNum, int renderType)
+Mesh* initMesh(int verticesNum, int polysNum, int indicesNum, int linesNum, int renderType, Texture *tex)
 {
 	Mesh *ms = (Mesh*)AllocMem(sizeof(Mesh), MEMTYPE_ANY);
 
@@ -284,7 +313,7 @@ Mesh* initMesh(int verticesNum, int polysNum, int indicesNum, int linesNum, int 
 	ms->renderType = renderType;
 
 	ms->texturesNum = 0;
-	ms->tex = NULL;
+	ms->tex = tex;
 
 	return ms;
 }
@@ -315,8 +344,7 @@ Mesh *loadMesh(char *path, int loadOptions, int meshOptions, Texture *tex)
 	tempBuffSize = verticesNum * 3;
 
 
-	ms = initMesh(verticesNum, polysNum, 3*polysNum, linesNum * (int)loadLines, meshOptions);
-	ms->tex = tex;
+	ms = initMesh(verticesNum, polysNum, 3*polysNum, linesNum * (int)loadLines, meshOptions, tex);
 
 	readSequentialBytesFromFileStream(tempBuffSize, tempBuffSrc, CDstream);
 	tempBuff8 = (unsigned char*)tempBuffSrc;

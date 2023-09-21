@@ -357,65 +357,83 @@ Mesh *subdivMesh(Mesh *srcMesh)
 	
 	int *srcIndex = srcMesh->index;
 	Vertex *srcVertex = srcMesh->vertex;
-	PolyData *poly = srcMesh->poly;
+	PolyData *srcPoly = srcMesh->poly;
 
-	int i,j;
-	int b,p;
+	int i;
 	int newVertNum = 0;
 	for (i=0; i<srcMesh->polysNum; ++i) {
-		if (poly[i].numPoints==3) {
+		if (srcPoly[i].numPoints==3) {
 			newVertNum += 6;
 		} else {
 			newVertNum += 9;
 		}
 	}
-	dstMesh = initMesh(newVertNum, 4*srcMesh->polysNum, 4*srcMesh->indicesNum, 0, srcMesh->renderType);
+
+	dstMesh = initMesh(newVertNum, 4*srcMesh->polysNum, 4*srcMesh->indicesNum, 0, srcMesh->renderType, srcMesh->tex);
+
 	resetAllCurrentPointers(dstMesh);
 
-	setAllPolyData(dstMesh,4,0,0);
+	{
+		PolyData *dstPoly = dstMesh->poly;
+		int u,v;
+		int b = 0;
+		for (i=0; i<srcMesh->polysNum; ++i) {
+			const int numPoints = srcPoly->numPoints;
 
-	b = 0;
-	p = 0;
-	for (i=0; i<srcMesh->polysNum; ++i) {
-		Vertex *v0 = &srcVertex[*srcIndex++];
-		Vertex *v1 = &srcVertex[*srcIndex++];
-		Vertex *v2 = &srcVertex[*srcIndex++];
-		copyVertex(v0);
-		copyVertex(v1);
-		copyVertex(v2);
-		if (poly[i].numPoints==3) {
-			insertMiddleVertex(v0, v1);
-			insertMiddleVertex(v1, v2);
-			insertMiddleVertex(v2, v0);
-			addTriangleIndices(b,  b+3,b+5);
-			addTriangleIndices(b+3,b+1,b+4);
-			addTriangleIndices(b+3,b+4,b+5);
-			addTriangleIndices(b+5,b+4,b+2);
-			b += 6;
-		} else {
-			Vertex *v3 = &srcVertex[*srcIndex++];
-			copyVertex(v3);
-			insertMiddleVertex(v0, v1);
-			insertMiddleVertex(v1, v2);
-			insertMiddleVertex(v2, v3);
-			insertMiddleVertex(v3, v0);
-			insertAverageQuadVertex(v0, v1, v2, v3);
-			addQuadIndices(b,  b+4,b+8,b+7);
-			addQuadIndices(b+4,b+1,b+5,b+8);
-			addQuadIndices(b+8,b+5,b+2,b+6);
-			addQuadIndices(b+7,b+8,b+6,b+3);
-			b += 9;
+			Vertex *v0 = &srcVertex[*srcIndex++];
+			Vertex *v1 = &srcVertex[*srcIndex++];
+			Vertex *v2 = &srcVertex[*srcIndex++];
+
+			copyVertex(v0);
+			copyVertex(v1);
+			copyVertex(v2);
+
+			if (numPoints==3) {
+				insertMiddleVertex(v0, v1);
+				insertMiddleVertex(v1, v2);
+				insertMiddleVertex(v2, v0);
+				addTriangleIndices(b,  b+3,b+5);
+				addTriangleIndices(b+3,b+1,b+4);
+				addTriangleIndices(b+3,b+4,b+5);
+				addTriangleIndices(b+5,b+4,b+2);
+				b += 6;
+			} else {
+				Vertex *v3 = &srcVertex[*srcIndex++];
+				copyVertex(v3);
+				insertMiddleVertex(v0, v1);
+				insertMiddleVertex(v1, v2);
+				insertMiddleVertex(v2, v3);
+				insertMiddleVertex(v3, v0);
+				insertAverageQuadVertex(v0, v1, v2, v3);
+				addQuadIndices(b,  b+4,b+8,b+7);
+				addQuadIndices(b+4,b+1,b+5,b+8);
+				addQuadIndices(b+8,b+5,b+2,b+6);
+				addQuadIndices(b+7,b+8,b+6,b+3);
+				b += 9;
+			}
+
+			for (v=0; v<2; ++v) {
+				for (u=0; u<2; ++u) {
+					dstPoly->numPoints = numPoints;
+					dstPoly->textureId = srcPoly->textureId;
+					dstPoly->palId = 0;
+
+					dstPoly->subtexWidth = srcPoly->subtexWidth / 2;
+					dstPoly->subtexHeight = srcPoly->subtexHeight / 2;
+					dstPoly->offsetU = srcPoly->offsetU + u * dstPoly->subtexWidth;
+					dstPoly->offsetV = srcPoly->offsetV + v * dstPoly->subtexHeight;
+
+					++dstPoly;
+				}
+			}
+			++srcPoly;
 		}
-		for (j=0; j<4; ++j) {
-			dstMesh->poly[p+j].numPoints = poly[i].numPoints;
-		}
-		p += 4;
 	}
 	calculateMeshNormals(dstMesh);
 
-	dstMesh->tex = srcMesh->tex;
-
 	prepareCelList(dstMesh);
+
+	updateMeshCELs(dstMesh);
 
 	return dstMesh;
 }
@@ -438,7 +456,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 		default:
 		case MESH_PLANE:
 		{
-			ms = initMesh(4,1,4,0, optionsFlags);
+			ms = initMesh(4,1,4,0, optionsFlags, tex);
 
 			resetAllCurrentPointers(ms);
 
@@ -456,7 +474,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 
 		case MESH_CUBE:
 		{
-			ms = initMesh(8,6,24,12, optionsFlags);
+			ms = initMesh(8,6,24,12, optionsFlags, tex);
 
 			resetAllCurrentPointers(ms);
 
@@ -479,7 +497,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 
 		case MESH_CUBE_TRI:
 		{
-			ms = initMesh(8,12,36,12, optionsFlags);
+			ms = initMesh(8,12,36,12, optionsFlags, tex);
 
 			resetAllCurrentPointers(ms);
 
@@ -508,7 +526,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 		
 		case MESH_ROMBUS:
 		{
-			ms = initMesh(6,8,24,0, optionsFlags);
+			ms = initMesh(6,8,24,0, optionsFlags, tex);
 
 			resetAllCurrentPointers(ms);
 
@@ -536,7 +554,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 
 		case MESH_PRISM:
 		{
-			ms = initMesh(6,5,18,0, optionsFlags);
+			ms = initMesh(6,5,18,0, optionsFlags, tex);
 
 			resetAllCurrentPointers(ms);
 
@@ -562,7 +580,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 
 		case MESH_PYRAMID1:
 		{
-			ms = initMesh(5,5,20,0, optionsFlags);
+			ms = initMesh(5,5,20,0, optionsFlags, tex);
 
 			resetAllCurrentPointers(ms);
 
@@ -574,7 +592,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 
 		case MESH_PYRAMID2:
 		{
-			ms = initMesh(9,5,20,0, optionsFlags);
+			ms = initMesh(9,5,20,0, optionsFlags, tex);
 
 			resetAllCurrentPointers(ms);
 
@@ -608,12 +626,13 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 					ms->poly[i].palId = 1;
 				}
 			}
+			updatePolyTexData(ms);
 		}
 		break;
 
 		case MESH_PYRAMID3:
 		{
-			ms = initMesh(5,5,20,0, optionsFlags);
+			ms = initMesh(5,5,20,0, optionsFlags, tex);
 
 			resetAllCurrentPointers(ms);
 
@@ -629,6 +648,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 					ms->poly[i].textureId = 1;
 				}
 			}
+			updatePolyTexData(ms);
 		}
 		break;
 
@@ -639,7 +659,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			const int polysNum = divisions * divisions;
 			const int indicesNum = polysNum * 4;
 
-			ms = initMesh(vertexNum, polysNum, indicesNum, 0, optionsFlags);
+			ms = initMesh(vertexNum, polysNum, indicesNum, 0, optionsFlags, tex);
 
 			resetAllCurrentPointers(ms);
 
@@ -684,7 +704,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			const int indicesNum = polysNum * 4;
 			const int linesNum = (procPointsNum - 1) * 4 + procPointsNum * 4;
 
-			ms = initMesh(vertexNum, polysNum, indicesNum, linesNum, optionsFlags);
+			ms = initMesh(vertexNum, polysNum, indicesNum, linesNum, optionsFlags, tex);
 
 			resetAllCurrentPointers(ms);
 
@@ -724,7 +744,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 
 		case MESH_SKYBOX:
 		{
-			ms = initMesh(8,6,24,12, optionsFlags);
+			ms = initMesh(8,6,24,12, optionsFlags, tex);
 
 			resetAllCurrentPointers(ms);
 
@@ -745,6 +765,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 				ms->poly[i].textureId = i;
 				ms->poly[i].palId = 0;
 			}
+			updatePolyTexData(ms);
 		}
 		break;
 
@@ -753,7 +774,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			const int starsNum = params.numProcPoints;
 			const int distance = params.size;
 
-			ms = initMesh(starsNum,0,0,0, optionsFlags);
+			ms = initMesh(starsNum,0,0,0, optionsFlags, tex);
 
 			resetAllCurrentPointers(ms);
 
@@ -778,7 +799,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			const int particlesNum = params.numProcPoints;
 			const int halfSize = 256;
 
-			ms = initMesh(particlesNum,0,0,0, optionsFlags);
+			ms = initMesh(particlesNum,0,0,0, optionsFlags, tex);
 
 			resetAllCurrentPointers(ms);
 
@@ -796,8 +817,6 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 		}
 		break;
 	}
-
-	ms->tex = tex;
 
 	prepareCelList(ms);
 

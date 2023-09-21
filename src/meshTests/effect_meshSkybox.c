@@ -58,15 +58,15 @@ static void initSkyboxTextures()
 
 static void initSkyboxObject()
 {
-	MeshgenParams params = makeDefaultMeshgenParams(8192);
+	MeshgenParams params = makeDefaultMeshgenParams(16384);
 	Mesh *skyboxMesh;
 
 	initSkyboxTextures();
 
-	skyboxMesh = initGenMesh(MESH_SKYBOX, params, MESH_OPTIONS_DEFAULT | MESH_OPTION_NO_POLYSORT | MESH_OPTION_NO_TRANSLATE/* | MESH_OPTION_NO_POLYCLIP | MESH_OPTION_NO_TRANSLATE*/, skyboxTex);
+	skyboxMesh = initGenMesh(MESH_SKYBOX, params, MESH_OPTIONS_DEFAULT | MESH_OPTION_NO_POLYSORT | MESH_OPTION_NO_TRANSLATE, skyboxTex);
 	flipMeshPolyOrder(skyboxMesh);
 	skyboxMesh = subdivMesh(skyboxMesh);
-	skyboxMesh = subdivMesh(skyboxMesh);
+	//skyboxMesh = subdivMesh(skyboxMesh);
 
 	skyboxObj = initObject3D(skyboxMesh);
 

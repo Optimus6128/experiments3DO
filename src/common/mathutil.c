@@ -36,7 +36,7 @@ int getRand(int from, int to)
 	return rnd;
 }
 
-int getShr(int n)
+int getShr(unsigned int n)
 {
 	int b = -1;
 	do{

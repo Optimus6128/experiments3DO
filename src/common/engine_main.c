@@ -371,48 +371,33 @@ static void translateAndProjectVertices(Object3D *obj, Camera *cam)
 	const bool doPolyClipTests = !(obj->mesh->renderType & MESH_OPTION_NO_POLYCLIP);
 	const bool doTranslate = !(obj->mesh->renderType & MESH_OPTION_NO_TRANSLATE);
 
+
+	posFromCam[0] = 0;
+	posFromCam[1] = 0;
+	posFromCam[2] = 0;
 	if (doTranslate) {
 		posFromCam[0] = obj->pos.x - cam->pos.x;
 		posFromCam[1] = obj->pos.y - cam->pos.y;
 		posFromCam[2] = obj->pos.z - cam->pos.z;
 
 		SoftMulVec3Mat33_F16(&posFromCam, &posFromCam, cam->inverseRotMat);
+	}
 
-		for (i=0; i<lvNum; i++) {
-			const int vx = screenVertices[i].x + posFromCam[0];
-			const int vy = screenVertices[i].y + posFromCam[1];
-			int vz = screenVertices[i].z + posFromCam[2];
-			CLAMP(vz, cam->near, cam->far)
+	for (i=0; i<lvNum; i++) {
+		const int vx = screenVertices[i].x + posFromCam[0];
+		const int vy = screenVertices[i].y + posFromCam[1];
+		const int vz = screenVertices[i].z + posFromCam[2];
+		//CLAMP(vz, cam->near, cam->far)
 
-			if (doPolyClipTests) {
-				const int edgeX = (screenWidthHalf * vz) >> PROJ_SHR;
-				const int edgeY = (screenHeightHalf * vz) >> PROJ_SHR;
-				screenElements[i].outside = (vx < -edgeX || vx > edgeX || vy < -edgeY || vy > edgeY);
-			}
-
-			screenElements[i].x = offsetX + (((vx << PROJ_SHR) * recZ[vz]) >> REC_FPSHR);
-			screenElements[i].y = offsetY - (((vy << PROJ_SHR) * recZ[vz]) >> REC_FPSHR);
-			screenElements[i].z = vz;
-		}
-	} else {
-		for (i=0; i<lvNum; i++) {
-			const int vx = screenVertices[i].x;
-			const int vy = screenVertices[i].y;
-			const int vz = screenVertices[i].z;
-
-			const bool zBehind = vz < cam->near;
+		if (doPolyClipTests) {
 			const int edgeX = (screenWidthHalf * vz) >> PROJ_SHR;
 			const int edgeY = (screenHeightHalf * vz) >> PROJ_SHR;
-			const int notVisible = (zBehind || vx < -edgeX || vx > edgeX || vy < -edgeY || vy > edgeY);
-
-			screenElements[i].outside = notVisible;
-
-			if (!notVisible) {
-				screenElements[i].x = offsetX + (((vx << PROJ_SHR) * recZ[vz]) >> REC_FPSHR);
-				screenElements[i].y = offsetY - (((vy << PROJ_SHR) * recZ[vz]) >> REC_FPSHR);
-				screenElements[i].z = vz;
-			}
+			screenElements[i].outside = (vz < cam->near || vx < -edgeX || vx > edgeX || vy < -edgeY || vy > edgeY);
 		}
+
+		screenElements[i].x = offsetX + (((vx << PROJ_SHR) * recZ[vz]) >> REC_FPSHR);
+		screenElements[i].y = offsetY - (((vy << PROJ_SHR) * recZ[vz]) >> REC_FPSHR);
+		screenElements[i].z = vz;
 	}
 }
 

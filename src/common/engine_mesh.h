@@ -29,6 +29,11 @@ typedef struct PolyData
 	unsigned char textureId;
 	unsigned char palId;
 	unsigned char texShifts;	// Width/Height bits, WWWWHHHH
+
+	unsigned char offsetU;
+	unsigned char offsetV;
+	unsigned char subtexWidth;
+	unsigned char subtexHeight;
 }PolyData;
 
 typedef struct TexCoords
@@ -64,7 +69,7 @@ typedef struct Mesh
 }Mesh;
 
 
-Mesh *initMesh(int verticesNum, int polysNum, int indicesNum, int linesNum, int renderType);
+Mesh *initMesh(int verticesNum, int polysNum, int indicesNum, int linesNum, int renderType, Texture *tex);
 Mesh *loadMesh(char *path, int loadOptions, int meshOptions, Texture *tex);
 
 void prepareCelList(Mesh *ms);
@@ -80,6 +85,7 @@ void setMeshTexture(Mesh *ms, Texture *tex);
 void setMeshPaletteIndex(Mesh *ms, int palIndex);
 
 void setAllPolyData(Mesh *ms, int numPoints, int textureId, int palId);
+void updatePolyTexData(Mesh *ms);
 void flipMeshPolyOrder(Mesh *ms);
 void scaleMesh(Mesh *ms, int scaleX, int scaleY, int scaleZ);
 void flipMeshVerticesIfNeg(Mesh *ms, bool flipX, int flipY, bool flipZ);

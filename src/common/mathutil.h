@@ -64,7 +64,7 @@ extern int *recZ;
 int isqrt(int x);
 
 int getRand(int from, int to);
-int getShr(int n);
+int getShr(unsigned int n);
 void initEngineLUTs(void);
 
 void setVector3D(Vector3D *v, int x, int y, int z);
