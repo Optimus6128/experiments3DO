@@ -407,8 +407,8 @@ Mesh *subdivMesh(Mesh *srcMesh)
 				insertAverageQuadVertex(v0, v1, v2, v3);
 				addQuadIndices(b,  b+4,b+8,b+7);
 				addQuadIndices(b+4,b+1,b+5,b+8);
-				addQuadIndices(b+8,b+5,b+2,b+6);
 				addQuadIndices(b+7,b+8,b+6,b+3);
+				addQuadIndices(b+8,b+5,b+2,b+6);
 				b += 9;
 			}
 

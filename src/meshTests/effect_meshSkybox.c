@@ -58,7 +58,7 @@ static void initSkyboxTextures()
 
 static void initSkyboxObject()
 {
-	MeshgenParams params = makeDefaultMeshgenParams(16384);
+	MeshgenParams params = makeDefaultMeshgenParams(4096);
 	Mesh *skyboxMesh;
 
 	initSkyboxTextures();
@@ -66,7 +66,7 @@ static void initSkyboxObject()
 	skyboxMesh = initGenMesh(MESH_SKYBOX, params, MESH_OPTIONS_DEFAULT | MESH_OPTION_NO_POLYSORT | MESH_OPTION_NO_TRANSLATE, skyboxTex);
 	flipMeshPolyOrder(skyboxMesh);
 	skyboxMesh = subdivMesh(skyboxMesh);
-	//skyboxMesh = subdivMesh(skyboxMesh);
+	skyboxMesh = subdivMesh(skyboxMesh);
 
 	skyboxObj = initObject3D(skyboxMesh);
 
@@ -141,7 +141,9 @@ void effectMeshSkyboxRun()
 
 	inputScript(dt);
 
-	setObjectsPosAndRot(dt);
+	//setObjectsPosAndRot(dt);
 
 	renderWorld(myWorld);
+
+	displayDebugNums(false);
 }

@@ -10,6 +10,12 @@
 #include "mathutil.h"
 #include "file_utils.h"
 
+static void setCelTexShifts(CCB *cel, PolyData *poly)
+{
+	const int texShrX = getShr(poly->subtexWidth);
+	const int texShrY = getShr(poly->subtexHeight);
+	poly->texShifts = (texShrX << 4) | texShrY;
+}
 
 void updateMeshCELs(Mesh *ms)
 {
@@ -22,9 +28,7 @@ void updateMeshCELs(Mesh *ms)
 			int vcnt;
 			CCB *cel = &ms->cel[i];
 
-			int texShrX = getShr(poly->subtexWidth);
-			int texShrY = getShr(poly->subtexHeight);
-			poly->texShifts = (texShrX << 4) | texShrY;
+			setCelTexShifts(cel, poly);
 
 			// In the future, also take account of offscreen buffer position too
 			if (tex->type & TEXTURE_TYPE_FEEDBACK) {
@@ -34,12 +38,12 @@ void updateMeshCELs(Mesh *ms)
 				woffset = SCREEN_WIDTH - 2;
 				vcnt = (tex->height / 2) - 1;
 			} else {
-				const int xPos32 = (poly->offsetU * tex->bpp) >> 5;
-				const int lineSize32 = (tex->width * tex->bpp) >> 5;
+				const int xPos32 = (poly->offsetU * tex->bpp) / 32;
+				const int lineSize32 = (tex->width * tex->bpp) / 32;
 
-				cel->ccb_Flags |= (CCB_ACSC | CCB_ALSC);
+				cel->ccb_Flags = (cel->ccb_Flags & ~CCB_ACSC) | CCB_ALSC;
 				cel->ccb_PRE1 &= ~PRE1_LRFORM;
-				cel->ccb_SourcePtr = (CelData*)&tex->bitmap[poly->offsetV * lineSize32 + xPos32];
+				cel->ccb_SourcePtr = (CelData*)&tex->bitmap[4 * (poly->offsetV * lineSize32 + xPos32)];
 				woffset = lineSize32 - 2;
 				vcnt = poly->subtexHeight - 1;
 			}
@@ -66,19 +70,15 @@ void prepareCelList(Mesh *ms)
 
 		for (i=0; i<celsNum; i++) {
 			PolyData *poly = &ms->poly[i];
-			Texture *tex = ms->tex;
+			Texture *tex = &ms->tex[poly->textureId];
 			uint16 *pal = (uint16*)tex->pal;
 
 			CCB *cel = &ms->cel[i];
 			int celType = CEL_TYPE_UNCODED;
 
 			if (!isBillBoards) {
-				int texShrX, texShrY;
 
-				tex = &ms->tex[poly->textureId];
-				texShrX = getShr(tex->width);
-				texShrY = getShr(tex->height);
-				poly->texShifts = (texShrX << 4) | texShrY;
+				setCelTexShifts(cel, poly);
 
 				if (tex->pal) {
 					pal = (uint16*)&tex->pal[poly->palId << getCelPaletteColorsRealBpp(tex->bpp)];
@@ -207,32 +207,30 @@ void setMeshDottedDisplay(Mesh *ms, bool enable)
 
 void updatePolyTexData(Mesh *ms)
 {
-	PolyData *poly = ms->poly;	
-
 	int i;
 	for (i=0; i<ms->polysNum; i++) {
+		PolyData *poly = &ms->poly[i];
 		Texture *tex = &ms->tex[poly->textureId];
 
 		poly->offsetU = 0;
 		poly->offsetV = 0;
 		poly->subtexWidth = tex->width;
 		poly->subtexHeight = tex->height;
-		++poly;
 	}
 }
 
 void setAllPolyData(Mesh *ms, int numPoints, int textureId, int palId)
 {
-	PolyData *poly = ms->poly;
-
 	int i;
+
 	for (i=0; i<ms->polysNum; i++) {
+		PolyData *poly = &ms->poly[i];
 		poly->numPoints = numPoints;
 		poly->textureId = textureId;
 		poly->palId = palId;
 		++poly;
 	}
-
+	
 	updatePolyTexData(ms);
 }
 
@@ -285,6 +283,8 @@ Mesh* initMesh(int verticesNum, int polysNum, int indicesNum, int linesNum, int 
 	ms->polysNum = polysNum;
 	ms->indicesNum = indicesNum;
 	ms->linesNum = linesNum;
+	ms->renderType = renderType;
+	ms->tex = tex;
 
 	if (verticesNum) ms->vertex = (Vertex*)AllocMem(verticesNum * sizeof(Vertex), MEMTYPE_ANY);
 	if (indicesNum) ms->index = (int*)AllocMem(indicesNum * sizeof(int), MEMTYPE_ANY);
@@ -310,10 +310,6 @@ Mesh* initMesh(int verticesNum, int polysNum, int indicesNum, int linesNum, int 
 			ms->cel = (CCB*)AllocMem(polysNum * sizeof(CCB), MEMTYPE_ANY);
 		}
 	}
-	ms->renderType = renderType;
-
-	ms->texturesNum = 0;
-	ms->tex = tex;
 
 	return ms;
 }

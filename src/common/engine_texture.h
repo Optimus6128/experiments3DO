@@ -10,10 +10,10 @@
 
 typedef struct Texture
 {
-	int type;
 	int width, height;
 	int wShift, hShift;
 	int bpp;
+	int type;
 
 	// Texture bitmap and palette pointer (needed for 8bpp CODED or less)
 	unsigned char *bitmap;

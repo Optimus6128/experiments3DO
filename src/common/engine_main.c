@@ -366,6 +366,8 @@ static void translateAndProjectVertices(Object3D *obj, Camera *cam)
 
 	const int screenWidthHalf = screenWidth >> 1;
 	const int screenHeightHalf = screenHeight >> 1;
+	const int screenWidthHalfEdge = screenWidthHalf + (screenWidthHalf >> 2);
+	const int screenHeightHalfEdge = screenHeightHalf + (screenHeightHalf >> 2);
 	const int offsetX = screenOffsetX + screenWidthHalf;
 	const int offsetY = screenOffsetY + screenHeightHalf;
 	const bool doPolyClipTests = !(obj->mesh->renderType & MESH_OPTION_NO_POLYCLIP);
@@ -390,8 +392,8 @@ static void translateAndProjectVertices(Object3D *obj, Camera *cam)
 		//CLAMP(vz, cam->near, cam->far)
 
 		if (doPolyClipTests) {
-			const int edgeX = (screenWidthHalf * vz) >> PROJ_SHR;
-			const int edgeY = (screenHeightHalf * vz) >> PROJ_SHR;
+			const int edgeX = (screenWidthHalfEdge * vz) >> PROJ_SHR;
+			const int edgeY = (screenHeightHalfEdge * vz) >> PROJ_SHR;
 			screenElements[i].outside = (vz < cam->near || vx < -edgeX || vx > edgeX || vy < -edgeY || vy > edgeY);
 		}
 
