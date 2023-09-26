@@ -22,7 +22,6 @@
 #define MESH_LOAD_SKIP_LINES		(1 << 0)
 #define MESH_LOAD_FLIP_POLYORDER	(1 << 1)
 
-
 typedef struct PolyData
 {
 	unsigned char numPoints;
@@ -67,12 +66,20 @@ typedef struct Mesh
 	int renderType;
 }Mesh;
 
+typedef struct ElementsSize
+{
+	int verticesNum;
+	int polysNum;
+	int indicesNum;
+	int linesNum;
+} ElementsSize;
 
-Mesh *initMesh(int verticesNum, int polysNum, int indicesNum, int linesNum, int renderType, Texture *tex);
+
+Mesh *initMesh(ElementsSize *elSize, int renderType, Texture *tex);
 Mesh *loadMesh(char *path, int loadOptions, int meshOptions, Texture *tex);
+ElementsSize *getElementsSize(int verticesNum, int polysNum, int indicesNum, int linesNum);
 
 void prepareCelList(Mesh *ms);
-void fuckThisShit(Mesh *ms);
 
 void setMeshPolygonOrder(Mesh *ms, bool cw, bool ccw);
 void setMeshTransparency(Mesh *ms, bool enable);

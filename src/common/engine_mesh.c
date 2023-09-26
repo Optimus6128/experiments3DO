@@ -275,54 +275,67 @@ void flipMeshVerticesIfNeg(Mesh *ms, bool flipX, int flipY, bool flipZ)
 	}
 }
 
-Mesh* initMesh(int verticesNum, int polysNum, int indicesNum, int linesNum, int renderType, Texture *tex)
+ElementsSize *getElementsSize(int verticesNum, int polysNum, int indicesNum, int linesNum)
+{
+	static ElementsSize elSize;
+
+	elSize.verticesNum = verticesNum;
+	elSize.polysNum = polysNum;
+	elSize.indicesNum = indicesNum;
+	elSize.linesNum = linesNum;
+
+	return &elSize;
+}
+
+Mesh* initMesh(ElementsSize *elSize, int renderType, Texture *tex)
 {
 	Mesh *ms = (Mesh*)AllocMem(sizeof(Mesh), MEMTYPE_ANY);
 
-	ms->verticesNum = verticesNum;
-	ms->polysNum = polysNum;
-	ms->indicesNum = indicesNum;
-	ms->linesNum = linesNum;
-	ms->renderType = renderType;
-	ms->tex = tex;
+	if (elSize) {
+		ms->verticesNum = elSize->verticesNum;
+		ms->polysNum = elSize->polysNum;
+		ms->indicesNum = elSize->indicesNum;
+		ms->linesNum = elSize->linesNum;
+		ms->renderType = renderType;
+		ms->tex = tex;
 
-	if (verticesNum) ms->vertex = (Vertex*)AllocMem(verticesNum * sizeof(Vertex), MEMTYPE_ANY);
-	if (indicesNum) ms->index = (int*)AllocMem(indicesNum * sizeof(int), MEMTYPE_ANY);
-	if (linesNum) ms->lineIndex = (int*)AllocMem(linesNum * 2 * sizeof(int), MEMTYPE_ANY);
-	if (polysNum) {
-		ms->poly = (PolyData*)AllocMem(polysNum * sizeof(PolyData), MEMTYPE_ANY);
-		ms->polyNormal = (Vector3D*)AllocMem(polysNum * sizeof(Vector3D), MEMTYPE_ANY);
-	}
-
-	if (renderType & MESH_OPTION_RENDER_SOFT) {
-		if (verticesNum) {
-			ms->vertexNormal = (Vector3D*)AllocMem(verticesNum * sizeof(Vector3D), MEMTYPE_ANY);
-			ms->vertexCol = (int*)AllocMem(verticesNum * sizeof(int), MEMTYPE_ANY);
-			ms->vertexTC = (TexCoords*)AllocMem(verticesNum * sizeof(TexCoords), MEMTYPE_ANY);
+		if (elSize->verticesNum) ms->vertex = (Vertex*)AllocMem(elSize->verticesNum * sizeof(Vertex), MEMTYPE_ANY);
+		if (elSize->indicesNum) ms->index = (int*)AllocMem(elSize->indicesNum * sizeof(int), MEMTYPE_ANY);
+		if (elSize->linesNum) ms->lineIndex = (int*)AllocMem(elSize->linesNum * 2 * sizeof(int), MEMTYPE_ANY);
+		if (elSize->polysNum) {
+			ms->poly = (PolyData*)AllocMem(elSize->polysNum * sizeof(PolyData), MEMTYPE_ANY);
+			ms->polyNormal = (Vector3D*)AllocMem(elSize->polysNum * sizeof(Vector3D), MEMTYPE_ANY);
 		}
-	} else {
-		if (renderType & MESH_OPTION_RENDER_BILLBOARDS) {
-			if (verticesNum) {
-				ms->cel = (CCB*)AllocMem(verticesNum * sizeof(CCB), MEMTYPE_ANY);
-				ms->poly = (PolyData*)AllocMem(verticesNum * sizeof(PolyData), MEMTYPE_ANY);
+
+		if (renderType & MESH_OPTION_RENDER_SOFT) {
+			if (elSize->verticesNum) {
+				ms->vertexNormal = (Vector3D*)AllocMem(elSize->verticesNum * sizeof(Vector3D), MEMTYPE_ANY);
+				ms->vertexCol = (int*)AllocMem(elSize->verticesNum * sizeof(int), MEMTYPE_ANY);
+				ms->vertexTC = (TexCoords*)AllocMem(elSize->verticesNum * sizeof(TexCoords), MEMTYPE_ANY);
 			}
-		} else if (polysNum) {
-			ms->cel = (CCB*)AllocMem(polysNum * sizeof(CCB), MEMTYPE_ANY);
+		} else {
+			if (renderType & MESH_OPTION_RENDER_BILLBOARDS) {
+				if (elSize->verticesNum) {
+					ms->cel = (CCB*)AllocMem(elSize->verticesNum * sizeof(CCB), MEMTYPE_ANY);
+					ms->poly = (PolyData*)AllocMem(elSize->verticesNum * sizeof(PolyData), MEMTYPE_ANY);
+				}
+			} else if (elSize->polysNum) {
+				ms->cel = (CCB*)AllocMem(elSize->polysNum * sizeof(CCB), MEMTYPE_ANY);
+			}
 		}
 	}
 
 	return ms;
 }
 
-static char tempBuffSrc[65536];	// will alloc later, changed things in file utils and so I forgot about this. Afraid to do AllocMem inside now because compiler issues might emerge again.
+static char tempBuffSrc[16384];	// will alloc later, changed things in file utils and so I forgot about this. Afraid to do AllocMem inside now because compiler issues might emerge again.
 
 Mesh *loadMesh(char *path, int loadOptions, int meshOptions, Texture *tex)
 {
 	int i;
-	int verticesNum, polysNum, linesNum, tempBuffSize;
-
 	unsigned char *tempBuff8;
 	uint16 *tempBuff16;
+	int tempBuffSize;
 
 	Mesh *ms = NULL;
 
@@ -330,6 +343,7 @@ Mesh *loadMesh(char *path, int loadOptions, int meshOptions, Texture *tex)
 	bool flipPolyOrder = loadOptions & MESH_LOAD_FLIP_POLYORDER;
 
 	Stream *CDstream = openFileStream(path); 
+	int verticesNum, polysNum, linesNum, indicesNum;
 
 	readSequentialBytesFromFileStream(6, tempBuffSrc, CDstream);
 	tempBuff16 = (uint16*)tempBuffSrc;
@@ -337,10 +351,11 @@ Mesh *loadMesh(char *path, int loadOptions, int meshOptions, Texture *tex)
 	verticesNum = SHORT_ENDIAN_FLIP(tempBuff16[0]);
 	polysNum = SHORT_ENDIAN_FLIP(tempBuff16[2]);
 	linesNum = SHORT_ENDIAN_FLIP(tempBuff16[1]);
+	indicesNum = 3 * polysNum;
 	tempBuffSize = verticesNum * 3;
 
 
-	ms = initMesh(verticesNum, polysNum, 3*polysNum, linesNum * (int)loadLines, meshOptions, tex);
+	ms = initMesh(getElementsSize(verticesNum, polysNum, indicesNum, linesNum * (int)loadLines), meshOptions, tex);
 
 	readSequentialBytesFromFileStream(tempBuffSize, tempBuffSrc, CDstream);
 	tempBuff8 = (unsigned char*)tempBuffSrc;
@@ -361,10 +376,10 @@ Mesh *loadMesh(char *path, int loadOptions, int meshOptions, Texture *tex)
 		moveFileStreamPointerRelative(tempBuffSize, CDstream);
 	}
 
-	tempBuffSize = 3*polysNum * sizeof(uint16);
+	tempBuffSize = indicesNum * sizeof(uint16);
 	readSequentialBytesFromFileStream(tempBuffSize, tempBuffSrc, CDstream);
 	tempBuff16 = (uint16*)tempBuffSrc;
-	for (i=0; i<3*polysNum; ++i) {
+	for (i=0; i<indicesNum; ++i) {
 		ms->index[i] = SHORT_ENDIAN_FLIP(tempBuff16[i]);
 	}
 	setAllPolyData(ms, 3, 0, 0);

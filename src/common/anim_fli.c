@@ -227,14 +227,14 @@ static void streamNextBlock(AnimFLI *anim, int size)
 	readBytesFromFileStream(anim->fileIndex, size, anim->fliBuffer, anim->fileStream);
 }
 
-static void streamNextBlockIfNeeded(AnimFLI *anim)
+/*static void streamNextBlockIfNeeded(AnimFLI *anim)
 {
 	const int frameSize = readU32(anim, false);
 
 	if (anim->dataIndex + frameSize > STREAM_BLOCK_SIZE) {
 		streamNextBlock(anim, STREAM_BLOCK_SIZE);
 	}
-}
+}*/
 
 void FLIplayNextFrame(AnimFLI *anim)
 {

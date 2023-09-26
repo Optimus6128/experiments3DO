@@ -176,6 +176,8 @@ void effectMeshSoftRun()
 	}
 
 	renderSoftObj(0, 256, t);
+	
+	//printf("test %d", t);
 
-	//displayDebugNums(true);
+	displayDebugNums(false);
 }

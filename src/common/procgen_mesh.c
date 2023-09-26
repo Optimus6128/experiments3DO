@@ -369,7 +369,7 @@ Mesh *subdivMesh(Mesh *srcMesh)
 		}
 	}
 
-	dstMesh = initMesh(newVertNum, 4*srcMesh->polysNum, 4*srcMesh->indicesNum, 0, srcMesh->renderType, srcMesh->tex);
+	dstMesh = initMesh(getElementsSize(newVertNum, 4*srcMesh->polysNum, 4*srcMesh->indicesNum, 0), srcMesh->renderType, srcMesh->tex);
 
 	resetAllCurrentPointers(dstMesh);
 
@@ -456,7 +456,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 		default:
 		case MESH_PLANE:
 		{
-			ms = initMesh(4,1,4,0, optionsFlags, tex);
+			ms = initMesh(getElementsSize(4,1,4,0), optionsFlags, tex);
 
 			resetAllCurrentPointers(ms);
 
@@ -474,7 +474,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 
 		case MESH_CUBE:
 		{
-			ms = initMesh(8,6,24,12, optionsFlags, tex);
+			ms = initMesh(getElementsSize(8,6,24,12), optionsFlags, tex);
 
 			resetAllCurrentPointers(ms);
 
@@ -497,7 +497,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 
 		case MESH_CUBE_TRI:
 		{
-			ms = initMesh(8,12,36,12, optionsFlags, tex);
+			ms = initMesh(getElementsSize(8,12,36,12), optionsFlags, tex);
 
 			resetAllCurrentPointers(ms);
 
@@ -526,7 +526,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 		
 		case MESH_ROMBUS:
 		{
-			ms = initMesh(6,8,24,0, optionsFlags, tex);
+			ms = initMesh(getElementsSize(6,8,24,0), optionsFlags, tex);
 
 			resetAllCurrentPointers(ms);
 
@@ -554,7 +554,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 
 		case MESH_PRISM:
 		{
-			ms = initMesh(6,5,18,0, optionsFlags, tex);
+			ms = initMesh(getElementsSize(6,5,18,0), optionsFlags, tex);
 
 			resetAllCurrentPointers(ms);
 
@@ -580,7 +580,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 
 		case MESH_PYRAMID1:
 		{
-			ms = initMesh(5,5,20,0, optionsFlags, tex);
+			ms = initMesh(getElementsSize(5,5,20,0), optionsFlags, tex);
 
 			resetAllCurrentPointers(ms);
 
@@ -592,7 +592,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 
 		case MESH_PYRAMID2:
 		{
-			ms = initMesh(9,5,20,0, optionsFlags, tex);
+			ms = initMesh(getElementsSize(9,5,20,0), optionsFlags, tex);
 
 			resetAllCurrentPointers(ms);
 
@@ -632,7 +632,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 
 		case MESH_PYRAMID3:
 		{
-			ms = initMesh(5,5,20,0, optionsFlags, tex);
+			ms = initMesh(getElementsSize(5,5,20,0), optionsFlags, tex);
 
 			resetAllCurrentPointers(ms);
 
@@ -659,7 +659,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			const int polysNum = divisions * divisions;
 			const int indicesNum = polysNum * 4;
 
-			ms = initMesh(vertexNum, polysNum, indicesNum, 0, optionsFlags, tex);
+			ms = initMesh(getElementsSize(vertexNum, polysNum, indicesNum, 0), optionsFlags, tex);
 
 			resetAllCurrentPointers(ms);
 
@@ -704,7 +704,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			const int indicesNum = polysNum * 4;
 			const int linesNum = (procPointsNum - 1) * 4 + procPointsNum * 4;
 
-			ms = initMesh(vertexNum, polysNum, indicesNum, linesNum, optionsFlags, tex);
+			ms = initMesh(getElementsSize(vertexNum, polysNum, indicesNum, linesNum), optionsFlags, tex);
 
 			resetAllCurrentPointers(ms);
 
@@ -744,7 +744,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 
 		case MESH_SKYBOX:
 		{
-			ms = initMesh(8,6,24,12, optionsFlags, tex);
+			ms = initMesh(getElementsSize(8,6,24,12), optionsFlags, tex);
 
 			resetAllCurrentPointers(ms);
 
@@ -774,7 +774,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			const int starsNum = params.numProcPoints;
 			const int distance = params.size;
 
-			ms = initMesh(starsNum,0,0,0, optionsFlags, tex);
+			ms = initMesh(getElementsSize(starsNum,0,0,0), optionsFlags, tex);
 
 			resetAllCurrentPointers(ms);
 
@@ -799,7 +799,7 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			const int particlesNum = params.numProcPoints;
 			const int halfSize = 256;
 
-			ms = initMesh(particlesNum,0,0,0, optionsFlags, tex);
+			ms = initMesh(getElementsSize(particlesNum,0,0,0), optionsFlags, tex);
 
 			resetAllCurrentPointers(ms);
 

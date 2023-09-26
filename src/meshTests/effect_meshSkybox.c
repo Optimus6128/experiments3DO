@@ -141,9 +141,9 @@ void effectMeshSkyboxRun()
 
 	inputScript(dt);
 
-	//setObjectsPosAndRot(dt);
+	setObjectsPosAndRot(dt);
 
 	renderWorld(myWorld);
 
-	displayDebugNums(false);
+	//displayDebugNums(false);
 }
