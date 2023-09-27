@@ -287,9 +287,34 @@ ElementsSize *getElementsSize(int verticesNum, int polysNum, int indicesNum, int
 	return &elSize;
 }
 
+void destroyMesh(Mesh *ms)
+{
+	if (ms->vertex) FreeMem(ms->vertex, -1);
+	if (ms->index) FreeMem(ms->index, -1);
+	if (ms->poly) FreeMem(ms->poly, -1);
+	if (ms->polyNormal) FreeMem(ms->polyNormal, -1);
+	if (ms->vertexNormal) FreeMem(ms->vertexNormal, -1);
+	if (ms->lineIndex) FreeMem(ms->lineIndex, -1);
+	if (ms->cel) FreeMem(ms->cel, -1);
+	if (ms->vertexCol) FreeMem(ms->vertexCol, -1);
+	if (ms->vertexTC) FreeMem(ms->vertexTC, -1);
+
+	ScavengeMem();
+}
+
 Mesh* initMesh(ElementsSize *elSize, int renderType, Texture *tex)
 {
 	Mesh *ms = (Mesh*)AllocMem(sizeof(Mesh), MEMTYPE_ANY);
+
+	ms->vertex = NULL;
+	ms->index = NULL;
+	ms->poly = NULL;
+	ms->polyNormal = NULL;
+	ms->vertexNormal = NULL;
+	ms->lineIndex = NULL;
+	ms->cel = NULL;
+	ms->vertexCol = NULL;
+	ms->vertexTC = NULL;
 
 	if (elSize) {
 		ms->verticesNum = elSize->verticesNum;
@@ -299,28 +324,28 @@ Mesh* initMesh(ElementsSize *elSize, int renderType, Texture *tex)
 		ms->renderType = renderType;
 		ms->tex = tex;
 
-		if (elSize->verticesNum) ms->vertex = (Vertex*)AllocMem(elSize->verticesNum * sizeof(Vertex), MEMTYPE_ANY);
-		if (elSize->indicesNum) ms->index = (int*)AllocMem(elSize->indicesNum * sizeof(int), MEMTYPE_ANY);
-		if (elSize->linesNum) ms->lineIndex = (int*)AllocMem(elSize->linesNum * 2 * sizeof(int), MEMTYPE_ANY);
+		if (elSize->verticesNum) ms->vertex = (Vertex*)AllocMem(elSize->verticesNum * sizeof(Vertex), MEMTYPE_TRACKSIZE);
+		if (elSize->indicesNum) ms->index = (int*)AllocMem(elSize->indicesNum * sizeof(int), MEMTYPE_TRACKSIZE);
+		if (elSize->linesNum) ms->lineIndex = (int*)AllocMem(elSize->linesNum * 2 * sizeof(int), MEMTYPE_TRACKSIZE);
 		if (elSize->polysNum) {
-			ms->poly = (PolyData*)AllocMem(elSize->polysNum * sizeof(PolyData), MEMTYPE_ANY);
-			ms->polyNormal = (Vector3D*)AllocMem(elSize->polysNum * sizeof(Vector3D), MEMTYPE_ANY);
+			ms->poly = (PolyData*)AllocMem(elSize->polysNum * sizeof(PolyData), MEMTYPE_TRACKSIZE);
+			ms->polyNormal = (Vector3D*)AllocMem(elSize->polysNum * sizeof(Vector3D), MEMTYPE_TRACKSIZE);
 		}
 
 		if (renderType & MESH_OPTION_RENDER_SOFT) {
 			if (elSize->verticesNum) {
-				ms->vertexNormal = (Vector3D*)AllocMem(elSize->verticesNum * sizeof(Vector3D), MEMTYPE_ANY);
-				ms->vertexCol = (int*)AllocMem(elSize->verticesNum * sizeof(int), MEMTYPE_ANY);
-				ms->vertexTC = (TexCoords*)AllocMem(elSize->verticesNum * sizeof(TexCoords), MEMTYPE_ANY);
+				ms->vertexNormal = (Vector3D*)AllocMem(elSize->verticesNum * sizeof(Vector3D), MEMTYPE_TRACKSIZE);
+				ms->vertexCol = (int*)AllocMem(elSize->verticesNum * sizeof(int), MEMTYPE_TRACKSIZE);
+				ms->vertexTC = (TexCoords*)AllocMem(elSize->verticesNum * sizeof(TexCoords), MEMTYPE_TRACKSIZE);
 			}
 		} else {
 			if (renderType & MESH_OPTION_RENDER_BILLBOARDS) {
 				if (elSize->verticesNum) {
-					ms->cel = (CCB*)AllocMem(elSize->verticesNum * sizeof(CCB), MEMTYPE_ANY);
-					ms->poly = (PolyData*)AllocMem(elSize->verticesNum * sizeof(PolyData), MEMTYPE_ANY);
+					ms->cel = (CCB*)AllocMem(elSize->verticesNum * sizeof(CCB), MEMTYPE_TRACKSIZE);
+					ms->poly = (PolyData*)AllocMem(elSize->verticesNum * sizeof(PolyData), MEMTYPE_TRACKSIZE);
 				}
 			} else if (elSize->polysNum) {
-				ms->cel = (CCB*)AllocMem(elSize->polysNum * sizeof(CCB), MEMTYPE_ANY);
+				ms->cel = (CCB*)AllocMem(elSize->polysNum * sizeof(CCB), MEMTYPE_TRACKSIZE);
 			}
 		}
 	}
@@ -389,8 +414,8 @@ Mesh *loadMesh(char *path, int loadOptions, int meshOptions, Texture *tex)
 	calculateMeshNormals(ms);
 	prepareCelList(ms);
 
-	// Commenting out this will make things fail for uknown reasons
+	// Commenting out this will make things fail for uknown reasons (UPDATE: Not this time)
 	//closeFileStream(CDstream);
-	
+
 	return ms;
 }

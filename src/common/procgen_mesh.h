@@ -24,6 +24,7 @@ Mesh *subdivMesh(Mesh *srcMesh);
 
 MeshgenParams makeDefaultMeshgenParams(int size);
 MeshgenParams makeMeshgenGridParams(int size, int divisions);
+MeshgenParams makeMeshgenSkyboxParams(int size, int subdivisions);
 MeshgenParams makeMeshgenSquareColumnoidParams(int size, Point2D *points, int numPoints, bool capTop, bool capBottom);
 MeshgenParams makeMeshgenStarsParams(int distance, int numStars);
 MeshgenParams makeMeshgenParticlesParams(int numParticles);

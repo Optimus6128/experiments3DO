@@ -75,9 +75,11 @@ typedef struct ElementsSize
 } ElementsSize;
 
 
+ElementsSize *getElementsSize(int verticesNum, int polysNum, int indicesNum, int linesNum);
+
 Mesh *initMesh(ElementsSize *elSize, int renderType, Texture *tex);
 Mesh *loadMesh(char *path, int loadOptions, int meshOptions, Texture *tex);
-ElementsSize *getElementsSize(int verticesNum, int polysNum, int indicesNum, int linesNum);
+void destroyMesh(Mesh *ms);
 
 void prepareCelList(Mesh *ms);
 

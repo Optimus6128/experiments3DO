@@ -58,15 +58,12 @@ static void initSkyboxTextures()
 
 static void initSkyboxObject()
 {
-	MeshgenParams params = makeDefaultMeshgenParams(4096);
+	MeshgenParams params = makeMeshgenSkyboxParams(4096, 2);
 	Mesh *skyboxMesh;
 
 	initSkyboxTextures();
 
 	skyboxMesh = initGenMesh(MESH_SKYBOX, params, MESH_OPTIONS_DEFAULT | MESH_OPTION_NO_POLYSORT | MESH_OPTION_NO_TRANSLATE, skyboxTex);
-	flipMeshPolyOrder(skyboxMesh);
-	skyboxMesh = subdivMesh(skyboxMesh);
-	skyboxMesh = subdivMesh(skyboxMesh);
 
 	skyboxObj = initObject3D(skyboxMesh);
 
@@ -79,7 +76,7 @@ static void initTeapotObject()
 
 	flatTex = initGenTexture(4,4, 16, NULL, 0, TEXGEN_FLAT, &paramCol);
 
-	loadedMesh = loadMesh("data/teapot.3do", MESH_LOAD_SKIP_LINES | MESH_LOAD_FLIP_POLYORDER, MESH_OPTIONS_DEFAULT | MESH_OPTION_ENABLE_LIGHTING, flatTex);
+	loadedMesh = loadMesh("data/duck2.3do", MESH_LOAD_SKIP_LINES /*| MESH_LOAD_FLIP_POLYORDER*/, MESH_OPTIONS_DEFAULT | MESH_OPTION_ENABLE_LIGHTING, flatTex);
 	scaleMesh(loadedMesh, 4, 4, 4);
 	loadedObj = initObject3D(loadedMesh);
 
@@ -113,7 +110,7 @@ static void inputScript(int dt)
 
 static void setObjectsPosAndRot(int dt)
 {
-	static int softRotX = 0;
+	static int softRotX = -64;
 	static int softRotY = 0;
 	static int softRotZ = 0;
 
@@ -127,8 +124,8 @@ static void setObjectsPosAndRot(int dt)
 
 	if (autoRot) {
 		//softRotX += 1;
-		softRotY += 2;
-		//softRotZ -= 1;
+		//softRotY += 2;
+		softRotZ += 1;
 	}
 }
 

@@ -435,6 +435,8 @@ Mesh *subdivMesh(Mesh *srcMesh)
 
 	updateMeshCELs(dstMesh);
 
+	destroyMesh(srcMesh);
+
 	return dstMesh;
 }
 
@@ -469,6 +471,8 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			addQuadIndices(3,2,1,0);
 
 			setAllPolyData(ms,4,0,0);
+
+			prepareCelList(ms);
 		}
 		break;
 
@@ -492,6 +496,8 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			initCubeLineIndices();
 
 			setAllPolyData(ms,4,0,0);
+
+			prepareCelList(ms);
 		}
 		break;
 
@@ -521,6 +527,8 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			initCubeLineIndices();
 
 			setAllPolyData(ms,3,0,0);
+
+			prepareCelList(ms);
 		}
 		break;
 		
@@ -549,6 +557,8 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			setAllPolyData(ms,3,0,0);
 
 			calculateMeshNormals(ms);
+
+			prepareCelList(ms);
 		}
 		break;
 
@@ -575,6 +585,8 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			ms->poly[3].numPoints = ms->poly[4].numPoints = 3;
 
 			calculateMeshNormals(ms);
+
+			prepareCelList(ms);
 		}
 		break;
 
@@ -587,6 +599,8 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			initMeshPyramids_1or3(s);
 
 			setAllPolyData(ms,4,0,0);
+
+			prepareCelList(ms);
 		}
 		break;
 
@@ -627,6 +641,8 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 				}
 			}
 			updatePolyTexData(ms);
+
+			prepareCelList(ms);
 		}
 		break;
 
@@ -649,6 +665,8 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 				}
 			}
 			updatePolyTexData(ms);
+
+			prepareCelList(ms);
 		}
 		break;
 
@@ -691,6 +709,8 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			}
 
 			setAllPolyData(ms,4,0,0);
+
+			prepareCelList(ms);
 		}
 		break;
 
@@ -739,6 +759,8 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			calculateMeshNormals(ms);
 
 			generateWireframe(ms);
+
+			prepareCelList(ms);
 		}
 		break;
 
@@ -751,12 +773,12 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 			initCubeVertices(s);
 			initCubePolyNormals(n);
 
-			addQuadIndices(0,1,2,3);
-			addQuadIndices(1,4,7,2);
-			addQuadIndices(4,5,6,7);
-			addQuadIndices(5,0,3,6);
-			addQuadIndices(3,2,7,6);
-			addQuadIndices(5,4,1,0);
+			addQuadIndices(3,2,1,0);
+			addQuadIndices(2,7,4,1);
+			addQuadIndices(7,6,5,4);
+			addQuadIndices(6,3,0,5);
+			addQuadIndices(6,7,2,3);
+			addQuadIndices(0,1,4,5);
 
 			initCubeLineIndices();
 
@@ -766,6 +788,12 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 				ms->poly[i].palId = 0;
 			}
 			updatePolyTexData(ms);
+
+			prepareCelList(ms);
+
+			for (i=0; i<params.divisions; ++i) {
+				ms = subdivMesh(ms);
+			}
 		}
 		break;
 
@@ -791,6 +819,8 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 
 				addVertex(x, y, z);
 			}
+
+			prepareCelList(ms);
 		}
 		break;
 
@@ -809,6 +839,8 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 				const int z = getRand(-halfSize, halfSize);
 				addVertex(x, y, z);
 			}
+
+			prepareCelList(ms);
 		}
 		break;
 
@@ -817,8 +849,6 @@ Mesh *initGenMesh(int meshgenId, const MeshgenParams params, int optionsFlags, T
 		}
 		break;
 	}
-
-	prepareCelList(ms);
 
 	return ms;
 }
@@ -839,6 +869,16 @@ MeshgenParams makeMeshgenGridParams(int size, int divisions)
 	params.size = size;
 	params.divisions = divisions;
 	params.procPoints = NULL;
+
+	return params;
+}
+
+MeshgenParams makeMeshgenSkyboxParams(int size, int subdivisions)
+{
+	MeshgenParams params;
+
+	params.size = size;
+	params.divisions = subdivisions;
 
 	return params;
 }
