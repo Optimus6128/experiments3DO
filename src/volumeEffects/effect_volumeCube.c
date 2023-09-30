@@ -6,11 +6,13 @@
 #include "tools.h"
 #include "input.h"
 #include "mathutil.h"
+#include "cel_helpers.h"
 #include "engine_main.h"
 #include "engine_mesh.h"
 #include "engine_texture.h"
 #include "procgen_mesh.h"
 #include "procgen_texture.h"
+
 
 #define DOTS_WIDTH 2
 #define DOTS_HEIGHT 2
@@ -83,9 +85,9 @@ static void updateBlending()
 
 	for (i=0; i<DOTS_DEPTH; ++i) {
 		if (blendOn) {
-			dotCel[i]->ccb_PIXC = 0x1F801F80;
+			dotCel[i]->ccb_PIXC = CEL_BLEND_ADDITIVE;
 		} else {
-			dotCel[i]->ccb_PIXC = SOLID_CEL;
+			dotCel[i]->ccb_PIXC = CEL_BLEND_OPAQUE;
 		}
 	}
 }

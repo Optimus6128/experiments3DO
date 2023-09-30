@@ -171,8 +171,8 @@ void setMeshPolygonCPUbackfaceTest(Mesh *ms, bool enable)
 
 void setMeshTranslucency(Mesh *ms, bool enable, bool additive)
 {
-	uint32 pixcBlend = TRANSLUCENT_CEL;
-	if (additive) pixcBlend = 0x1F801F80;
+	uint32 pixcBlend = CEL_BLEND_AVERAGE;
+	if (additive) pixcBlend = CEL_BLEND_ADDITIVE;
 
 	if (!(ms->renderType & MESH_OPTION_RENDER_SOFT)) {
 		const bool isBillBoards = (ms->renderType & MESH_OPTION_RENDER_BILLBOARDS) != 0;
@@ -185,7 +185,7 @@ void setMeshTranslucency(Mesh *ms, bool enable, bool additive)
 			if (enable) {
 				cel->ccb_PIXC = pixcBlend;
 			} else {
-				cel->ccb_PIXC = SOLID_CEL;
+				cel->ccb_PIXC = CEL_BLEND_OPAQUE;
 			}
 		}
 	}

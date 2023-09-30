@@ -6,7 +6,7 @@ static int bppTable[8] = {0, 1,2,4,6,8,16, 0};
 static void setDefaultCelValues(CCB *cel)
 {
 	cel->ccb_Flags =	CCB_LAST | CCB_NPABS | CCB_SPABS | CCB_PPABS | CCB_LDSIZE | CCB_LDPRS | CCB_LDPPMP | CCB_LDPLUT |
-						CCB_CCBPRE | CCB_YOXY | CCB_ACW | CCB_ACCW | CCB_ACE | CCB_USEAV | CCB_POVER_MASK | CCB_NOBLK;
+						CCB_CCBPRE | CCB_YOXY | CCB_ACW | CCB_ACCW | CCB_ACE | CCB_USEAV | /*CCB_POVER_MASK |*/ CCB_NOBLK;
 
 	// If we want superclipping (should do functions to set extra gimmicks)
 	// cel->ccb_Flags |= (CCB_ACSC | CCB_ALSC);

@@ -77,12 +77,12 @@ void setSpriteAlpha(Sprite *spr, bool enable, bool average)
 {
 	if (enable) {
 		if (average) {
-			spr->cel->ccb_PIXC = TRANSLUCENT_CEL;
+			spr->cel->ccb_PIXC = CEL_BLEND_AVERAGE;
 		} else {
-			spr->cel->ccb_PIXC = 0x1F801F80;
+			spr->cel->ccb_PIXC = CEL_BLEND_ADDITIVE;
 		}
 	} else {
-		spr->cel->ccb_PIXC = SOLID_CEL;
+		spr->cel->ccb_PIXC = CEL_BLEND_OPAQUE;
 	}
 }
 
