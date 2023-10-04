@@ -1,7 +1,5 @@
 #include "core.h"
 
-#include "effect_packedRadial.h"
-
 #include "mathutil.h"
 #include "system_graphics.h"
 #include "tools.h"

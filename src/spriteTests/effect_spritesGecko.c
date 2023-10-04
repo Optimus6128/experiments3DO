@@ -1,7 +1,5 @@
 #include "core.h"
 
-#include "effect_spritesGecko.h"
-
 #include "system_graphics.h"
 #include "tools.h"
 
@@ -10,6 +8,8 @@
 
 #define SPR_W 4
 #define SPR_H 4
+
+//#define SINGLE_DRAW_CEL_CALLS
 
 uint16 *geckoCelStorage;
 
@@ -60,7 +60,9 @@ static void prepareGeckoCels()
 			microGexCels[i].ccb_YPos = y << 16;
 			microGexCels[i].ccb_Flags |= CCB_BGND;
 			if (i>0) {
-				linkCel(&microGexCels[i-1], &microGexCels[i]);
+				#ifndef SINGLE_DRAW_CEL_CALLS
+					linkCel(&microGexCels[i-1], &microGexCels[i]);
+				#endif
 				microGexCels[i].ccb_Flags &= ~(CCB_LDSIZE | CCB_LDPRS | CCB_LDPPMP);
 				memcpy(&microGexCels[i].ccb_HDX, &microGexCels[i].ccb_PRE0, 8);
 			}
@@ -227,9 +229,25 @@ void effectSpritesGeckoInit()
 	prepareGeckoCels();
 }
 
+#ifdef SINGLE_DRAW_CEL_CALLS
+static void drawCelsManyCalls()
+{
+	int i;
+	const int count = mg_width * mg_height;
+
+	for (i=0; i<count; ++i) {
+		drawCels(&microGexCels[i]);
+	}
+}
+#endif
+
 void effectSpritesGeckoRun()
 {
 	scriptGeckoCels();
 
-	drawCels(microGexCels);
+	#ifdef SINGLE_DRAW_CEL_CALLS
+		drawCelsManyCalls();
+	#else
+		drawCels(microGexCels);
+	#endif
 }

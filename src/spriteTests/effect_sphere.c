@@ -2,8 +2,6 @@
 
 #include "core.h"
 
-#include "effect_sphere.h"
-
 #include "system_graphics.h"
 #include "sprite_engine.h"
 #include "tools.h"

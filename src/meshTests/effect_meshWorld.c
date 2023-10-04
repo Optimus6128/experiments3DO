@@ -1,8 +1,5 @@
 #include "core.h"
 
-#include "effect_meshWorld.h"
-#include "effect_meshLoad.h"
-
 #include "system_graphics.h"
 #include "tools.h"
 #include "input.h"

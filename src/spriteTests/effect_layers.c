@@ -1,7 +1,5 @@
 #include "core.h"
 
-#include "effect_layers.h"
-
 #include "system_graphics.h"
 #include "tools.h"
 

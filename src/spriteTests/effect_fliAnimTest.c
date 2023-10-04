@@ -1,7 +1,5 @@
 #include "core.h"
 
-#include "effect_fliAnimTest.h"
-
 #include "system_graphics.h"
 #include "sprite_engine.h"
 #include "anim_fli.h"
