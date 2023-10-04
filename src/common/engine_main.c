@@ -24,6 +24,7 @@ typedef struct zOrderListBucket
 static zOrderListBucket *zOrderList;
 static int zIndexMin, zIndexMax;
 
+static bool allCasesCheckInside[OUTSIDE_ALL_BITS];
 
 static Vertex *screenVertices;
 static ScreenElement *screenElements;
@@ -107,6 +108,26 @@ static void useCPUtestPolygonOrder(bool enable)
 	polygonOrderTestCPU = enable;
 }
 
+static void initAllCasesOutsideBits()
+{
+	int i;
+	const int insideBothXorY = INSIDE_X | INSIDE_Y;
+	const int outsideAllX = OUTSIDE_LEFT | OUTSIDE_RIGHT;
+	const int outsideAllY = OUTSIDE_UP | OUTSIDE_DOWN;
+	const int outsideAllFourSides = outsideAllX | outsideAllY;
+	const int halfOverlapX = outsideAllY | INSIDE_X;
+	const int halfOverlapY = outsideAllX | INSIDE_Y;
+
+	for (i=0; i<OUTSIDE_ALL_BITS; ++i) {
+		allCasesCheckInside[i] = 	!(i & OUTSIDE_Z) && 
+									((i & INSIDE) || 
+									((i & insideBothXorY) == insideBothXorY) || 
+									((i & outsideAllFourSides) == outsideAllFourSides) || 
+									((i & halfOverlapX) == halfOverlapX) || 
+									((i & halfOverlapY) == halfOverlapY));
+	}
+}
+
 static void prepareTransformedMeshCELs(Mesh *mesh)
 {
 	int i;
@@ -127,23 +148,23 @@ static void prepareTransformedMeshCELs(Mesh *mesh)
 	for (i=0; i<mesh->polysNum; ++i) {
 		const int polyNumPoints = mesh->poly[i].numPoints;
 
-		ScreenElement *sc1 = &screenElements[*index];
-		ScreenElement *sc2 = &screenElements[*(index+1)];
-		ScreenElement *sc3 = &screenElements[*(index+2)];
-		ScreenElement *sc4;
+		ScreenElement *se1 = &screenElements[*index];
+		ScreenElement *se2 = &screenElements[*(index+1)];
+		ScreenElement *se3 = &screenElements[*(index+2)];
+		ScreenElement *se4;
 		if (polyNumPoints == 3) {
-			sc4 = sc3;
+			se4 = se3;
 		} else {
-			sc4 = &screenElements[*(index+3)];
+			se4 = &screenElements[*(index+3)];
 		}
 
-		if (!(doPolyClipTests && sc1->outside && sc2->outside && sc3->outside && sc4->outside) && 
-			!(polygonOrderTestCPU && (sc1->x - sc2->x) * (sc3->y - sc2->y) - (sc3->x - sc2->x) * (sc1->y - sc2->y) <= 0)) {
+		if (!(doPolyClipTests && !allCasesCheckInside[se1->outside | se2->outside | se3->outside | se4->outside]) && 
+			!(polygonOrderTestCPU && (se1->x - se2->x) * (se3->y - se2->y) - (se3->x - se2->x) * (se1->y - se2->y) <= 0)) {
 
 				Point qpt[4];
 
 				if (doPolySort) {	// prepare buckets and link CELs inside buckets
-					const int avgZ = (sc1->z + sc2->z + sc3->z + sc4->z) >> (2 + Z_ORDER_SHIFT);
+					const int avgZ = (se1->z + se2->z + se3->z + se4->z) >> (2 + Z_ORDER_SHIFT);
 					zOrderListBucket *zBucket = &zOrderList[avgZ];
 
 					if (zBucket->first==NULL) {
@@ -165,15 +186,14 @@ static void prepareTransformedMeshCELs(Mesh *mesh)
 
 				if (mesh->renderType & MESH_OPTION_ENABLE_LIGHTING) {
 					int shade = -(getVector3Ddot(normal, &rotatedGlobalLightVec) >> NORMAL_SHIFT);
-					//CLAMP(shade,(1<<(NORMAL_SHIFT-4)),((1<<NORMAL_SHIFT)-1))
-					CLAMP(shade,(1<<(NORMAL_SHIFT-3)),((1<<NORMAL_SHIFT)-1))
+					CLAMP(shade,(1<<(NORMAL_SHIFT-4)),((1<<NORMAL_SHIFT)-1))
 					cel->ccb_PIXC = shadeTable[shade >> (NORMAL_SHIFT-SHADE_TABLE_SHR)];
 				}
 
-				qpt[0].pt_X = sc1->x; qpt[0].pt_Y = sc1->y;
-				qpt[1].pt_X = sc2->x; qpt[1].pt_Y = sc2->y;
-				qpt[2].pt_X = sc3->x; qpt[2].pt_Y = sc3->y;
-				qpt[3].pt_X = sc4->x; qpt[3].pt_Y = sc4->y;
+				qpt[0].pt_X = se1->x; qpt[0].pt_Y = se1->y;
+				qpt[1].pt_X = se2->x; qpt[1].pt_Y = se2->y;
+				qpt[2].pt_X = se3->x; qpt[2].pt_Y = se3->y;
+				qpt[3].pt_X = se4->x; qpt[3].pt_Y = se4->y;
 				mapcelFunc(cel, qpt, mesh->poly[i].texShifts);
 		}
 		index += polyNumPoints;
@@ -225,11 +245,11 @@ static void prepareTransformedMeshBillboardCELs(Mesh *mesh)
 
 	startPolyCel = NULL;
 	for (i=0; i<mesh->verticesNum; ++i) {
-		ScreenElement *sc = &screenElements[i];
+		ScreenElement *se = &screenElements[i];
 
-		if (!sc->outside) {
+		if ((se->outside & INSIDE)) {
 			if (doPolySort) {	// prepare buckets and link CELs inside buckets
-				const int pointZ = sc->z >> Z_ORDER_SHIFT;
+				const int pointZ = se->z >> Z_ORDER_SHIFT;
 				zOrderListBucket *zBucket = &zOrderList[pointZ];
 
 				if (zBucket->first==NULL) {
@@ -249,10 +269,10 @@ static void prepareTransformedMeshBillboardCELs(Mesh *mesh)
 				}
 			}
 
-			cel->ccb_XPos = (sc->x - (cel->ccb_Width >> 1)) << 16;
-			cel->ccb_YPos = (sc->y - (cel->ccb_Height >> 1)) << 16;
+			cel->ccb_XPos = (se->x - (cel->ccb_Width >> 1)) << 16;
+			cel->ccb_YPos = (se->y - (cel->ccb_Height >> 1)) << 16;
 
-			scale = ((256 << PROJ_SHR) * recZ[sc->z]) >> (REC_FPSHR - 8);
+			scale = ((256 << PROJ_SHR) * recZ[se->z]) >> (REC_FPSHR - 8);
 			cel->ccb_HDX = scale << 4;
 			cel->ccb_VDY = scale;
 
@@ -364,12 +384,14 @@ static void translateAndProjectVertices(Object3D *obj, Camera *cam)
 
 	const int lvNum = obj->mesh->verticesNum;
 
-	const int screenWidthHalf = screenWidth >> 1;
-	const int screenHeightHalf = screenHeight >> 1;
-	const int screenWidthHalfEdge = screenWidthHalf + (screenWidthHalf >> 2);
-	const int screenHeightHalfEdge = screenHeightHalf + (screenHeightHalf >> 2);
-	const int offsetX = screenOffsetX + screenWidthHalf;
-	const int offsetY = screenOffsetY + screenHeightHalf;
+	const int offsetX = screenOffsetX + SCREEN_WIDTH/2;
+	const int offsetY = screenOffsetY + SCREEN_HEIGHT/2;
+	const int camNear = cam->near;
+	const int camFar = cam->far;
+
+	Vertex *sv = screenVertices;
+	ScreenElement *se = screenElements;
+
 	const bool doPolyClipTests = !(obj->mesh->renderType & MESH_OPTION_NO_POLYCLIP);
 	const bool doTranslate = !(obj->mesh->renderType & MESH_OPTION_NO_TRANSLATE);
 
@@ -386,20 +408,37 @@ static void translateAndProjectVertices(Object3D *obj, Camera *cam)
 	}
 
 	for (i=0; i<lvNum; i++) {
-		const int vx = screenVertices[i].x + posFromCam[0];
-		const int vy = screenVertices[i].y + posFromCam[1];
 		const int vz = screenVertices[i].z + posFromCam[2];
-		//CLAMP(vz, cam->near, cam->far)
+		if (vz < camNear || vz > camFar) {
+			se->outside = OUTSIDE_Z;
+		} else {
+			const int vx = sv->x + posFromCam[0];
+			const int vy = sv->y + posFromCam[1];
+			const int rcz = recZ[vz];
 
-		if (doPolyClipTests) {
-			const int edgeX = (screenWidthHalfEdge * vz) >> PROJ_SHR;
-			const int edgeY = (screenHeightHalfEdge * vz) >> PROJ_SHR;
-			screenElements[i].outside = (vz < cam->near || vx < -edgeX || vx > edgeX || vy < -edgeY || vy > edgeY);
+			if (doPolyClipTests) {
+				const int edgeX = ((SCREEN_WIDTH/2) * vz) >> PROJ_SHR;
+				const int edgeY = ((SCREEN_HEIGHT/2) * vz) >> PROJ_SHR;
+
+				int outsideBits = 0;
+
+				if (vx >= -edgeX && vx <= edgeX) outsideBits |= INSIDE_X;
+				if (vx < -edgeX) outsideBits |= OUTSIDE_LEFT;
+				if (vx > edgeX)	outsideBits |= OUTSIDE_RIGHT;
+				if (vy >= -edgeY && vy <= edgeY) outsideBits |= INSIDE_Y;
+				if (vy < -edgeY) outsideBits |= OUTSIDE_UP;
+				if (vy > edgeY) outsideBits |= OUTSIDE_DOWN;
+				if ((outsideBits & (INSIDE_X | INSIDE_Y)) == (INSIDE_X | INSIDE_Y)) outsideBits |= INSIDE;
+
+				se->outside = outsideBits;
+			}
+
+			se->x = offsetX + (((vx << PROJ_SHR) * rcz) >> REC_FPSHR);
+			se->y = offsetY - (((vy << PROJ_SHR) * rcz) >> REC_FPSHR);
+			se->z = vz;
 		}
-
-		screenElements[i].x = offsetX + (((vx << PROJ_SHR) * recZ[vz]) >> REC_FPSHR);
-		screenElements[i].y = offsetY - (((vy << PROJ_SHR) * recZ[vz]) >> REC_FPSHR);
-		screenElements[i].z = vz;
+		++sv;
+		++se;
 	}
 }
 
@@ -625,6 +664,8 @@ void initEngine(bool usesSoftEngine)
 {
 	initEngineLUTs();
 	initEngineVertexTables();
+
+	initAllCasesOutsideBits();
 
 	useCPUtestPolygonOrder(false);
 	useMapCelFunctionFast(true);

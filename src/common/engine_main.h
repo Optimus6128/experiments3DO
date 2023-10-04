@@ -5,9 +5,19 @@
 #include "engine_view.h"
 #include "engine_mesh.h"
 
-#define MAX_VERTEX_ELEMENTS_NUM 6144
+#define MAX_VERTEX_ELEMENTS_NUM 4096
 
 #define PROJ_SHR 8
+
+#define INSIDE				(1 << 0)
+#define INSIDE_X 			(1 << 1)
+#define INSIDE_Y 			(1 << 2)
+#define OUTSIDE_LEFT		(1 << 3)
+#define OUTSIDE_RIGHT		(1 << 4)
+#define OUTSIDE_UP			(1 << 5)
+#define OUTSIDE_DOWN		(1 << 6)
+#define OUTSIDE_Z			(1 << 7)
+#define OUTSIDE_ALL_BITS	((1 << 8) - 1)
 
 #define SHADE_TABLE_SHR 4
 #define SHADE_TABLE_SIZE (1 << SHADE_TABLE_SHR)
