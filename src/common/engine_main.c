@@ -384,8 +384,10 @@ static void translateAndProjectVertices(Object3D *obj, Camera *cam)
 
 	const int lvNum = obj->mesh->verticesNum;
 
-	const int offsetX = screenOffsetX + SCREEN_WIDTH/2;
-	const int offsetY = screenOffsetY + SCREEN_HEIGHT/2;
+	const int screenWidthHalf = screenWidth / 2;
+	const int screenHeightHalf = screenHeight / 2;
+	const int offsetX = screenOffsetX + screenWidthHalf;
+	const int offsetY = screenOffsetY + screenHeightHalf;
 	const int camNear = cam->near;
 	const int camFar = cam->far;
 
@@ -417,8 +419,8 @@ static void translateAndProjectVertices(Object3D *obj, Camera *cam)
 			const int rcz = recZ[vz];
 
 			if (doPolyClipTests) {
-				const int edgeX = ((SCREEN_WIDTH/2) * vz) >> PROJ_SHR;
-				const int edgeY = ((SCREEN_HEIGHT/2) * vz) >> PROJ_SHR;
+				const int edgeX = (screenWidthHalf * vz) >> PROJ_SHR;
+				const int edgeY = (screenHeightHalf * vz) >> PROJ_SHR;
 
 				int outsideBits = 0;
 
