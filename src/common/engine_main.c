@@ -56,6 +56,7 @@ static void slowMapCel(CCB *c, Point *q, unsigned char texShifts)
 	MapCel(c, q);
 }
 
+#ifndef USE_MAP_CEL_ASM
 static void fasterMapCel(CCB *c, Point *q, unsigned char texShifts)
 {
 	const int shrWidth = (int)(texShifts >> 4);
@@ -93,11 +94,18 @@ static void fasterMapCel(CCB *c, Point *q, unsigned char texShifts)
 	c->ccb_HDDX = (hdx1 - hdx0) >> shrHeight;
 	c->ccb_HDDY = (hdy1 - hdy0) >> shrHeight;
 }
+#else
+	void fasterMapCelAsm(CCB *c, Point *q, unsigned char texShifts);
+#endif
 
 static void useMapCelFunctionFast(bool enable)
 {
 	if (enable) {
-		mapcelFunc = fasterMapCel;
+		#ifdef USE_MAP_CEL_ASM
+			mapcelFunc = fasterMapCelAsm;
+		#else
+			mapcelFunc = fasterMapCel;
+		#endif
 	} else {
 		mapcelFunc = slowMapCel;
 	}

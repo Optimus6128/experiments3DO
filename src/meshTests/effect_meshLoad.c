@@ -68,7 +68,7 @@ void effectMeshLoadInit()
 
 	gridMesh = initGenMesh(MESH_GRID, gridParams, MESH_OPTIONS_DEFAULT | MESH_OPTION_NO_POLYSORT, gridTex);
 	
-	loadedMesh = loadMesh("data/teapot.3do", MESH_LOAD_SKIP_LINES | MESH_LOAD_FLIP_POLYORDER, MESH_OPTIONS_DEFAULT | MESH_OPTION_ENABLE_LIGHTING, flatTex);
+	loadedMesh = loadMesh("data/head.3do", MESH_LOAD_SKIP_LINES | MESH_LOAD_FLIP_POLYORDER, MESH_OPTIONS_DEFAULT | MESH_OPTION_ENABLE_LIGHTING, flatTex);
 	loadedObj = initObject3D(loadedMesh);
 
 
@@ -76,7 +76,8 @@ void effectMeshLoadInit()
 	shadeGrid();
 
 	viewer = createViewer(64,192,64, 176);
-	setViewerPos(viewer, 0,96,-1024);
+	//setViewerPos(viewer, 0,96,-1024);
+	setViewerPos(viewer, 0,160,-320);
 
 	light = createLight(true);
 
@@ -101,7 +102,7 @@ static void inputScript(int dt)
 static void setObjectsPosAndRot(int dt)
 {
 	static int softRotX = 0;
-	static int softRotY = 0;
+	static int softRotY = 128;
 	static int softRotZ = 0;
 
 	setObject3Dpos(gridObj, 0, 0, 0);
