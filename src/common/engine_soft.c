@@ -14,6 +14,8 @@
 #include "tools.h"
 
 
+//#define OLD_TRIANGLE_DRAW
+
 #define SOFT_BUFF_MAX_SIZE (2 * SCREEN_WIDTH * SCREEN_HEIGHT)
 
 #define DIV_TAB_SIZE 4096
@@ -980,6 +982,138 @@ static bool shouldSkipTriangle(ScreenElement *e0, ScreenElement *e1, ScreenEleme
 }
 
 
+#define D_FP 8
+
+static void DrawGouraudTriangleOld(ScreenElement *e0, ScreenElement *e1, ScreenElement *e2)
+{
+	// ===== Sort =====
+
+	int y0 = e0->y;
+	int y1 = e1->y;
+	int y2 = e2->y;
+
+	ScreenElement *temp;
+	if (y1<y0) {
+		temp = e0; e0 = e1; e1 = temp;
+	}
+	if (y2<y0) {
+		temp = e0; e0 = e2; e2 = temp;
+	}
+	if (y2<y1) {
+		temp = e1; e1 = e2; e2 = temp;
+	}
+
+
+	// ===== Prepare interpolants =====
+
+	{
+		int x, y, dc;
+
+		int dx01, dx12, dx02;
+		int dc01, dc12, dc02;
+		int repDiv;
+
+		const int stride8 = softBuffer.stride;
+		unsigned char *vram8, *dst;
+
+		const int x0 =e0->x;
+		const int x1 =e1->x;
+		const int x2 =e2->x;
+
+		const int c0 = e0->c;
+		const int c1 = e1->c;
+		const int c2 = e2->c;
+
+		int x01 = x0<<D_FP;
+		int x02 = x01;
+		int c01 = c0<<D_FP;
+		int c02 = c01;
+
+		y0 = e0->y;
+		y1 = e1->y;
+		y2 = e2->y;
+
+		repDiv = divTab[y1 - y0 + DIV_TAB_SIZE/2];
+		dx01 = (((x1 - x0)<<D_FP) * repDiv) >> DIV_TAB_SHIFT;
+		dc01 = (((c1 - c0)<<D_FP) * repDiv) >> DIV_TAB_SHIFT;
+
+		repDiv = divTab[y2 - y1 + DIV_TAB_SIZE/2];
+		dx12 = (((x2 - x1)<<D_FP) * repDiv) >> DIV_TAB_SHIFT;
+		dc12 = (((c2 - c1)<<D_FP) * repDiv) >> DIV_TAB_SHIFT;
+
+		repDiv = divTab[y2 - y0 + DIV_TAB_SIZE/2];
+		dx02 = (((x2 - x0)<<D_FP) * repDiv) >> DIV_TAB_SHIFT;
+		dc02 = (((c2 - c0)<<D_FP) * repDiv) >> DIV_TAB_SHIFT;
+
+
+		// ===== First half triangle =====
+
+		vram8 = (unsigned char*)softBufferCurrentPtr + y0 * stride8;
+
+		for (y = y0; y<y1; y++) {
+			int sx1 = x01>>D_FP;
+			int sx2 = x02>>D_FP;
+			int sc1 = c01;
+			int sc2 = c02;
+
+			// TODO: shouldn't have to swap every scanline necessarily
+			if (sx1>sx2) {
+				int temp = sx1; sx1 = sx2; sx2 = temp;
+				temp = sc1; sc1 = sc2; sc2 = temp;
+			}
+			dc = ((sc2 - sc1) * divTab[sx2 - sx1 + DIV_TAB_SIZE/2]) >> DIV_TAB_SHIFT;
+
+			dst = vram8 + sx1;
+			for (x = sx1; x<sx2; x++) {
+				//*dst++ = (unsigned char)(sc1>>D_FP);
+				sc1+=dc;
+			}
+			x01+=dx01;
+			x02+=dx02;
+			c01+=dc01;
+			c02+=dc02;
+
+			vram8 += stride8;
+		}
+
+
+		// ===== Second half triangle =====
+
+		x01 = x1<<D_FP;
+		c01 = c1<<D_FP;
+
+		vram8 = (unsigned char*)softBufferCurrentPtr + y1 * stride8;
+
+		for (y = y1; y<y2; y++) {
+			int sx1 = x01>>D_FP;
+			int sx2 = x02>>D_FP;
+			int sc1 = c01;
+			int sc2 = c02;
+
+			// TODO: shouldn't have to swap every scanline necessarily
+			if (sx1>sx2) {
+				int temp = sx1; sx1 = sx2; sx2 = temp;
+				temp = sc1; sc1 = sc2; sc2 = temp;
+			}
+			dc = ((sc2 - sc1) * divTab[sx2 - sx1 + DIV_TAB_SIZE/2]) >> DIV_TAB_SHIFT;
+
+			dst = vram8 + sx1;
+			for (x = sx1; x<sx2; x++) {
+				//*dst++ = (unsigned char)(sc1>>D_FP);
+				sc1+=dc;
+			}
+			x01+=dx12;
+			x02+=dx02;
+			c01+=dc12;
+			c02+=dc02;
+
+			vram8 += stride8;
+		}
+	}
+}
+
+
+
 static void drawTriangle(ScreenElement *e0, ScreenElement *e1, ScreenElement *e2)
 {
 	int y0, y1;
@@ -1145,12 +1279,20 @@ static void renderMeshSoft(Mesh *ms, ScreenElement *elements)
 		n = (e0->x - e1->x) * (e2->y - e1->y) - (e2->x - e1->x) * (e0->y - e1->y);
 		if (n > 0) {
 			bindMeshPolyData(ms, i);
-			drawTriangle(e0, e1, e2);
+			#ifndef OLD_TRIANGLE_DRAW
+				drawTriangle(e0, e1, e2);
+			#else
+				DrawGouraudTriangleOld(e0, e1, e2);
+			#endif
 
 			if (ms->poly[i].numPoints == 4) {	// if quad then render another triangle
 				e1 = e2;
 				e2 = &elements[*index];
-				drawTriangle(e0, e1, e2);
+				#ifndef OLD_TRIANGLE_DRAW
+					drawTriangle(e0, e1, e2);
+				#else
+					DrawGouraudTriangleOld(e0, e1, e2);
+				#endif
 			}
 		}
 		if (ms->poly[i].numPoints == 4) ++index;
