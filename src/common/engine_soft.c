@@ -16,9 +16,6 @@
 
 #define OLD_TRIANGLE_DRAW
 
-// 54, 27 (109, 36)
-// 55, 28
-
 #define SOFT_BUFF_MAX_SIZE (2 * SCREEN_WIDTH * SCREEN_HEIGHT)
 
 #define DIV_TAB_SIZE 4096
@@ -984,6 +981,10 @@ static bool shouldSkipTriangle(ScreenElement *e0, ScreenElement *e1, ScreenEleme
     return ((outcode1 & outcode2 & outcode3)!=0);
 }
 
+
+// 54, 27 (109, 36)
+// 55, 28
+
 static void drawTriangleOldGouraud(ScreenElement *e0, ScreenElement *e1, ScreenElement *e2)
 {
 	// ===== Prepare interpolants =====
@@ -1164,6 +1165,7 @@ static void drawTriangleOldGouraud(ScreenElement *e0, ScreenElement *e1, ScreenE
 
 static void drawTriangleOld(ScreenElement *e0, ScreenElement *e1, ScreenElement *e2)
 {
+	//static ScreenElement e1b;
 	ScreenElement *temp;
 
 	if (shouldSkipTriangle(e0, e1, e2)) return;
@@ -1177,6 +1179,11 @@ static void drawTriangleOld(ScreenElement *e0, ScreenElement *e1, ScreenElement 
 	if (e2->y < e1->y) {
 		temp = e1; e1 = e2; e2 = temp;
 	}
+
+	//e1b.y = e1->y;
+	//e1b.x = (INT_TO_FIXED(e0->x, FP_BASE) + (e1->y - e0->y) * (((e2->x - e0->x) * divTab[e2->y - e0->y + DIV_TAB_SIZE/2]) >> (DIV_TAB_SHIFT - FP_BASE))) >> FP_BASE;
+	// Could avoid per scanline swap by creating fourth point and doing sorting/swap over X here.
+	// But with a lazy test where I called a duplication of drawTriangleOldGouraud with pre-swapped variables and removed checks, in the case e1b.x < e0->x, the performance gain was so minimal that I wonder if I should bother now
 
 	drawTriangleOldGouraud(e0, e1, e2);
 }
