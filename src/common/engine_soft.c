@@ -14,7 +14,7 @@
 #include "tools.h"
 
 
-//#define OLD_TRIANGLE_DRAW
+#define OLD_TRIANGLE_DRAW
 
 #define SOFT_BUFF_MAX_SIZE (2 * SCREEN_WIDTH * SCREEN_HEIGHT)
 
@@ -31,7 +31,7 @@ static CCB **currentScanlineCel8;
 #define GRADIENT_GROUP_SIZE (GRADIENT_SHADES * GRADIENT_LENGTH)
 static unsigned char *gourGrads;
 
-static bool fastGouraud = true;
+static bool fastGouraud = false;
 
 typedef struct Edge
 {
@@ -981,9 +981,6 @@ static bool shouldSkipTriangle(ScreenElement *e0, ScreenElement *e1, ScreenEleme
     return ((outcode1 & outcode2 & outcode3)!=0);
 }
 
-
-#define D_FP 8
-
 static void DrawGouraudTriangleOld(ScreenElement *e0, ScreenElement *e1, ScreenElement *e2)
 {
 	// ===== Sort =====
@@ -993,6 +990,7 @@ static void DrawGouraudTriangleOld(ScreenElement *e0, ScreenElement *e1, ScreenE
 	int y2 = e2->y;
 
 	ScreenElement *temp;
+
 	if (y1<y0) {
 		temp = e0; e0 = e1; e1 = temp;
 	}
@@ -1002,7 +1000,6 @@ static void DrawGouraudTriangleOld(ScreenElement *e0, ScreenElement *e1, ScreenE
 	if (y2<y1) {
 		temp = e1; e1 = e2; e2 = temp;
 	}
-
 
 	// ===== Prepare interpolants =====
 
@@ -1024,9 +1021,9 @@ static void DrawGouraudTriangleOld(ScreenElement *e0, ScreenElement *e1, ScreenE
 		const int c1 = e1->c;
 		const int c2 = e2->c;
 
-		int x01 = x0<<D_FP;
+		int x01 = x0 << FP_BASE;
 		int x02 = x01;
-		int c01 = c0<<D_FP;
+		int c01 = c0 << FP_BASE;
 		int c02 = c01;
 
 		y0 = e0->y;
@@ -1034,16 +1031,16 @@ static void DrawGouraudTriangleOld(ScreenElement *e0, ScreenElement *e1, ScreenE
 		y2 = e2->y;
 
 		repDiv = divTab[y1 - y0 + DIV_TAB_SIZE/2];
-		dx01 = (((x1 - x0)<<D_FP) * repDiv) >> DIV_TAB_SHIFT;
-		dc01 = (((c1 - c0)<<D_FP) * repDiv) >> DIV_TAB_SHIFT;
+		dx01 = ((x1 - x0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
+		dc01 = ((c1 - c0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
 
 		repDiv = divTab[y2 - y1 + DIV_TAB_SIZE/2];
-		dx12 = (((x2 - x1)<<D_FP) * repDiv) >> DIV_TAB_SHIFT;
-		dc12 = (((c2 - c1)<<D_FP) * repDiv) >> DIV_TAB_SHIFT;
+		dx12 = ((x2 - x1) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
+		dc12 = ((c2 - c1) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
 
 		repDiv = divTab[y2 - y0 + DIV_TAB_SIZE/2];
-		dx02 = (((x2 - x0)<<D_FP) * repDiv) >> DIV_TAB_SHIFT;
-		dc02 = (((c2 - c0)<<D_FP) * repDiv) >> DIV_TAB_SHIFT;
+		dx02 = ((x2 - x0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
+		dc02 = ((c2 - c0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
 
 
 		// ===== First half triangle =====
@@ -1051,8 +1048,8 @@ static void DrawGouraudTriangleOld(ScreenElement *e0, ScreenElement *e1, ScreenE
 		vram8 = (unsigned char*)softBufferCurrentPtr + y0 * stride8;
 
 		for (y = y0; y<y1; y++) {
-			int sx1 = x01>>D_FP;
-			int sx2 = x02>>D_FP;
+			int sx1 = x01 >> FP_BASE;
+			int sx2 = x02 >> FP_BASE;
 			int sc1 = c01;
 			int sc2 = c02;
 
@@ -1061,11 +1058,11 @@ static void DrawGouraudTriangleOld(ScreenElement *e0, ScreenElement *e1, ScreenE
 				int temp = sx1; sx1 = sx2; sx2 = temp;
 				temp = sc1; sc1 = sc2; sc2 = temp;
 			}
-			dc = ((sc2 - sc1) * divTab[sx2 - sx1 + DIV_TAB_SIZE/2]) >> DIV_TAB_SHIFT;
+			dc = ((sc2 - sc1) * divTab[sx2 - sx1 + DIV_TAB_SIZE/2]) >> (DIV_TAB_SHIFT - FP_BASE);
 
 			dst = vram8 + sx1;
 			for (x = sx1; x<sx2; x++) {
-				//*dst++ = (unsigned char)(sc1>>D_FP);
+				*dst++ = (unsigned char)(sc1>>FP_BASE);
 				sc1+=dc;
 			}
 			x01+=dx01;
@@ -1079,14 +1076,14 @@ static void DrawGouraudTriangleOld(ScreenElement *e0, ScreenElement *e1, ScreenE
 
 		// ===== Second half triangle =====
 
-		x01 = x1<<D_FP;
-		c01 = c1<<D_FP;
+		x01 = x1 << FP_BASE;
+		c01 = c1 << FP_BASE;
 
 		vram8 = (unsigned char*)softBufferCurrentPtr + y1 * stride8;
 
 		for (y = y1; y<y2; y++) {
-			int sx1 = x01>>D_FP;
-			int sx2 = x02>>D_FP;
+			int sx1 = x01 >> FP_BASE;
+			int sx2 = x02 >> FP_BASE;
 			int sc1 = c01;
 			int sc2 = c02;
 
@@ -1095,11 +1092,11 @@ static void DrawGouraudTriangleOld(ScreenElement *e0, ScreenElement *e1, ScreenE
 				int temp = sx1; sx1 = sx2; sx2 = temp;
 				temp = sc1; sc1 = sc2; sc2 = temp;
 			}
-			dc = ((sc2 - sc1) * divTab[sx2 - sx1 + DIV_TAB_SIZE/2]) >> DIV_TAB_SHIFT;
+			dc = ((sc2 - sc1) * divTab[sx2 - sx1 + DIV_TAB_SIZE/2]) >> (DIV_TAB_SHIFT - FP_BASE);
 
 			dst = vram8 + sx1;
 			for (x = sx1; x<sx2; x++) {
-				//*dst++ = (unsigned char)(sc1>>D_FP);
+				*dst++ = (unsigned char)(sc1>>FP_BASE);
 				sc1+=dc;
 			}
 			x01+=dx12;
@@ -1282,7 +1279,9 @@ static void renderMeshSoft(Mesh *ms, ScreenElement *elements)
 			#ifndef OLD_TRIANGLE_DRAW
 				drawTriangle(e0, e1, e2);
 			#else
-				DrawGouraudTriangleOld(e0, e1, e2);
+				if (!shouldSkipTriangle(e0, e1, e2)) {
+					DrawGouraudTriangleOld(e0, e1, e2);
+				}
 			#endif
 
 			if (ms->poly[i].numPoints == 4) {	// if quad then render another triangle
@@ -1291,7 +1290,9 @@ static void renderMeshSoft(Mesh *ms, ScreenElement *elements)
 				#ifndef OLD_TRIANGLE_DRAW
 					drawTriangle(e0, e1, e2);
 				#else
-					DrawGouraudTriangleOld(e0, e1, e2);
+					if (!shouldSkipTriangle(e0, e1, e2)) {
+						DrawGouraudTriangleOld(e0, e1, e2);
+					}
 				#endif
 			}
 		}
