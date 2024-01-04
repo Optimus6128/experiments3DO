@@ -31,7 +31,7 @@ static CCB **currentScanlineCel8;
 #define GRADIENT_GROUP_SIZE (GRADIENT_SHADES * GRADIENT_LENGTH)
 static unsigned char *gourGrads;
 
-static bool fastGouraud = false;
+static bool fastGouraud = true;
 
 typedef struct Edge
 {
@@ -111,7 +111,6 @@ static void initDivs()
     for (i=0; i<DIV_TAB_SIZE; ++i) {
         ii = i - DIV_TAB_SIZE / 2;
         if (ii==0) ++ii;
-
         divTab[i] = (1 << DIV_TAB_SHIFT) / ii;
     }
 }
@@ -261,6 +260,7 @@ static void prepareEdgeListGouraud(ScreenElement *e0, ScreenElement *e1)
 {
 	Edge *edgeListToWrite;
 	ScreenElement *eTemp;
+	int32 *dvt = &divTab[DIV_TAB_SIZE/2];
 
 	//if (e0->y == e1->y) return;
 
@@ -281,7 +281,7 @@ static void prepareEdgeListGouraud(ScreenElement *e0, ScreenElement *e1)
         const int x1 = e1->x; int y1 = e1->y; int c1 = e1->c;
 
         int dy = y1 - y0;
-		const int repDiv = divTab[dy + DIV_TAB_SIZE / 2];
+		const int repDiv = dvt[dy];
         const int dx = ((x1 - x0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
 		const int dc = ((c1 - c0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
 
@@ -314,6 +314,7 @@ static void prepareEdgeListEnvmap(ScreenElement *e0, ScreenElement *e1)
 {
 	Edge *edgeListToWrite;
 	ScreenElement *eTemp;
+	int32 *dvt = &divTab[DIV_TAB_SIZE/2];
 
 	//if (e0->y == e1->y) return;
 
@@ -334,7 +335,7 @@ static void prepareEdgeListEnvmap(ScreenElement *e0, ScreenElement *e1)
         const int x1 = e1->x; int y1 = e1->y; int u1 = e1->u; int v1 = e1->v;
 
         int dy = y1 - y0;
-		const int repDiv = divTab[dy + DIV_TAB_SIZE / 2];
+		const int repDiv = dvt[dy];
         const int dx = ((x1 - x0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
 		const int du = ((u1 - u0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
 		const int dv = ((v1 - v0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
@@ -372,6 +373,7 @@ static void prepareEdgeListGouraudEnvmap(ScreenElement *e0, ScreenElement *e1)
 {
 	Edge *edgeListToWrite;
 	ScreenElement *eTemp;
+	int32 *dvt = &divTab[DIV_TAB_SIZE/2];
 
 	//if (e0->y == e1->y) return;
 
@@ -392,7 +394,7 @@ static void prepareEdgeListGouraudEnvmap(ScreenElement *e0, ScreenElement *e1)
         const int x1 = e1->x; int y1 = e1->y; int c1 = e1->c; int u1 = e1->u; int v1 = e1->v;
 
         int dy = y1 - y0;
-		const int repDiv = divTab[dy + DIV_TAB_SIZE / 2];
+		const int repDiv = dvt[dy];
         const int dx = ((x1 - x0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
 		const int dc = ((c1 - c0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
 		const int du = ((u1 - u0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
@@ -473,6 +475,7 @@ static void fillGouraudEdges8(int y0, int y1)
 {
 	const int stride8 = softBuffer.stride;
 	unsigned char *vram8 = (unsigned char*)softBufferCurrentPtr + y0 * stride8;
+	int32 *dvt = &divTab[DIV_TAB_SIZE/2];
 
 	int count = y1 - y0 + 1;
 	Edge *le = &leftEdge[y0];
@@ -485,7 +488,7 @@ static void fillGouraudEdges8(int y0, int y1)
 		unsigned char *dst = vram8 + xl;
 		uint32 *dst32;
 
-		const int repDiv = divTab[length + DIV_TAB_SIZE / 2];
+		const int repDiv = dvt[length];
 		const int dc = ((cr - cl) * repDiv) >> DIV_TAB_SHIFT;
 		int fc = cl;
 
@@ -540,6 +543,7 @@ static void fillGouraudEdges16(int y0, int y1)
 {
 	const int stride16 = softBuffer.stride >> 1;
 	uint16 *vram16 = (uint16*)softBufferCurrentPtr + y0 * stride16;
+	int32 *dvt = &divTab[DIV_TAB_SIZE/2];
 
 	int count = y1 - y0 + 1;
 	Edge *le = &leftEdge[y0];
@@ -552,7 +556,7 @@ static void fillGouraudEdges16(int y0, int y1)
 		uint16 *dst = vram16 + xl;
 		uint32 *dst32;
 
-		const int repDiv = divTab[length + DIV_TAB_SIZE / 2];
+		const int repDiv = dvt[length];
 		const int dc = ((cr - cl) * repDiv) >> DIV_TAB_SHIFT;
 		int fc = cl;
 
@@ -601,6 +605,7 @@ static void fillEnvmapEdges8(int y0, int y1)
 {
 	const int stride8 = softBuffer.stride;
 	unsigned char *vram8 = (unsigned char*)softBufferCurrentPtr + y0 * stride8;
+	int32 *dvt = &divTab[DIV_TAB_SIZE/2];
 
 	int count = y1 - y0 + 1;
 	Edge *le = &leftEdge[y0];
@@ -620,7 +625,7 @@ static void fillEnvmapEdges8(int y0, int y1)
 		unsigned char *dst = vram8 + xl;
 		uint32 *dst32;
 
-		const int repDiv = divTab[length + DIV_TAB_SIZE / 2];
+		const int repDiv = dvt[length];
 		const int du = ((ur - ul) * repDiv) >> DIV_TAB_SHIFT;
 		const int dv = ((vr - vl) * repDiv) >> DIV_TAB_SHIFT;
 		int fu = ul;
@@ -680,6 +685,7 @@ static void fillEnvmapEdges16(int y0, int y1)
 {
 	const int stride16 = softBuffer.stride >> 1;
 	uint16 *vram16 = (uint16*)softBufferCurrentPtr + y0 * stride16;
+	int32 *dvt = &divTab[DIV_TAB_SIZE/2];
 
 	int count = y1 - y0 + 1;
 	Edge *le = &leftEdge[y0];
@@ -700,7 +706,7 @@ static void fillEnvmapEdges16(int y0, int y1)
 			uint16 *dst = vram16 + xl;
 			uint32 *dst32;
 
-			const int repDiv = divTab[length + DIV_TAB_SIZE / 2];
+			const int repDiv = dvt[length];
 			const int du = ((ur - ul) * repDiv) >> DIV_TAB_SHIFT;
 			const int dv = ((vr - vl) * repDiv) >> DIV_TAB_SHIFT;
 			int fu = ul;
@@ -751,8 +757,8 @@ static void fillEnvmapEdges16(int y0, int y1)
 static void fillGouraudEnvmapEdges8(int y0, int y1)
 {
 	const int stride8 = softBuffer.stride;
-
 	unsigned char *vram8 = (unsigned char*)softBufferCurrentPtr + y0 * stride8;
+	int32 *dvt = &divTab[DIV_TAB_SIZE/2];
 
 	int count = y1 - y0 + 1;
 	Edge *le = &leftEdge[y0];
@@ -773,7 +779,7 @@ static void fillGouraudEnvmapEdges8(int y0, int y1)
 		unsigned char *dst = vram8 + xl;
 		uint32 *dst32;
 
-		const int repDiv = divTab[length + DIV_TAB_SIZE / 2];
+		const int repDiv = dvt[length];
 		const int dc = ((cr - cl) * repDiv) >> DIV_TAB_SHIFT;
 		const int du = ((ur - ul) * repDiv) >> DIV_TAB_SHIFT;
 		const int dv = ((vr - vl) * repDiv) >> DIV_TAB_SHIFT;
@@ -846,8 +852,8 @@ static void fillGouraudEnvmapEdges8(int y0, int y1)
 static void fillGouraudEnvmapEdges16(int y0, int y1)
 {
 	const int stride16 = softBuffer.stride >> 1;
-
 	uint16 *vram16 = (uint16*)softBufferCurrentPtr + y0 * stride16;
+	int32 *dvt = &divTab[DIV_TAB_SIZE/2];
 
 	int count = y1 - y0 + 1;
 	Edge *le = &leftEdge[y0];
@@ -871,7 +877,7 @@ static void fillGouraudEnvmapEdges16(int y0, int y1)
 			uint16 *dst = vram16 + xl;
 			uint32 *dst32;
 
-			const int repDiv = divTab[length + DIV_TAB_SIZE / 2];
+			const int repDiv = dvt[length];
 			const int dc = ((cr - cl) * repDiv) >> DIV_TAB_SHIFT;
 			const int du = ((ur - ul) * repDiv) >> DIV_TAB_SHIFT;
 			const int dv = ((vr - vl) * repDiv) >> DIV_TAB_SHIFT;
@@ -982,15 +988,14 @@ static bool shouldSkipTriangle(ScreenElement *e0, ScreenElement *e1, ScreenEleme
 }
 
 
-// 54, 27 (109, 36)
-// 56, 29
+// 55, 28 (109, 36)
+// 57, 30
 
 static void drawTriangleOldGouraud(ScreenElement *e0, ScreenElement *e1, ScreenElement *e2, ScreenElement *e3)
 {
 	// ===== Prepare interpolants =====
 
 	int y, dc;
-	int xlp, length;
 
 	int dx02, dx13;
 	int dc02, dc13;
@@ -999,6 +1004,7 @@ static void drawTriangleOldGouraud(ScreenElement *e0, ScreenElement *e1, ScreenE
 	const int stride8 = softBuffer.stride;
 	unsigned char *vram8, *dst;
 	uint32 *dst32;
+	int32 *dvt = &divTab[DIV_TAB_SIZE/2];
 
 	const int x0 =e0->x;
 	const int x1 =e1->x;
@@ -1018,11 +1024,11 @@ static void drawTriangleOldGouraud(ScreenElement *e0, ScreenElement *e1, ScreenE
 	int y0 = e0->y;
 	int y1 = e2->y;
 
-	repDiv = divTab[y1 - y0 + DIV_TAB_SIZE/2];
+	repDiv = dvt[y1 - y0];
 	dx02 = ((x2 - x0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
 	dc02 = ((c2 - c0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
 
-	repDiv = divTab[y1 - y0 + DIV_TAB_SIZE/2];
+	repDiv = dvt[y1 - y0];
 	dx13 = ((x3 - x1) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
 	dc13 = ((c3 - c1) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
 
@@ -1031,17 +1037,18 @@ static void drawTriangleOldGouraud(ScreenElement *e0, ScreenElement *e1, ScreenE
 	vram8 = (unsigned char*)softBufferCurrentPtr + y0 * stride8;
 
 	for (y = y0; y<y1; y++) {
-		int sx1 = x02 >> FP_BASE;
-		int sx2 = x13 >> FP_BASE;
-		int sc1 = c02;
-		int sc2 = c13;
+		const int sx1 = x02 >> FP_BASE;
+		const int sx2 = x13 >> FP_BASE;
 
-		dc = ((sc2 - sc1) * divTab[sx2 - sx1 + DIV_TAB_SIZE/2]) >> DIV_TAB_SHIFT;
+		int xlp = sx1 & 3;
+		int sc1 = c02;
+		int length = sx2 - sx1;
+
+		dc = ((c13 - sc1) * dvt[length]) >> DIV_TAB_SHIFT;
 
 		dst = vram8 + sx1;
 
-		length = sx2 - sx1;
-		xlp = sx1 & 3;
+		
 		if (xlp) {
 			xlp = 4 - xlp;
 			while (xlp-- > 0 && length-- > 0) {
@@ -1090,6 +1097,7 @@ static void drawTriangleOld(ScreenElement *e0, ScreenElement *e1, ScreenElement 
 {
 	static ScreenElement eMid;
 	ScreenElement *temp, *e1b = &eMid;
+	int32 *dvt = &divTab[DIV_TAB_SIZE/2];
 
 	if (shouldSkipTriangle(e0, e1, e2)) return;
 
@@ -1104,8 +1112,8 @@ static void drawTriangleOld(ScreenElement *e0, ScreenElement *e1, ScreenElement 
 	}
 
 	e1b->y = e1->y;
-	e1b->x = (INT_TO_FIXED(e0->x, FP_BASE) + (e1->y - e0->y) * (((e2->x - e0->x) * divTab[e2->y - e0->y + DIV_TAB_SIZE/2]) >> (DIV_TAB_SHIFT - FP_BASE))) >> FP_BASE;
-	e1b->c = (INT_TO_FIXED(e0->c, FP_BASE) + (e1->y - e0->y) * (((e2->c - e0->c) * divTab[e2->y - e0->y + DIV_TAB_SIZE/2]) >> (DIV_TAB_SHIFT - FP_BASE))) >> FP_BASE;
+	e1b->x = (INT_TO_FIXED(e0->x, FP_BASE) + (e1->y - e0->y) * (((e2->x - e0->x) * dvt[e2->y - e0->y]) >> (DIV_TAB_SHIFT - FP_BASE))) >> FP_BASE;
+	e1b->c = (INT_TO_FIXED(e0->c, FP_BASE) + (e1->y - e0->y) * (((e2->c - e0->c) * dvt[e2->y - e0->y]) >> (DIV_TAB_SHIFT - FP_BASE))) >> FP_BASE;
 
 	if (e1->x > eMid.x) {
 		temp = e1;
