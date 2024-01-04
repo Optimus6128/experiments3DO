@@ -14,7 +14,7 @@
 #include "tools.h"
 
 
-//#define OLD_TRIANGLE_DRAW
+#define OLD_TRIANGLE_DRAW
 
 #define SOFT_BUFF_MAX_SIZE (2 * SCREEN_WIDTH * SCREEN_HEIGHT)
 
@@ -39,6 +39,11 @@ typedef struct Edge
 	int c;
 	int u,v;
 }Edge;
+
+typedef struct Gradients
+{
+	int dx,dc,du,dv;
+}Gradients;
 
 typedef struct SoftBuffer
 {
@@ -254,6 +259,28 @@ static void drawAntialiasedLine(ScreenElement *e1, ScreenElement *e2)
             x00+=l;
 		}
 	}
+}
+
+static Gradients *calculateTriangleGradients(ScreenElement *e0, ScreenElement *e1, ScreenElement *e2)
+{
+	static Gradients grads;
+
+	const int x0 = e0->x; const int x1 = e1->x; const int x2 = e2->x;
+	const int y0 = e0->y; const int y1 = e1->y; const int y2 = e2->y;
+
+	if (renderSoftMethod & RENDER_SOFT_METHOD_GOURAUD) {
+		const int c0 = e0->c; const int c1 = e1->c; const int c2 = e2->c;
+		grads.dc = (((c1-c2)*(y0-y2) - (c0-c2)*(y1-y2)) << FP_BASE) / ((x1-x2)*(y0-y2) - (x0-x2)*(y1-y2));
+	}
+
+	if (renderSoftMethod & RENDER_SOFT_METHOD_ENVMAP) {
+		const int u0 = e0->u; const int u1 = e1->u; const int u2 = e2->u;
+		const int v0 = e0->v; const int v1 = e1->v; const int v2 = e2->v;
+		grads.du = (((u1-u2)*(y0-y2) - (u0-u2)*(y1-y2)) << FP_BASE) / ((x1-x2)*(y0-y2) - (x0-x2)*(y1-y2));
+		grads.dv = (((v1-v2)*(y0-y2) - (v0-v2)*(y1-y2)) << FP_BASE) / ((x1-x2)*(y0-y2) - (x0-x2)*(y1-y2));
+	}
+
+	return &grads;
 }
 
 static void prepareEdgeListGouraud(ScreenElement *e0, ScreenElement *e1)
@@ -991,48 +1018,29 @@ static bool shouldSkipTriangle(ScreenElement *e0, ScreenElement *e1, ScreenEleme
 // 55, 28 (109, 36)
 // 57, 30
 
-static void drawTriangleOldGouraud(ScreenElement *e0, ScreenElement *e1, ScreenElement *e2, ScreenElement *e3)
+static void drawTriangleOldGouraud(ScreenElement *e0, ScreenElement *e1, Gradients *slope1, Gradients *slope2)
 {
-	// ===== Prepare interpolants =====
-
-	int y, dc;
-
-	int dx02, dx13;
-	int dc02, dc13;
-	int repDiv;
+	int y;
 
 	const int stride8 = softBuffer.stride;
 	unsigned char *vram8, *dst;
 	uint32 *dst32;
-	int32 *dvt = &divTab[DIV_TAB_SIZE/2];
 
-	const int x0 =e0->x;
-	const int x1 =e1->x;
-	const int x2 =e2->x;
-	const int x3 =e3->x;
-
-	const int c0 = e0->c;
-	const int c1 = e1->c;
-	const int c2 = e2->c;
-	const int c3 = e3->c;
-
-	int x02 = INT_TO_FIXED(x0, FP_BASE);
-	int x13 = INT_TO_FIXED(x1, FP_BASE);
-	int c02 = INT_TO_FIXED(c0, FP_BASE);
-	int c13 = INT_TO_FIXED(c1, FP_BASE);
+	int x02 = INT_TO_FIXED(e0->x, FP_BASE);
+	int x13 = INT_TO_FIXED(e1->x, FP_BASE);
+	int c02 = INT_TO_FIXED(e0->c, FP_BASE);
+	int c13 = INT_TO_FIXED(e1->c, FP_BASE);
 
 	int y0 = e0->y;
-	int y1 = e2->y;
+	int y1 = e1->y;
 
-	repDiv = dvt[y1 - y0];
-	dx02 = ((x2 - x0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
-	dc02 = ((c2 - c0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
+	const int dx02 = slope1->dx;
+	const int dc02 = slope1->dc;
+	const int dx13 = slope2->dx;
+	const int dc13 = slope2->dc;
 
-	repDiv = dvt[y1 - y0];
-	dx13 = ((x3 - x1) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
-	dc13 = ((c3 - c1) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
+	int32 *dvt = &divTab[DIV_TAB_SIZE/2];
 
-	// ===== Rasterize =====
 
 	vram8 = (unsigned char*)softBufferCurrentPtr + y0 * stride8;
 
@@ -1044,7 +1052,7 @@ static void drawTriangleOldGouraud(ScreenElement *e0, ScreenElement *e1, ScreenE
 		int sc1 = c02;
 		int length = sx2 - sx1;
 
-		dc = ((c13 - sc1) * dvt[length]) >> DIV_TAB_SHIFT;
+		const int dc = ((c13 - sc1) * dvt[length]) >> DIV_TAB_SHIFT;
 
 		dst = vram8 + sx1;
 
@@ -1095,8 +1103,10 @@ static void drawTriangleOldGouraud(ScreenElement *e0, ScreenElement *e1, ScreenE
 
 static void drawTriangleOld(ScreenElement *e0, ScreenElement *e1, ScreenElement *e2)
 {
-	static ScreenElement eMid;
-	ScreenElement *temp, *e1b = &eMid;
+	int xLongMid;
+	static Gradients slope01, slope12, slope02;
+
+	ScreenElement *temp;
 	int32 *dvt = &divTab[DIV_TAB_SIZE/2];
 
 	if (shouldSkipTriangle(e0, e1, e2)) return;
@@ -1111,18 +1121,25 @@ static void drawTriangleOld(ScreenElement *e0, ScreenElement *e1, ScreenElement 
 		temp = e1; e1 = e2; e2 = temp;
 	}
 
-	e1b->y = e1->y;
-	e1b->x = (INT_TO_FIXED(e0->x, FP_BASE) + (e1->y - e0->y) * (((e2->x - e0->x) * dvt[e2->y - e0->y]) >> (DIV_TAB_SHIFT - FP_BASE))) >> FP_BASE;
-	e1b->c = (INT_TO_FIXED(e0->c, FP_BASE) + (e1->y - e0->y) * (((e2->c - e0->c) * dvt[e2->y - e0->y]) >> (DIV_TAB_SHIFT - FP_BASE))) >> FP_BASE;
+	slope01.dx = ((e1->x - e0->x) * dvt[e1->y - e0->y]) >> (DIV_TAB_SHIFT - FP_BASE);
+	slope01.dc = ((e1->c - e0->c) * dvt[e1->y - e0->y]) >> (DIV_TAB_SHIFT - FP_BASE);
+	slope12.dx = ((e2->x - e1->x) * dvt[e2->y - e1->y]) >> (DIV_TAB_SHIFT - FP_BASE);
+	slope12.dc = ((e2->c - e1->c) * dvt[e2->y - e1->y]) >> (DIV_TAB_SHIFT - FP_BASE);
+	slope02.dx = ((e2->x - e0->x) * dvt[e2->y - e0->y]) >> (DIV_TAB_SHIFT - FP_BASE);
+	slope02.dc = ((e2->c - e0->c) * dvt[e2->y - e0->y]) >> (DIV_TAB_SHIFT - FP_BASE);
 
-	if (e1->x > eMid.x) {
-		temp = e1;
-		e1 = e1b;
-		e1b = temp;
+	xLongMid = (INT_TO_FIXED(e0->x, FP_BASE) + (e1->y - e0->y) * slope02.dx) >> FP_BASE;
+
+	if (e1->x <= xLongMid) {
+		drawTriangleOldGouraud(e0, e1, &slope01, &slope02);
+		drawTriangleOldGouraud(e1, e2, &slope12, &slope02);
+	} else {
+		ScreenElement *e1b = e1;
+		e1b->x = xLongMid;
+		e1b->c = (INT_TO_FIXED(e0->c, FP_BASE) + (e1->y - e0->y) * slope02.dc) >> FP_BASE;
+		drawTriangleOldGouraud(e0, e1, &slope02, &slope01);
+		drawTriangleOldGouraud(e1, e2, &slope02, &slope12);
 	}
-
-	drawTriangleOldGouraud(e0, e0, e1, e1b);
-	drawTriangleOldGouraud(e1, e1b, e2, e2);
 }
 
 static void drawTriangle(ScreenElement *e0, ScreenElement *e1, ScreenElement *e2)
@@ -1141,8 +1158,9 @@ static void drawTriangle(ScreenElement *e0, ScreenElement *e1, ScreenElement *e2
 	if (e1->y < y0) y0 = e1->y; if (e1->y > y1) y1 = e1->y;
 	if (e2->y < y0) y0 = e2->y; if (e2->y > y1) y1 = e2->y;
 
-if (y0 < y1)
-	fillEdges(y0, y1-1);
+	if (y0 < y1) {
+		fillEdges(y0, y1-1);
+	}
 }
 
 static void updateSoftBufferVariables(int posX, int posY, int width, int height, Mesh *ms)
@@ -1246,7 +1264,7 @@ static void prepareMeshSoftRender(Mesh *ms, ScreenElement *elements)
 		}
 		break;
 
-		case RENDER_SOFT_METHOD_GOURAUD_ENVMAP:
+		case RENDER_SOFT_METHOD_GOURAUD | RENDER_SOFT_METHOD_ENVMAP:
 		{
 			prepareEdgeList = prepareEdgeListGouraudEnvmap;
 			fillEdges = fillGouraudEnvmapEdges16;

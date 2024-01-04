@@ -122,7 +122,7 @@ static void inputScript()
 	}
 
 	if (isJoyButtonPressedOnce(JOY_BUTTON_START)) {
-		if (++renderSoftMethodIndex == RENDER_SOFT_METHOD_NUM) renderSoftMethodIndex = 0;
+		if (++renderSoftMethodIndex == RENDER_SOFT_METHOD_LAST) renderSoftMethodIndex = 0;
 
 		setRenderSoftMethod(renderSoftMethodIndex);
 	}
