@@ -14,7 +14,7 @@
 #include "tools.h"
 
 
-#define OLD_TRIANGLE_DRAW
+//#define OLD_TRIANGLE_DRAW
 
 #define SOFT_BUFF_MAX_SIZE (2 * SCREEN_WIDTH * SCREEN_HEIGHT)
 
@@ -983,17 +983,17 @@ static bool shouldSkipTriangle(ScreenElement *e0, ScreenElement *e1, ScreenEleme
 
 
 // 54, 27 (109, 36)
-// 55, 28
+// 56, 29
 
-static void drawTriangleOldGouraud(ScreenElement *e0, ScreenElement *e1, ScreenElement *e2)
+static void drawTriangleOldGouraud(ScreenElement *e0, ScreenElement *e1, ScreenElement *e2, ScreenElement *e3)
 {
 	// ===== Prepare interpolants =====
 
 	int y, dc;
 	int xlp, length;
 
-	int dx01, dx12, dx02;
-	int dc01, dc12, dc02;
+	int dx02, dx13;
+	int dc02, dc13;
 	int repDiv;
 
 	const int stride8 = softBuffer.stride;
@@ -1003,48 +1003,39 @@ static void drawTriangleOldGouraud(ScreenElement *e0, ScreenElement *e1, ScreenE
 	const int x0 =e0->x;
 	const int x1 =e1->x;
 	const int x2 =e2->x;
+	const int x3 =e3->x;
 
 	const int c0 = e0->c;
 	const int c1 = e1->c;
 	const int c2 = e2->c;
+	const int c3 = e3->c;
 
-	int x01 = INT_TO_FIXED(x0, FP_BASE);
-	int x02 = x01;
-	int c01 = INT_TO_FIXED(c0, FP_BASE);
-	int c02 = c01;
+	int x02 = INT_TO_FIXED(x0, FP_BASE);
+	int x13 = INT_TO_FIXED(x1, FP_BASE);
+	int c02 = INT_TO_FIXED(c0, FP_BASE);
+	int c13 = INT_TO_FIXED(c1, FP_BASE);
 
 	int y0 = e0->y;
-	int y1 = e1->y;
-	int y2 = e2->y;
+	int y1 = e2->y;
 
 	repDiv = divTab[y1 - y0 + DIV_TAB_SIZE/2];
-	dx01 = ((x1 - x0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
-	dc01 = ((c1 - c0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
-
-	repDiv = divTab[y2 - y1 + DIV_TAB_SIZE/2];
-	dx12 = ((x2 - x1) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
-	dc12 = ((c2 - c1) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
-
-	repDiv = divTab[y2 - y0 + DIV_TAB_SIZE/2];
 	dx02 = ((x2 - x0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
 	dc02 = ((c2 - c0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
 
+	repDiv = divTab[y1 - y0 + DIV_TAB_SIZE/2];
+	dx13 = ((x3 - x1) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
+	dc13 = ((c3 - c1) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
 
-	// ===== First half triangle =====
+	// ===== Rasterize =====
 
 	vram8 = (unsigned char*)softBufferCurrentPtr + y0 * stride8;
 
 	for (y = y0; y<y1; y++) {
-		int sx1 = x01 >> FP_BASE;
-		int sx2 = x02 >> FP_BASE;
-		int sc1 = c01;
-		int sc2 = c02;
+		int sx1 = x02 >> FP_BASE;
+		int sx2 = x13 >> FP_BASE;
+		int sc1 = c02;
+		int sc2 = c13;
 
-		// TODO: shouldn't have to swap every scanline necessarily
-		if (sx1>sx2) {
-			int temp = sx1; sx1 = sx2; sx2 = temp;
-			temp = sc1; sc1 = sc2; sc2 = temp;
-		}
 		dc = ((sc2 - sc1) * divTab[sx2 - sx1 + DIV_TAB_SIZE/2]) >> DIV_TAB_SHIFT;
 
 		dst = vram8 + sx1;
@@ -1086,78 +1077,10 @@ static void drawTriangleOldGouraud(ScreenElement *e0, ScreenElement *e1, ScreenE
 			sc1+=dc;
 		}
 
-		x01+=dx01;
 		x02+=dx02;
-		c01+=dc01;
+		x13+=dx13;
 		c02+=dc02;
-
-		vram8 += stride8;
-	}
-
-
-	// ===== Second half triangle =====
-
-	x01 = x1 << FP_BASE;
-	c01 = c1 << FP_BASE;
-
-	vram8 = (unsigned char*)softBufferCurrentPtr + y1 * stride8;
-
-	for (y = y1; y<y2; y++) {
-		int sx1 = x01 >> FP_BASE;
-		int sx2 = x02 >> FP_BASE;
-		int sc1 = c01;
-		int sc2 = c02;
-
-		// TODO: shouldn't have to swap every scanline necessarily
-		if (sx1>sx2) {
-			int temp = sx1; sx1 = sx2; sx2 = temp;
-			temp = sc1; sc1 = sc2; sc2 = temp;
-		}
-		dc = ((sc2 - sc1) * divTab[sx2 - sx1 + DIV_TAB_SIZE/2]) >> DIV_TAB_SHIFT;
-
-		dst = vram8 + sx1;
-
-		length = sx2 - sx1;
-		xlp = sx1 & 3;
-		if (xlp) {
-			xlp = 4 - xlp;
-			while (xlp-- > 0 && length-- > 0) {
-				*dst++ = (unsigned char)FIXED_TO_INT(sc1, FP_BASE);
-				sc1+=dc;
-			}
-		}
-
-		dst32 = (uint32*)dst;
-		while(length >= 4) {
-			int c0,c1,c2,c3;
-
-			c0 = FIXED_TO_INT(sc1, FP_BASE);
-			sc1+=dc;
-			c1 = FIXED_TO_INT(sc1, FP_BASE);
-			sc1+=dc;
-			c2 = FIXED_TO_INT(sc1, FP_BASE);
-			sc1+=dc;
-			c3 = FIXED_TO_INT(sc1, FP_BASE);
-			sc1+=dc;
-
-			#ifdef BIG_ENDIAN
-				*dst32++ = (c0 << 24) | (c1 << 16) | (c2 << 8) | c3;
-			#else
-				*dst32++ = (c3 << 24) | (c2 << 16) | (c1 << 8) | c0;
-			#endif
-			length-=4;
-		};
-
-		dst = (unsigned char*)dst32;
-		while (length-- > 0) {
-			*dst++ = (unsigned char)(sc1>>FP_BASE);
-			sc1+=dc;
-		}
-
-		x01+=dx12;
-		x02+=dx02;
-		c01+=dc12;
-		c02+=dc02;
+		c13+=dc13;
 
 		vram8 += stride8;
 	}
@@ -1165,8 +1088,8 @@ static void drawTriangleOldGouraud(ScreenElement *e0, ScreenElement *e1, ScreenE
 
 static void drawTriangleOld(ScreenElement *e0, ScreenElement *e1, ScreenElement *e2)
 {
-	//static ScreenElement e1b;
-	ScreenElement *temp;
+	static ScreenElement eMid;
+	ScreenElement *temp, *e1b = &eMid;
 
 	if (shouldSkipTriangle(e0, e1, e2)) return;
 
@@ -1180,12 +1103,18 @@ static void drawTriangleOld(ScreenElement *e0, ScreenElement *e1, ScreenElement 
 		temp = e1; e1 = e2; e2 = temp;
 	}
 
-	//e1b.y = e1->y;
-	//e1b.x = (INT_TO_FIXED(e0->x, FP_BASE) + (e1->y - e0->y) * (((e2->x - e0->x) * divTab[e2->y - e0->y + DIV_TAB_SIZE/2]) >> (DIV_TAB_SHIFT - FP_BASE))) >> FP_BASE;
-	// Could avoid per scanline swap by creating fourth point and doing sorting/swap over X here.
-	// But with a lazy test where I called a duplication of drawTriangleOldGouraud with pre-swapped variables and removed checks, in the case e1b.x < e0->x, the performance gain was so minimal that I wonder if I should bother now
+	e1b->y = e1->y;
+	e1b->x = (INT_TO_FIXED(e0->x, FP_BASE) + (e1->y - e0->y) * (((e2->x - e0->x) * divTab[e2->y - e0->y + DIV_TAB_SIZE/2]) >> (DIV_TAB_SHIFT - FP_BASE))) >> FP_BASE;
+	e1b->c = (INT_TO_FIXED(e0->c, FP_BASE) + (e1->y - e0->y) * (((e2->c - e0->c) * divTab[e2->y - e0->y + DIV_TAB_SIZE/2]) >> (DIV_TAB_SHIFT - FP_BASE))) >> FP_BASE;
 
-	drawTriangleOldGouraud(e0, e1, e2);
+	if (e1->x > eMid.x) {
+		temp = e1;
+		e1 = e1b;
+		e1b = temp;
+	}
+
+	drawTriangleOldGouraud(e0, e0, e1, e1b);
+	drawTriangleOldGouraud(e1, e1b, e2, e2);
 }
 
 static void drawTriangle(ScreenElement *e0, ScreenElement *e1, ScreenElement *e2)
