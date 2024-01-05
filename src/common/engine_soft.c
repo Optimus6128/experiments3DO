@@ -14,12 +14,12 @@
 #include "tools.h"
 
 
-//#define OLD_TRIANGLE_DRAW
+#define OLD_TRIANGLE_DRAW
 
 #define SOFT_BUFF_MAX_SIZE (2 * SCREEN_WIDTH * SCREEN_HEIGHT)
 
 #define DIV_TAB_SIZE 4096
-#define DIV_TAB_SHIFT 16
+#define DIV_TAB_SHIFT 12
 
 // Semisoft gouraud method
 #define MAX_SCANLINES 4096
@@ -31,7 +31,7 @@ static CCB **currentScanlineCel8;
 #define GRADIENT_GROUP_SIZE (GRADIENT_SHADES * GRADIENT_LENGTH)
 static unsigned char *gourGrads;
 
-static bool fastGouraud = true;
+static bool fastGouraud = false;
 
 typedef struct Edge
 {
@@ -1015,19 +1015,19 @@ static bool shouldSkipTriangle(ScreenElement *e0, ScreenElement *e1, ScreenEleme
 }
 
 
-// 55, 28 (109, 36)
-// 57, 30
+// 60, 29
+// 63, 31
 
-static void drawTriangleOldGouraud(ScreenElement *e0, ScreenElement *e1, Gradients *slope1, Gradients *slope2, int count)
+static void drawTriangleOldGouraud(ScreenElement *e0, ScreenElement *e1, Gradients *slope1, Gradients *slope2, int y0, int y1)
 {
+	int count = y1 - y0;
+
 	const int stride8 = softBuffer.stride;
 	unsigned char *vram8, *dst;
 	uint32 *dst32;
 
-	int x01 = INT_TO_FIXED(e0->x, FP_BASE);
-	int x02 = INT_TO_FIXED(e1->x, FP_BASE);
-	int c01 = INT_TO_FIXED(e0->c, FP_BASE);
-	int c02 = INT_TO_FIXED(e1->c, FP_BASE);
+	int x01 = e0->x; int c01 = e0->c;
+	int x02 = e1->x; int c02 = e1->c;
 
 	const int dx01 = slope1->dx;
 	const int dc01 = slope1->dc;
@@ -1036,8 +1036,7 @@ static void drawTriangleOldGouraud(ScreenElement *e0, ScreenElement *e1, Gradien
 
 	int32 *dvt = &divTab[DIV_TAB_SIZE/2];
 
-
-	vram8 = (unsigned char*)softBufferCurrentPtr + e0->y * stride8;
+	vram8 = (unsigned char*)softBufferCurrentPtr + y0 * stride8;
 
 	while(count-- > 0) {
 		const int sx1 = x01 >> FP_BASE;
@@ -1097,8 +1096,8 @@ static void drawTriangleOldGouraud(ScreenElement *e0, ScreenElement *e1, Gradien
 
 static void drawTriangleOld(ScreenElement *e0, ScreenElement *e1, ScreenElement *e2)
 {
-	static Gradients slope01, slope12, slope02, slope01b;
-	static ScreenElement e1b;
+	static Gradients slope01, slope12, slope02;
+	static ScreenElement se0, se1, se2, se1b;
 
 	ScreenElement *temp;
 	int32 *dvt = &divTab[DIV_TAB_SIZE/2];
@@ -1115,26 +1114,39 @@ static void drawTriangleOld(ScreenElement *e0, ScreenElement *e1, ScreenElement 
 		temp = e1; e1 = e2; e2 = temp;
 	}
 
-	slope01.dx = ((e1->x - e0->x) * dvt[e1->y - e0->y]) >> (DIV_TAB_SHIFT - FP_BASE);
-	slope01.dc = ((e1->c - e0->c) * dvt[e1->y - e0->y]) >> (DIV_TAB_SHIFT - FP_BASE);
-	slope12.dx = ((e2->x - e1->x) * dvt[e2->y - e1->y]) >> (DIV_TAB_SHIFT - FP_BASE);
-	slope12.dc = ((e2->c - e1->c) * dvt[e2->y - e1->y]) >> (DIV_TAB_SHIFT - FP_BASE);
-	slope02.dx = ((e2->x - e0->x) * dvt[e2->y - e0->y]) >> (DIV_TAB_SHIFT - FP_BASE);
-	slope02.dc = ((e2->c - e0->c) * dvt[e2->y - e0->y]) >> (DIV_TAB_SHIFT - FP_BASE);
+	se0.x = e0->x << FP_BASE; se0.c = e0->c << FP_BASE;
+	se1.x = e1->x << FP_BASE; se1.c = e1->c << FP_BASE;
+	se2.x = e2->x << FP_BASE; se2.c = e2->c << FP_BASE;
 
-	e1b.y = e1->y;
-	e1b.x = (INT_TO_FIXED(e0->x, FP_BASE) + (e1->y - e0->y) * slope02.dx) >> FP_BASE;
-	e1b.c = (INT_TO_FIXED(e0->c, FP_BASE) + (e1->y - e0->y) * slope02.dc) >> FP_BASE;
+	slope01.dx = ((se1.x - se0.x) * dvt[e1->y - e0->y]) >> DIV_TAB_SHIFT;
+	slope12.dx = ((se2.x - se1.x) * dvt[e2->y - e1->y]) >> DIV_TAB_SHIFT;
+	slope02.dx = ((se2.x - se0.x) * dvt[e2->y - e0->y]) >> DIV_TAB_SHIFT;
+	se1b.x = se0.x + (e1->y - e0->y) * slope02.dx;
 
-	slope01b.dx = ((e1b.x - e0->x) * dvt[e1b.y - e0->y]) >> (DIV_TAB_SHIFT - FP_BASE);
-	slope01b.dc = ((e1b.c - e0->c) * dvt[e1b.y - e0->y]) >> (DIV_TAB_SHIFT - FP_BASE);
+	if (renderSoftMethod & RENDER_SOFT_METHOD_GOURAUD) {
+		slope01.dc = ((se1.c - se0.c) * dvt[e1->y - e0->y]) >> DIV_TAB_SHIFT;
+		slope12.dc = ((se2.c - se1.c) * dvt[e2->y - e1->y]) >> DIV_TAB_SHIFT;
+		slope02.dc = ((se2.c - se0.c) * dvt[e2->y - e0->y]) >> DIV_TAB_SHIFT;
+		se1b.c = se0.c + (e1->y - e0->y) * slope02.dc;
+	}
 
-	if (e1->x <= e1b.x) {
-		drawTriangleOldGouraud(e0, e0, &slope01, &slope02, e1->y - e0->y);
-		drawTriangleOldGouraud(e1, &e1b, &slope12, &slope02, e2->y - e1->y);
+	if (renderSoftMethod & RENDER_SOFT_METHOD_ENVMAP) {
+		slope01.du = ((se1.u - se0.u) * dvt[e1->y - e0->y]) >> DIV_TAB_SHIFT;
+		slope01.dv = ((se1.v - se0.v) * dvt[e1->y - e0->y]) >> DIV_TAB_SHIFT;
+		slope12.du = ((se2.u - se1.u) * dvt[e2->y - e1->y]) >> DIV_TAB_SHIFT;
+		slope12.dv = ((se2.v - se1.v) * dvt[e2->y - e1->y]) >> DIV_TAB_SHIFT;
+		slope02.du = ((se2.u - se0.u) * dvt[e2->y - e0->y]) >> DIV_TAB_SHIFT;
+		slope02.dv = ((se2.v - se0.v) * dvt[e2->y - e0->y]) >> DIV_TAB_SHIFT;
+		se1b.u = se0.u + (e1->y - e0->y) * slope02.du;
+		se1b.v = se0.v + (e1->y - e0->y) * slope02.dv;
+	}
+
+	if (se1.x <= se1b.x) {
+		drawTriangleOldGouraud(&se0, &se0, &slope01, &slope02, e0->y, e1->y);
+		drawTriangleOldGouraud(&se1, &se1b, &slope12, &slope02, e1->y, e2->y);
 	} else {
-		drawTriangleOldGouraud(e0, e0, &slope02, &slope01, e1->y - e0->y);
-		drawTriangleOldGouraud(&e1b, e1, &slope02, &slope12, e2->y - e1->y);
+		drawTriangleOldGouraud(&se0, &se0, &slope02, &slope01, e0->y, e1->y);
+		drawTriangleOldGouraud(&se1b, &se1, &slope02, &slope12, e1->y, e2->y);
 	}
 }
 
