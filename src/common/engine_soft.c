@@ -14,7 +14,7 @@
 #include "tools.h"
 
 
-#define OLD_TRIANGLE_DRAW
+//#define OLD_TRIANGLE_DRAW
 
 #define SOFT_BUFF_MAX_SIZE (2 * SCREEN_WIDTH * SCREEN_HEIGHT)
 
@@ -1018,45 +1018,39 @@ static bool shouldSkipTriangle(ScreenElement *e0, ScreenElement *e1, ScreenEleme
 // 55, 28 (109, 36)
 // 57, 30
 
-static void drawTriangleOldGouraud(ScreenElement *e0, ScreenElement *e1, Gradients *slope1, Gradients *slope2)
+static void drawTriangleOldGouraud(ScreenElement *e0, ScreenElement *e1, Gradients *slope1, Gradients *slope2, int count)
 {
-	int y;
-
 	const int stride8 = softBuffer.stride;
 	unsigned char *vram8, *dst;
 	uint32 *dst32;
 
-	int x02 = INT_TO_FIXED(e0->x, FP_BASE);
-	int x13 = INT_TO_FIXED(e1->x, FP_BASE);
-	int c02 = INT_TO_FIXED(e0->c, FP_BASE);
-	int c13 = INT_TO_FIXED(e1->c, FP_BASE);
+	int x01 = INT_TO_FIXED(e0->x, FP_BASE);
+	int x02 = INT_TO_FIXED(e1->x, FP_BASE);
+	int c01 = INT_TO_FIXED(e0->c, FP_BASE);
+	int c02 = INT_TO_FIXED(e1->c, FP_BASE);
 
-	int y0 = e0->y;
-	int y1 = e1->y;
-
-	const int dx02 = slope1->dx;
-	const int dc02 = slope1->dc;
-	const int dx13 = slope2->dx;
-	const int dc13 = slope2->dc;
+	const int dx01 = slope1->dx;
+	const int dc01 = slope1->dc;
+	const int dx02 = slope2->dx;
+	const int dc02 = slope2->dc;
 
 	int32 *dvt = &divTab[DIV_TAB_SIZE/2];
 
 
-	vram8 = (unsigned char*)softBufferCurrentPtr + y0 * stride8;
+	vram8 = (unsigned char*)softBufferCurrentPtr + e0->y * stride8;
 
-	for (y = y0; y<y1; y++) {
-		const int sx1 = x02 >> FP_BASE;
-		const int sx2 = x13 >> FP_BASE;
+	while(count-- > 0) {
+		const int sx1 = x01 >> FP_BASE;
+		const int sx2 = x02 >> FP_BASE;
 
 		int xlp = sx1 & 3;
-		int sc1 = c02;
+		int sc1 = c01;
 		int length = sx2 - sx1;
 
-		const int dc = ((c13 - sc1) * dvt[length]) >> DIV_TAB_SHIFT;
+		const int dc = ((c02 - sc1) * dvt[length]) >> DIV_TAB_SHIFT;
 
 		dst = vram8 + sx1;
 
-		
 		if (xlp) {
 			xlp = 4 - xlp;
 			while (xlp-- > 0 && length-- > 0) {
@@ -1084,7 +1078,7 @@ static void drawTriangleOldGouraud(ScreenElement *e0, ScreenElement *e1, Gradien
 				*dst32++ = (c3 << 24) | (c2 << 16) | (c1 << 8) | c0;
 			#endif
 			length-=4;
-		};
+		}
 
 		dst = (unsigned char*)dst32;
 		while (length-- > 0) {
@@ -1092,10 +1086,10 @@ static void drawTriangleOldGouraud(ScreenElement *e0, ScreenElement *e1, Gradien
 			sc1+=dc;
 		}
 
+		x01+=dx01;
 		x02+=dx02;
-		x13+=dx13;
+		c01+=dc01;
 		c02+=dc02;
-		c13+=dc13;
 
 		vram8 += stride8;
 	}
@@ -1103,8 +1097,8 @@ static void drawTriangleOldGouraud(ScreenElement *e0, ScreenElement *e1, Gradien
 
 static void drawTriangleOld(ScreenElement *e0, ScreenElement *e1, ScreenElement *e2)
 {
-	int xLongMid;
-	static Gradients slope01, slope12, slope02;
+	static Gradients slope01, slope12, slope02, slope01b;
+	static ScreenElement e1b;
 
 	ScreenElement *temp;
 	int32 *dvt = &divTab[DIV_TAB_SIZE/2];
@@ -1128,17 +1122,19 @@ static void drawTriangleOld(ScreenElement *e0, ScreenElement *e1, ScreenElement 
 	slope02.dx = ((e2->x - e0->x) * dvt[e2->y - e0->y]) >> (DIV_TAB_SHIFT - FP_BASE);
 	slope02.dc = ((e2->c - e0->c) * dvt[e2->y - e0->y]) >> (DIV_TAB_SHIFT - FP_BASE);
 
-	xLongMid = (INT_TO_FIXED(e0->x, FP_BASE) + (e1->y - e0->y) * slope02.dx) >> FP_BASE;
+	e1b.y = e1->y;
+	e1b.x = (INT_TO_FIXED(e0->x, FP_BASE) + (e1->y - e0->y) * slope02.dx) >> FP_BASE;
+	e1b.c = (INT_TO_FIXED(e0->c, FP_BASE) + (e1->y - e0->y) * slope02.dc) >> FP_BASE;
 
-	if (e1->x <= xLongMid) {
-		drawTriangleOldGouraud(e0, e1, &slope01, &slope02);
-		drawTriangleOldGouraud(e1, e2, &slope12, &slope02);
+	slope01b.dx = ((e1b.x - e0->x) * dvt[e1b.y - e0->y]) >> (DIV_TAB_SHIFT - FP_BASE);
+	slope01b.dc = ((e1b.c - e0->c) * dvt[e1b.y - e0->y]) >> (DIV_TAB_SHIFT - FP_BASE);
+
+	if (e1->x <= e1b.x) {
+		drawTriangleOldGouraud(e0, e0, &slope01, &slope02, e1->y - e0->y);
+		drawTriangleOldGouraud(e1, &e1b, &slope12, &slope02, e2->y - e1->y);
 	} else {
-		ScreenElement *e1b = e1;
-		e1b->x = xLongMid;
-		e1b->c = (INT_TO_FIXED(e0->c, FP_BASE) + (e1->y - e0->y) * slope02.dc) >> FP_BASE;
-		drawTriangleOldGouraud(e0, e1, &slope02, &slope01);
-		drawTriangleOldGouraud(e1, e2, &slope02, &slope12);
+		drawTriangleOldGouraud(e0, e0, &slope02, &slope01, e1->y - e0->y);
+		drawTriangleOldGouraud(&e1b, e1, &slope02, &slope12, e2->y - e1->y);
 	}
 }
 

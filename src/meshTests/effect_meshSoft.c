@@ -18,6 +18,7 @@
 
 
 static int rotX=10, rotY=20, rotZ=50;
+//static int rotX=0, rotY=0, rotZ=0;
 static int zoom=512;
 
 static const int rotVel = 2;
