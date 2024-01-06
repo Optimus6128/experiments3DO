@@ -1016,9 +1016,9 @@ static bool shouldSkipTriangle(ScreenElement *e0, ScreenElement *e1, ScreenEleme
 
 
 // 60, 29
-// 63, 31
+// 68, 37
 
-static void drawTriangleOldGouraud(ScreenElement *e0, ScreenElement *e1, Gradients *slope1, Gradients *slope2, int y0, int y1)
+static void drawTriangleOldGouraud(int y0, int y1, ScreenElement *e0, ScreenElement *e1, Gradients *slope1, Gradients *slope2, Gradients *grads)
 {
 	int count = y1 - y0;
 
@@ -1026,15 +1026,15 @@ static void drawTriangleOldGouraud(ScreenElement *e0, ScreenElement *e1, Gradien
 	unsigned char *vram8, *dst;
 	uint32 *dst32;
 
-	int x01 = e0->x; int c01 = e0->c;
-	int x02 = e1->x; int c02 = e1->c;
+	int x01 = e0->x;
+	int x02 = e1->x;
+	int c01 = e0->c;
 
 	const int dx01 = slope1->dx;
-	const int dc01 = slope1->dc;
 	const int dx02 = slope2->dx;
-	const int dc02 = slope2->dc;
+	const int dc01 = slope1->dc;
 
-	int32 *dvt = &divTab[DIV_TAB_SIZE/2];
+	const int dc = grads->dc;
 
 	vram8 = (unsigned char*)softBufferCurrentPtr + y0 * stride8;
 
@@ -1045,8 +1045,6 @@ static void drawTriangleOldGouraud(ScreenElement *e0, ScreenElement *e1, Gradien
 		int xlp = sx1 & 3;
 		int sc1 = c01;
 		int length = sx2 - sx1;
-
-		const int dc = ((c02 - sc1) * dvt[length]) >> DIV_TAB_SHIFT;
 
 		dst = vram8 + sx1;
 
@@ -1088,7 +1086,6 @@ static void drawTriangleOldGouraud(ScreenElement *e0, ScreenElement *e1, Gradien
 		x01+=dx01;
 		x02+=dx02;
 		c01+=dc01;
-		c02+=dc02;
 
 		vram8 += stride8;
 	}
@@ -1101,6 +1098,7 @@ static void drawTriangleOld(ScreenElement *e0, ScreenElement *e1, ScreenElement 
 
 	ScreenElement *temp;
 	int32 *dvt = &divTab[DIV_TAB_SIZE/2];
+	Gradients *grads;
 
 	if (shouldSkipTriangle(e0, e1, e2)) return;
 
@@ -1141,12 +1139,14 @@ static void drawTriangleOld(ScreenElement *e0, ScreenElement *e1, ScreenElement 
 		se1b.v = se0.v + (e1->y - e0->y) * slope02.dv;
 	}
 
+	grads = calculateTriangleGradients(e0, e1, e2);
+
 	if (se1.x <= se1b.x) {
-		drawTriangleOldGouraud(&se0, &se0, &slope01, &slope02, e0->y, e1->y);
-		drawTriangleOldGouraud(&se1, &se1b, &slope12, &slope02, e1->y, e2->y);
+		drawTriangleOldGouraud(e0->y, e1->y, &se0, &se0, &slope01, &slope02, grads);
+		drawTriangleOldGouraud(e1->y, e2->y, &se1, &se1b, &slope12, &slope02, grads);
 	} else {
-		drawTriangleOldGouraud(&se0, &se0, &slope02, &slope01, e0->y, e1->y);
-		drawTriangleOldGouraud(&se1b, &se1, &slope02, &slope12, e1->y, e2->y);
+		drawTriangleOldGouraud(e0->y, e1->y, &se0, &se0, &slope02, &slope01, grads);
+		drawTriangleOldGouraud(e1->y, e2->y, &se1b, &se1, &slope02, &slope12, grads);
 	}
 }
 

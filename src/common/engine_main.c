@@ -418,7 +418,7 @@ static void translateAndProjectVertices(Object3D *obj, Camera *cam)
 	}
 
 	for (i=0; i<lvNum; i++) {
-		const int vz = screenVertices[i].z + posFromCam[2];
+		const int vz = sv->z + posFromCam[2];
 		if (vz < camNear || vz > camFar) {
 			se->outside = OUTSIDE_Z;
 		} else {
