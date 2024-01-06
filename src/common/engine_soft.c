@@ -14,7 +14,7 @@
 #include "tools.h"
 
 
-#define OLD_TRIANGLE_DRAW
+//#define OLD_TRIANGLE_DRAW
 
 #define SOFT_BUFF_MAX_SIZE (2 * SCREEN_WIDTH * SCREEN_HEIGHT)
 
@@ -29,7 +29,7 @@ static CCB **currentScanlineCel8;
 #define GRADIENT_SHADES 32
 #define GRADIENT_LENGTH GRADIENT_SHADES
 #define GRADIENT_GROUP_SIZE (GRADIENT_SHADES * GRADIENT_LENGTH)
-static unsigned char *gourGrads;
+static unsigned char *gourGradBmps;
 
 static bool fastGouraud = false;
 
@@ -64,6 +64,7 @@ void *softBufferCurrentPtr;
 static Edge *leftEdge;
 static Edge *rightEdge;
 static int32 *divTab;
+static Gradients grads;
 
 static uint16 *lineColorShades[4] = { NULL, NULL, NULL, NULL };
 static uint16 *gouraudColorShades;
@@ -126,11 +127,11 @@ static void initSemiSoftGouraud()
 	unsigned char *dst;
 	int c0,c1,x;
 
-	gourGrads = (unsigned char*)AllocMem(GRADIENT_SHADES * GRADIENT_GROUP_SIZE, MEMTYPE_ANY);
+	gourGradBmps = (unsigned char*)AllocMem(GRADIENT_SHADES * GRADIENT_GROUP_SIZE, MEMTYPE_ANY);
 	scanlineCel8 = (CCB**)AllocMem(MAX_SCANLINES * sizeof(CCB*), MEMTYPE_ANY);
 	currentScanlineCel8 = scanlineCel8;
 
-	dst = gourGrads;
+	dst = gourGradBmps;
 	for (i=0; i<MAX_SCANLINES; ++i) {
 		scanlineCel8[i] = createCel(GRADIENT_LENGTH, 1, 8, CEL_TYPE_CODED);
 		if (i>0) {
@@ -261,10 +262,8 @@ static void drawAntialiasedLine(ScreenElement *e1, ScreenElement *e2)
 	}
 }
 
-static Gradients *calculateTriangleGradients(ScreenElement *e0, ScreenElement *e1, ScreenElement *e2)
+static void calculateTriangleGradients(ScreenElement *e0, ScreenElement *e1, ScreenElement *e2)
 {
-	static Gradients grads;
-
 	const int x0 = e0->x; const int x1 = e1->x; const int x2 = e2->x;
 	const int y0 = e0->y; const int y1 = e1->y; const int y2 = e2->y;
 
@@ -279,8 +278,6 @@ static Gradients *calculateTriangleGradients(ScreenElement *e0, ScreenElement *e
 		grads.du = (((u1-u2)*(y0-y2) - (u0-u2)*(y1-y2)) << FP_BASE) / ((x1-x2)*(y0-y2) - (x0-x2)*(y1-y2));
 		grads.dv = (((v1-v2)*(y0-y2) - (v0-v2)*(y1-y2)) << FP_BASE) / ((x1-x2)*(y0-y2) - (x0-x2)*(y1-y2));
 	}
-
-	return &grads;
 }
 
 static void prepareEdgeListGouraud(ScreenElement *e0, ScreenElement *e1)
@@ -294,6 +291,29 @@ static void prepareEdgeListGouraud(ScreenElement *e0, ScreenElement *e1)
 	// Assumes CCW
 	if (e0->y < e1->y) {
 		edgeListToWrite = leftEdge;
+
+		{
+			const int x0 = e0->x; int y0 = e0->y; int c0 = e0->c;
+			const int x1 = e1->x; int y1 = e1->y; int c1 = e1->c;
+
+			int dy = y1 - y0;
+			const int repDiv = dvt[dy];
+			const int dx = ((x1 - x0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
+			const int dc = ((c1 - c0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
+
+			int fx = INT_TO_FIXED(x0, FP_BASE);
+			int fc = INT_TO_FIXED(c0, FP_BASE);
+
+			edgeListToWrite = &edgeListToWrite[y0];
+			while(dy-- > 0) {
+				int x = FIXED_TO_INT(fx, FP_BASE);
+				edgeListToWrite->x = x;
+				edgeListToWrite->c = fc;
+				++edgeListToWrite;
+				fx += dx;
+				fc += dc;
+			};
+		}
 	}
 	else {
 		edgeListToWrite = rightEdge;
@@ -301,40 +321,26 @@ static void prepareEdgeListGouraud(ScreenElement *e0, ScreenElement *e1)
 		eTemp = e0;
 		e0 = e1;
 		e1 = eTemp;
-	}
 
-    {
-        const int x0 = e0->x; int y0 = e0->y; int c0 = e0->c;
-        const int x1 = e1->x; int y1 = e1->y; int c1 = e1->c;
+		{
+			const int x0 = e0->x; int y0 = e0->y;
+			const int x1 = e1->x; int y1 = e1->y;
 
-        int dy = y1 - y0;
-		const int repDiv = dvt[dy];
-        const int dx = ((x1 - x0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
-		const int dc = ((c1 - c0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
+			int dy = y1 - y0;
+			const int repDiv = dvt[dy];
+			const int dx = ((x1 - x0) * repDiv) >> (DIV_TAB_SHIFT - FP_BASE);
 
-        int fx = INT_TO_FIXED(x0, FP_BASE);
-		int fc = INT_TO_FIXED(c0, FP_BASE);
+			int fx = INT_TO_FIXED(x0, FP_BASE);
 
-		/*if (y0 < 0) {
-			fx += -y0 * dx;
-			fc += -y0 * dc;
-			dy += y0;
-			y0 = 0;
+			edgeListToWrite = &edgeListToWrite[y0];
+			while(dy-- > 0) {
+				int x = FIXED_TO_INT(fx, FP_BASE);
+				edgeListToWrite->x = x;
+				++edgeListToWrite;
+				fx += dx;
+			};
 		}
-		if (y1 > SCREEN_HEIGHT-1) {
-			dy -= (y1 - SCREEN_HEIGHT-1);
-		}*/
-
-        edgeListToWrite = &edgeListToWrite[y0];
-        while(dy-- > 0) {
-			int x = FIXED_TO_INT(fx, FP_BASE);
-			edgeListToWrite->x = x;
-			edgeListToWrite->c = fc;
-            ++edgeListToWrite;
-            fx += dx;
-			fc += dc;
-		};
-    }
+	}
 }
 
 static void prepareEdgeListEnvmap(ScreenElement *e0, ScreenElement *e1)
@@ -489,7 +495,7 @@ static void fillGouraudEdges8_SemiSoft(int y0, int y1)
 
 		cel->ccb_HDX = (length<<20) / GRADIENT_LENGTH;
 		
-		cel->ccb_SourcePtr = (CelData*)&gourGrads[cl*GRADIENT_GROUP_SIZE + cr*GRADIENT_LENGTH];
+		cel->ccb_SourcePtr = (CelData*)&gourGradBmps[cl*GRADIENT_GROUP_SIZE + cr*GRADIENT_LENGTH];
 
 		++le;
 		++re;
@@ -502,7 +508,9 @@ static void fillGouraudEdges8(int y0, int y1)
 {
 	const int stride8 = softBuffer.stride;
 	unsigned char *vram8 = (unsigned char*)softBufferCurrentPtr + y0 * stride8;
-	int32 *dvt = &divTab[DIV_TAB_SIZE/2];
+	//int32 *dvt = &divTab[DIV_TAB_SIZE/2];
+
+	const int dc = grads.dc;
 
 	int count = y1 - y0 + 1;
 	Edge *le = &leftEdge[y0];
@@ -510,13 +518,13 @@ static void fillGouraudEdges8(int y0, int y1)
 	do {
 		const int xl = le->x;
 		const int cl = le->c;
-		const int cr = re->c;
+		//const int cr = re->c;
 		int length = re->x - xl;
 		unsigned char *dst = vram8 + xl;
 		uint32 *dst32;
 
-		const int repDiv = dvt[length];
-		const int dc = ((cr - cl) * repDiv) >> DIV_TAB_SHIFT;
+		//const int repDiv = dvt[length];
+		//const int dc = ((cr - cl) * repDiv) >> DIV_TAB_SHIFT;
 		int fc = cl;
 
 		int xlp = xl & 3;
@@ -1015,10 +1023,10 @@ static bool shouldSkipTriangle(ScreenElement *e0, ScreenElement *e1, ScreenEleme
 }
 
 
-// 60, 29
+// 63, 32
 // 68, 37
 
-static void drawTriangleOldGouraud(int y0, int y1, ScreenElement *e0, ScreenElement *e1, Gradients *slope1, Gradients *slope2, Gradients *grads)
+static void drawTriangleOldGouraud(int y0, int y1, ScreenElement *e0, ScreenElement *e1, Gradients *slope1, Gradients *slope2)
 {
 	int count = y1 - y0;
 
@@ -1034,7 +1042,7 @@ static void drawTriangleOldGouraud(int y0, int y1, ScreenElement *e0, ScreenElem
 	const int dx02 = slope2->dx;
 	const int dc01 = slope1->dc;
 
-	const int dc = grads->dc;
+	const int dc = grads.dc;
 
 	vram8 = (unsigned char*)softBufferCurrentPtr + y0 * stride8;
 
@@ -1098,7 +1106,6 @@ static void drawTriangleOld(ScreenElement *e0, ScreenElement *e1, ScreenElement 
 
 	ScreenElement *temp;
 	int32 *dvt = &divTab[DIV_TAB_SIZE/2];
-	Gradients *grads;
 
 	if (shouldSkipTriangle(e0, e1, e2)) return;
 
@@ -1139,14 +1146,14 @@ static void drawTriangleOld(ScreenElement *e0, ScreenElement *e1, ScreenElement 
 		se1b.v = se0.v + (e1->y - e0->y) * slope02.dv;
 	}
 
-	grads = calculateTriangleGradients(e0, e1, e2);
+	calculateTriangleGradients(e0, e1, e2);
 
 	if (se1.x <= se1b.x) {
-		drawTriangleOldGouraud(e0->y, e1->y, &se0, &se0, &slope01, &slope02, grads);
-		drawTriangleOldGouraud(e1->y, e2->y, &se1, &se1b, &slope12, &slope02, grads);
+		drawTriangleOldGouraud(e0->y, e1->y, &se0, &se0, &slope01, &slope02);
+		drawTriangleOldGouraud(e1->y, e2->y, &se1, &se1b, &slope12, &slope02);
 	} else {
-		drawTriangleOldGouraud(e0->y, e1->y, &se0, &se0, &slope02, &slope01, grads);
-		drawTriangleOldGouraud(e1->y, e2->y, &se1b, &se1, &slope02, &slope12, grads);
+		drawTriangleOldGouraud(e0->y, e1->y, &se0, &se0, &slope02, &slope01);
+		drawTriangleOldGouraud(e1->y, e2->y, &se1b, &se1, &slope02, &slope12);
 	}
 }
 
@@ -1165,6 +1172,8 @@ static void drawTriangle(ScreenElement *e0, ScreenElement *e1, ScreenElement *e2
 
 	if (e1->y < y0) y0 = e1->y; if (e1->y > y1) y1 = e1->y;
 	if (e2->y < y0) y0 = e2->y; if (e2->y > y1) y1 = e2->y;
+
+	calculateTriangleGradients(e0, e1, e2);
 
 	if (y0 < y1) {
 		fillEdges(y0, y1-1);
