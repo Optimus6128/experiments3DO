@@ -14,7 +14,7 @@
 #include "tools.h"
 
 
-//#define OLD_TRIANGLE_DRAW
+#define OLD_TRIANGLE_DRAW
 
 #define SOFT_BUFF_MAX_SIZE (2 * SCREEN_WIDTH * SCREEN_HEIGHT)
 
@@ -80,6 +80,8 @@ static int minX, maxX, minY, maxY;
 
 static void(*fillEdges)(int y0, int y1);
 static void(*prepareEdgeList) (ScreenElement *e0, ScreenElement *e1);
+
+static void(*fillTriangleOld) (int y0, int y1, ScreenElement *e0, ScreenElement *e1, Gradients *slope1, Gradients *slope2);
 
 
 static void bindGradient(uint16 *gradient)
@@ -508,7 +510,6 @@ static void fillGouraudEdges8(int y0, int y1)
 {
 	const int stride8 = softBuffer.stride;
 	unsigned char *vram8 = (unsigned char*)softBufferCurrentPtr + y0 * stride8;
-	//int32 *dvt = &divTab[DIV_TAB_SIZE/2];
 
 	const int dc = grads.dc;
 
@@ -518,13 +519,10 @@ static void fillGouraudEdges8(int y0, int y1)
 	do {
 		const int xl = le->x;
 		const int cl = le->c;
-		//const int cr = re->c;
 		int length = re->x - xl;
 		unsigned char *dst = vram8 + xl;
 		uint32 *dst32;
 
-		//const int repDiv = dvt[length];
-		//const int dc = ((cr - cl) * repDiv) >> DIV_TAB_SHIFT;
 		int fc = cl;
 
 		int xlp = xl & 3;
@@ -578,7 +576,8 @@ static void fillGouraudEdges16(int y0, int y1)
 {
 	const int stride16 = softBuffer.stride >> 1;
 	uint16 *vram16 = (uint16*)softBufferCurrentPtr + y0 * stride16;
-	int32 *dvt = &divTab[DIV_TAB_SIZE/2];
+
+	const int dc = grads.dc;
 
 	int count = y1 - y0 + 1;
 	Edge *le = &leftEdge[y0];
@@ -586,13 +585,10 @@ static void fillGouraudEdges16(int y0, int y1)
 	do {
 		const int xl = le->x;
 		const int cl = le->c;
-		const int cr = re->c;
 		int length = re->x - xl;
 		uint16 *dst = vram16 + xl;
 		uint32 *dst32;
 
-		const int repDiv = dvt[length];
-		const int dc = ((cr - cl) * repDiv) >> DIV_TAB_SHIFT;
 		int fc = cl;
 
 		if (length>0){
@@ -1023,15 +1019,16 @@ static bool shouldSkipTriangle(ScreenElement *e0, ScreenElement *e1, ScreenEleme
 }
 
 
-// 63, 32
-// 68, 37
+// 63, 32, 27, 20
+// 68, 37, 26, 21
 
-static void drawTriangleOldGouraud(int y0, int y1, ScreenElement *e0, ScreenElement *e1, Gradients *slope1, Gradients *slope2)
+
+static void fillTriangleOldGouraud8(int y0, int y1, ScreenElement *e0, ScreenElement *e1, Gradients *slope1, Gradients *slope2)
 {
 	int count = y1 - y0;
 
 	const int stride8 = softBuffer.stride;
-	unsigned char *vram8, *dst;
+	unsigned char *vram8 = (unsigned char*)softBufferCurrentPtr + y0 * stride8;
 	uint32 *dst32;
 
 	int x01 = e0->x;
@@ -1044,8 +1041,6 @@ static void drawTriangleOldGouraud(int y0, int y1, ScreenElement *e0, ScreenElem
 
 	const int dc = grads.dc;
 
-	vram8 = (unsigned char*)softBufferCurrentPtr + y0 * stride8;
-
 	while(count-- > 0) {
 		const int sx1 = x01 >> FP_BASE;
 		const int sx2 = x02 >> FP_BASE;
@@ -1054,7 +1049,7 @@ static void drawTriangleOldGouraud(int y0, int y1, ScreenElement *e0, ScreenElem
 		int sc1 = c01;
 		int length = sx2 - sx1;
 
-		dst = vram8 + sx1;
+		unsigned char *dst = vram8 + sx1;
 
 		if (xlp) {
 			xlp = 4 - xlp;
@@ -1096,6 +1091,72 @@ static void drawTriangleOldGouraud(int y0, int y1, ScreenElement *e0, ScreenElem
 		c01+=dc01;
 
 		vram8 += stride8;
+	}
+}
+
+static void fillTriangleOldGouraud16(int y0, int y1, ScreenElement *e0, ScreenElement *e1, Gradients *slope1, Gradients *slope2)
+{
+	const int stride16 = softBuffer.stride >> 1;
+	uint16 *vram16 = (uint16*)softBufferCurrentPtr + y0 * stride16;
+	uint32 *dst32;
+
+	int count = y1 - y0;
+
+	int x01 = e0->x;
+	int x02 = e1->x;
+	int c01 = e0->c;
+
+	const int dx01 = slope1->dx;
+	const int dx02 = slope2->dx;
+	const int dc01 = slope1->dc;
+
+	const int dc = grads.dc;
+
+	while(count-- > 0) {
+		const int sx1 = x01 >> FP_BASE;
+		const int sx2 = x02 >> FP_BASE;
+
+		int sc1 = c01;
+		int length = sx2 - sx1;
+
+		uint16 *dst = vram16 + sx1;
+
+		if (length>0){
+			if (sx1 & 1) {
+				*dst++ = activeGradient[FIXED_TO_INT(sc1, FP_BASE)];
+				sc1+=dc;
+				length--;
+			}
+		}
+
+		dst32 = (uint32*)dst;
+		while(length >= 2) {
+			int c0,c1;
+
+			c0 = FIXED_TO_INT(sc1, FP_BASE);
+			sc1+=dc;
+			c1 = FIXED_TO_INT(sc1, FP_BASE);
+			sc1+=dc;
+
+			#ifdef BIG_ENDIAN
+				*dst32++ = (activeGradient[c0] << 16) | activeGradient[c1];
+			#else
+				*dst32++ = (activeGradient[c1] << 16) | activeGradient[c0];
+			#endif
+			length -= 2;
+		}
+
+		dst = (uint16*)dst32;
+		if (length & 1) {
+			*dst++ = activeGradient[FIXED_TO_INT(sc1, FP_BASE)];
+			sc1+=dc;
+		}
+
+		x01+=dx01;
+		x02+=dx02;
+		c01+=dc01;
+
+		vram16 += stride16;
 	}
 }
 
@@ -1149,11 +1210,11 @@ static void drawTriangleOld(ScreenElement *e0, ScreenElement *e1, ScreenElement 
 	calculateTriangleGradients(e0, e1, e2);
 
 	if (se1.x <= se1b.x) {
-		drawTriangleOldGouraud(e0->y, e1->y, &se0, &se0, &slope01, &slope02);
-		drawTriangleOldGouraud(e1->y, e2->y, &se1, &se1b, &slope12, &slope02);
+		fillTriangleOld(e0->y, e1->y, &se0, &se0, &slope01, &slope02);
+		fillTriangleOld(e1->y, e2->y, &se1, &se1b, &slope12, &slope02);
 	} else {
-		drawTriangleOldGouraud(e0->y, e1->y, &se0, &se0, &slope02, &slope01);
-		drawTriangleOldGouraud(e1->y, e2->y, &se1b, &se1, &slope02, &slope12);
+		fillTriangleOld(e0->y, e1->y, &se0, &se0, &slope02, &slope01);
+		fillTriangleOld(e1->y, e2->y, &se1b, &se1, &slope02, &slope12);
 	}
 }
 
@@ -1263,9 +1324,12 @@ static void prepareMeshSoftRender(Mesh *ms, ScreenElement *elements)
 			if (useFastGouraud) {
 				fillEdges = fillGouraudEdges8_SemiSoft;
 			} else {
-				fillEdges = fillGouraudEdges16;
 				if (ms->renderType & MESH_OPTION_RENDER_SOFT8) {
 					fillEdges = fillGouraudEdges8;
+					fillTriangleOld = fillTriangleOldGouraud8;
+				} else {
+					fillEdges = fillGouraudEdges16;
+					fillTriangleOld = fillTriangleOldGouraud16;
 				}
 			}
 		}
@@ -1274,9 +1338,12 @@ static void prepareMeshSoftRender(Mesh *ms, ScreenElement *elements)
 		case RENDER_SOFT_METHOD_ENVMAP:
 		{
 			prepareEdgeList = prepareEdgeListEnvmap;
-			fillEdges = fillEnvmapEdges16;
 			if (ms->renderType & MESH_OPTION_RENDER_SOFT8) {
 				fillEdges = fillEnvmapEdges8;
+				fillTriangleOld = fillTriangleOldGouraud8;
+			} else {
+				fillEdges = fillEnvmapEdges16;
+				fillTriangleOld = fillTriangleOldGouraud16;
 			}
 		}
 		break;
@@ -1284,27 +1351,18 @@ static void prepareMeshSoftRender(Mesh *ms, ScreenElement *elements)
 		case RENDER_SOFT_METHOD_GOURAUD | RENDER_SOFT_METHOD_ENVMAP:
 		{
 			prepareEdgeList = prepareEdgeListGouraudEnvmap;
-			fillEdges = fillGouraudEnvmapEdges16;
 			if (ms->renderType & MESH_OPTION_RENDER_SOFT8) {
 				fillEdges = fillGouraudEnvmapEdges8;
+				fillTriangleOld = fillTriangleOldGouraud8;
+			} else {
+				fillEdges = fillGouraudEnvmapEdges16;
+				fillTriangleOld = fillTriangleOldGouraud16;
 			}
 		}
 		break;
 
 		default:
 		break;
-	}
-}
-
-static void finalizeMeshSoftRender(Mesh *ms)
-{
-	if (mustUseFastGouraud(ms)) {
-		CCB *lastScanlineCel = *(currentScanlineCel8 - 1);
-		lastScanlineCel->ccb_Flags |= CCB_LAST;
-		drawCels(*scanlineCel8);
-		lastScanlineCel->ccb_Flags &= ~CCB_LAST;
-	} else {
-		drawCels(softBuffer.cel);
 	}
 }
 
@@ -1315,11 +1373,7 @@ static void renderMeshSoft(Mesh *ms, ScreenElement *elements)
 
 	int *index = ms->index;
 
-	#ifndef OLD_TRIANGLE_DRAW
-		prepareMeshSoftRender(ms, elements);
-	#else
-		prepareAndPositionSoftBuffer(ms, elements);
-	#endif
+	prepareMeshSoftRender(ms, elements);
 
 	for (i=0; i<ms->polysNum; ++i) {
 		e0 = &elements[*index++];
@@ -1348,11 +1402,14 @@ static void renderMeshSoft(Mesh *ms, ScreenElement *elements)
 		if (ms->poly[i].numPoints == 4) ++index;
 	}
 
-	#ifndef OLD_TRIANGLE_DRAW
-		finalizeMeshSoftRender(ms);
-	#else
+	if (mustUseFastGouraud(ms)) {
+		CCB *lastScanlineCel = *(currentScanlineCel8 - 1);
+		lastScanlineCel->ccb_Flags |= CCB_LAST;
+		drawCels(*scanlineCel8);
+		lastScanlineCel->ccb_Flags &= ~CCB_LAST;
+	} else {
 		drawCels(softBuffer.cel);
-	#endif
+	}
 }
 
 static void renderMeshSoftWireframe(Mesh *ms, ScreenElement *elements)
@@ -1372,7 +1429,7 @@ static void renderMeshSoftWireframe(Mesh *ms, ScreenElement *elements)
 		drawAntialiasedLine(e0, e1);
 	}
 
-	finalizeMeshSoftRender(ms);
+	drawCels(softBuffer.cel);
 }
 
 void renderTransformedMeshSoft(Mesh *ms, ScreenElement *elements)
