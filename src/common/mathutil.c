@@ -17,11 +17,11 @@ int isqrt(int x) {
     while (q > 1) {
         int t;
         q >>= 2;
-        t = x - r - q;
+        t = (int)(x - r - q);
         r >>= 1;
         if (t >= 0) {
             x = t;
-            r += q;
+            r += (int)q;
         }
     }
     return r;

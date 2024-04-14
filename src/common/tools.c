@@ -162,7 +162,7 @@ void initTools()
 void drawZoomedText(int xtp, int ytp, char *text, int zoom)
 {
 	int i = 0;
-	char c;
+	unsigned char c;
 
 	if (!fontsAreReady) return;
 

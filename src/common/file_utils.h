@@ -4,8 +4,13 @@
 #include "types.h"
 #include "core.h"
 
-#define SHORT_ENDIAN_FLIP(v) (uint16)( (((v) >> 8) & 255) | ((v) << 8) )
-#define LONG_ENDIAN_FLIP(v) (uint32)( (((v) >> 24) & 0x000000FF) | (((v) >> 8) & 0x0000FF00) | (((v) << 8) & 0x00FF0000) | ((v) << 24) )
+#ifndef SHORT_ENDIAN_FLIP
+	#define SHORT_ENDIAN_FLIP(v) (uint16)( (((v) >> 8) & 255) | ((v) << 8) )
+#endif
+
+#ifndef LONG_ENDIAN_FLIP
+	#define LONG_ENDIAN_FLIP(v) (uint32)( (((v) >> 24) & 0x000000FF) | (((v) >> 8) & 0x0000FF00) | (((v) << 8) & 0x00FF0000) | ((v) << 24) )
+#endif
 
 Stream *openFileStream(char *path);
 void closeFileStream(Stream *CDstream);

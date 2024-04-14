@@ -14,6 +14,8 @@
 #include "tools.h"
 
 
+#define ASM_VRAMSET
+
 #define OLD_TRIANGLE_DRAW
 
 #define SOFT_BUFF_MAX_SIZE (2 * SCREEN_WIDTH * SCREEN_HEIGHT)
@@ -1262,8 +1264,12 @@ static void updateSoftBufferVariables(int posX, int posY, int width, int height,
 	}
 	softBufferCurrentPtr = &softBuffer.data[softBuffer.currentIndex];
 	if (currentBufferSize <= SOFT_BUFF_MAX_SIZE) {
-		vramSet(0, softBufferCurrentPtr, currentBufferSize);
-		//memset(softBufferCurrentPtr, 0, currentBufferSize);
+		#ifdef ASM_VRAMSET
+			vramSet(0, softBufferCurrentPtr, currentBufferSize);
+		#else
+			memset(softBufferCurrentPtr, 0, currentBufferSize);
+		#endif
+
 		softBuffer.currentIndex += currentBufferSize;
 	}	// else something went wrong
 

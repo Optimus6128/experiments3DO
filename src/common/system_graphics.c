@@ -103,7 +103,7 @@ void initGraphics(uint32 numVramBuffers, uint32 numOffscreenBuffers, bool horizo
 	Bitmaps = (Bitmap**)AllocMem(sizeof(Bitmap*) * totalBuffersNum, MEMTYPE_TRACKSIZE);
 	Buffers = (Bitmap**)AllocMem(sizeof(Bitmap*) * offscreenBuffersNum, MEMTYPE_TRACKSIZE);
 
-	for(i=0; i<totalBuffersNum; ++i) {
+	for(i=0; i<(int)totalBuffersNum; ++i) {
 		BitmapItems[i] = screen.sc_BitmapItems[i];
 		Bitmaps[i] = screen.sc_Bitmaps[i];
 
@@ -200,7 +200,7 @@ void switchRenderToBuffer(bool on)
 
 void setRenderBuffer(uint32 num)
 {
-	if (num > offscreenBuffersNum-1) num = offscreenBuffersNum-1;
+	if ((int)num > offscreenBuffersNum-1) num = offscreenBuffersNum-1;
 
 	bufferIndex = num;
 }
@@ -208,7 +208,7 @@ void setRenderBuffer(uint32 num)
 void clearAllBuffers()
 {
 	const uint32 totalBuffersNum = vramBuffersNum + offscreenBuffersNum;
-	int i;
+	uint32 i;
 
 	for(i=0; i<totalBuffersNum; ++i) {
 		memset(Bitmaps[i]->bm_Buffer, 0, Bitmaps[i]->bm_Width * Bitmaps[i]->bm_Height * 2);

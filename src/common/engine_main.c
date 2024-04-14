@@ -575,7 +575,7 @@ static void calculateBoundingBox(Object3D* obj)
 		if (i==0) {
 			min.x = max.x = v->x;
 			min.y = max.y = v->y;
-			min.z = max.y = v->z;
+			min.z = max.z = v->z;
 		} else {
 			if (v->x < min.x) min.x = v->x;
 			if (v->y < min.y) min.y = v->y;
@@ -592,7 +592,8 @@ static void calculateBoundingBox(Object3D* obj)
 	subVector3D(&bbox->halfSize, &max, &min);
 	divScalarVector3D(&bbox->halfSize, 2);
 
-	// Keep to see what breaks the compiler in the future
+	// Keep to see what breaks the compiler in the future (What was the fail? Maybe the fact that above had copy paste mistake and never set max.z?)
+	// Do we need to calculed diagonalLength here or is it ok to be commented out?
 	//bbox->diagonalLength = getVector3Dlength(&bbox->halfSize);
 }
 

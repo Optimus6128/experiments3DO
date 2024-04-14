@@ -2,6 +2,7 @@
 #include "file_utils.h"
 #include "tools.h"
 
+#define FLI_UPDATE_FULL_FRAME_ASM
 void FLIupdateFullFrame(uint16 *dst, uint32 *vga_pal, uint32 *vga32);
 
 static bool shouldUpdateFullFrame;
@@ -236,6 +237,18 @@ static void streamNextBlock(AnimFLI *anim, int size)
 	}
 }*/
 
+void FLIupdateFullFrameSlow(uint16* dst, uint32* vga_pal, uint32* vga32)
+{
+	int count = (VGA_WIDTH * VGA_HEIGHT) / 4;
+	uint32* dst32 = (uint32*)dst;
+	do {
+		const uint32 c = *vga32++;
+
+		*dst32++ = vga_pal[(c >> 24) & 255] | (vga_pal[(c >> 16) & 255] >> PAL_PAD_BITS);
+		*dst32++ = vga_pal[(c >> 8) & 255] | (vga_pal[c & 255] >> PAL_PAD_BITS);
+	} while (--count > 0);
+}
+
 void FLIplayNextFrame(AnimFLI *anim)
 {
 	int i;
@@ -275,7 +288,11 @@ void FLIplayNextFrame(AnimFLI *anim)
 
 	// Make a full frame copy from vga buffer to 16bpp CEL if necessary
 	if (shouldUpdateFullFrame) {
-		FLIupdateFullFrame(anim->bmp, anim->vga_pal, (uint32*)anim->vga_screen);
+		#ifdef FLI_UPDATE_FULL_FRAME_ASM
+			FLIupdateFullFrame(anim->bmp, anim->vga_pal, (uint32*)anim->vga_screen);
+		#else
+			FLIupdateFullFrameSlow(anim->bmp, anim->vga_pal, (uint32*)anim->vga_screen);
+		#endif
 	}
 }
 
