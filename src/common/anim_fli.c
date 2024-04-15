@@ -78,7 +78,7 @@ void FliBrun(AnimFLI *anim)
 
 	anim->firstFrameSize = anim->FRMhdr.size;
 
-	for (y=0; y<anim->FLIhdr.height; y++) {
+	for (y=0; y<(int)anim->FLIhdr.height; y++) {
 		const unsigned char packets = fliBuffer[anim->dataIndex++];
 		for (i=0; i<packets; i++) {
 			int8 size_count = (int8)fliBuffer[anim->dataIndex++];
@@ -115,7 +115,7 @@ void FliLc(AnimFLI *anim)
 	anim->yline += lines_skip;
 	vi = anim->yline * VGA_WIDTH;
 
-	for (i=0; i<lines_chng; i++) {
+	for (i=0; i<(int)lines_chng; i++) {
 		const unsigned char packets = fliBuffer[anim->dataIndex++];
 
 		for (n=0; n<packets; n++) {
@@ -266,7 +266,7 @@ void FLIplayNextFrame(AnimFLI *anim)
 	// Main chunk decoding loop
 	anim->yline=0;
 	shouldUpdateFullFrame = false;
-	for (i=0; i<anim->FRMhdr.chunks; i++)
+	for (i=0; i<(int)anim->FRMhdr.chunks; i++)
 	{
 		ReadChunkHDR(anim);
 		DoType(anim);

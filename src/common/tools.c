@@ -270,7 +270,7 @@ static void renderEffectSelectorBar(int px, int py, int length)
 	if (!selectionBarCel) {
 		selectionBarCel = CreateBackdropCel(SCREEN_WIDTH, 8, 0x7FFF, 100);
 		selectionBarCel->ccb_Flags |= CCB_PXOR;
-		selectionBarCel->ccb_PIXC = 0x1F80;
+		selectionBarCel->ccb_PIXC = 0x1F801F80;
 	}
 
 	selectionBarCel->ccb_XPos = px << 16;

@@ -270,17 +270,22 @@ static void calculateTriangleGradients(ScreenElement *e0, ScreenElement *e1, Scr
 {
 	const int x0 = e0->x; const int x1 = e1->x; const int x2 = e2->x;
 	const int y0 = e0->y; const int y1 = e1->y; const int y2 = e2->y;
+	const int dd = ((x1 - x2) * (y0 - y2) - (x0 - x2) * (y1 - y2));
 
 	if (renderSoftMethod & RENDER_SOFT_METHOD_GOURAUD) {
 		const int c0 = e0->c; const int c1 = e1->c; const int c2 = e2->c;
-		grads.dc = (((c1-c2)*(y0-y2) - (c0-c2)*(y1-y2)) << FP_BASE) / ((x1-x2)*(y0-y2) - (x0-x2)*(y1-y2));
+		if (dd != 0) {
+			grads.dc = (((c1 - c2) * (y0 - y2) - (c0 - c2) * (y1 - y2)) << FP_BASE) / dd;
+		}
 	}
 
 	if (renderSoftMethod & RENDER_SOFT_METHOD_ENVMAP) {
 		const int u0 = e0->u; const int u1 = e1->u; const int u2 = e2->u;
 		const int v0 = e0->v; const int v1 = e1->v; const int v2 = e2->v;
-		grads.du = (((u1-u2)*(y0-y2) - (u0-u2)*(y1-y2)) << FP_BASE) / ((x1-x2)*(y0-y2) - (x0-x2)*(y1-y2));
-		grads.dv = (((v1-v2)*(y0-y2) - (v0-v2)*(y1-y2)) << FP_BASE) / ((x1-x2)*(y0-y2) - (x0-x2)*(y1-y2));
+		if (dd != 0) {
+			grads.du = (((u1 - u2) * (y0 - y2) - (u0 - u2) * (y1 - y2)) << FP_BASE) / dd;
+			grads.dv = (((v1 - v2) * (y0 - y2) - (v0 - v2) * (y1 - y2)) << FP_BASE) / dd;
+		}
 	}
 }
 

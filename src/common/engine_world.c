@@ -8,7 +8,7 @@ int sortedObjectsNum = 0;
 
 void setActiveCamera(World *world, int camIndex)
 {
-	if (camIndex > 0 && camIndex < world->maxCameras) {
+	if (camIndex >= 0 && camIndex < world->maxCameras) {
 		world->activeCamera = camIndex;
 	}
 }
