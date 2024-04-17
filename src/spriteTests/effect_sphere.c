@@ -67,7 +67,7 @@ static void initSphere()
 			if (z2 < 0) {
 				if (xLength[yi]==0) xOffset[yi]++;
 			} else {
-				float z = sqrt((float)z1 / 256.0f);
+				float z = (float)sqrt((float)z1 / 256.0f);
 				if (z < 1.0f) z = 1.0f;
 				*dst++ = ((int)(y / z) + SPHERE_HEIGHT/2) * SCREEN_WIDTH + (int)(x / z) + SPHERE_WIDTH / 2;
 				xLength[yi]++;

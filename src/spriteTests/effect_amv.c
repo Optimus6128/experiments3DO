@@ -70,7 +70,7 @@ static void initCircle()
 
 	for (y=-SPRITE_HEIGHT/2; y<SPRITE_HEIGHT/2; ++y) {
 		for (x=-SPRITE_WIDTH/2; x<SPRITE_WIDTH/2; ++x) {
-			const float r = sqrt((float)(x*x + y*y));
+			const float r = (float)sqrt((float)(x*x + y*y));
 			if (r < CIRCLE_RADIUS) {
 				int c = ((x+SPRITE_WIDTH/2)^(y+SPRITE_HEIGHT/2)) % 31;
 				CLAMP(c, 1,30);

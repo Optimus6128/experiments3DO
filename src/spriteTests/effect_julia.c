@@ -129,8 +129,8 @@ void effectJuliaInit()
 void effectJuliaRun()
 {
 	const int t = getTicks();
-	const int xp = sin(t/800.0) * FP_MUL;
-	const int yp = sin(t/1100.0) * FP_MUL;
+	const int xp = (int)(sin(t/800.0) * FP_MUL);
+	const int yp = (int)(sin(t/1100.0) * FP_MUL);
 
 	juliaRender(xp,yp);
 

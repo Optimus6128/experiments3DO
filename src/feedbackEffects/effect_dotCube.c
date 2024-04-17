@@ -114,7 +114,7 @@ void effectDotcubeRun()
 	switch(fbo_fx){
 		case FBO_FX_DOTCUBE1:
 		{
-			int z = 1024 + 768 * sin(0.25f + time * 0.01f);
+			int z = (int)(1024 + 768 * sin(0.25f + time * 0.01f));
 			if (z > 1536) z = 1536;
 
 			renderFlatCube(time, z);
@@ -123,7 +123,7 @@ void effectDotcubeRun()
 
 		case FBO_FX_DOTCUBE2:
 		{
-			int z = (1.0f - cos(time * 0.01f)) * 2048;
+			int z = (int)((1.0f - cos(time * 0.01f)) * 2048);
 			if (z < 256) z = 256;
 
 			switchRenderToBuffer(true);

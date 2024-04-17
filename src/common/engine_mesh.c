@@ -373,9 +373,16 @@ Mesh *loadMesh(char *path, int loadOptions, int meshOptions, Texture *tex)
 	readSequentialBytesFromFileStream(6, tempBuffSrc, CDstream);
 	tempBuff16 = (uint16*)tempBuffSrc;
 
-	verticesNum = SHORT_ENDIAN_FLIP(tempBuff16[0]);
-	polysNum = SHORT_ENDIAN_FLIP(tempBuff16[2]);
-	linesNum = SHORT_ENDIAN_FLIP(tempBuff16[1]);
+	verticesNum = tempBuff16[0];
+	linesNum = tempBuff16[1];
+	polysNum = tempBuff16[2];
+
+	#ifdef BIG_ENDIAN
+		verticesNum = SHORT_ENDIAN_FLIP(verticesNum);
+		polysNum = SHORT_ENDIAN_FLIP(polysNum);
+		linesNum = SHORT_ENDIAN_FLIP(linesNum);
+	#endif
+
 	indicesNum = 3 * polysNum;
 	tempBuffSize = verticesNum * 3;
 
@@ -395,7 +402,10 @@ Mesh *loadMesh(char *path, int loadOptions, int meshOptions, Texture *tex)
 		readSequentialBytesFromFileStream(tempBuffSize, tempBuffSrc, CDstream);
 		tempBuff16 = (uint16*)tempBuffSrc;
 		for (i=0; i<2*linesNum; ++i) {
-			ms->lineIndex[i] = SHORT_ENDIAN_FLIP(tempBuff16[i]);
+			ms->lineIndex[i] = tempBuff16[i];
+			#ifdef BIG_ENDIAN
+				ms->lineIndex[i] = SHORT_ENDIAN_FLIP(ms->lineIndex[i]);
+			#endif
 		}
 	} else {
 		moveFileStreamPointerRelative(tempBuffSize, CDstream);
@@ -405,7 +415,10 @@ Mesh *loadMesh(char *path, int loadOptions, int meshOptions, Texture *tex)
 	readSequentialBytesFromFileStream(tempBuffSize, tempBuffSrc, CDstream);
 	tempBuff16 = (uint16*)tempBuffSrc;
 	for (i=0; i<indicesNum; ++i) {
-		ms->index[i] = SHORT_ENDIAN_FLIP(tempBuff16[i]);
+		ms->index[i] = tempBuff16[i];
+		#ifdef BIG_ENDIAN
+				ms->index[i] = SHORT_ENDIAN_FLIP(ms->index[i]);
+		#endif
 	}
 	setAllPolyData(ms, 3, 0, 0);
 
