@@ -68,7 +68,8 @@ void effectMeshLoadInit()
 
 	gridMesh = initGenMesh(MESH_GRID, gridParams, MESH_OPTIONS_DEFAULT | MESH_OPTION_NO_POLYSORT, gridTex);
 	
-	loadedMesh = loadMesh("data/head.3do", MESH_LOAD_SKIP_LINES | MESH_LOAD_FLIP_POLYORDER, MESH_OPTIONS_DEFAULT | MESH_OPTION_ENABLE_LIGHTING, flatTex);
+	//loadedMesh = loadMesh("data/head.3do", MESH_LOAD_SKIP_LINES | MESH_LOAD_FLIP_POLYORDER, MESH_OPTIONS_DEFAULT | MESH_OPTION_ENABLE_LIGHTING, flatTex);
+	loadedMesh = loadMesh("data/torus.plg", MESH_LOAD_SKIP_LINES, MESH_OPTIONS_DEFAULT | MESH_OPTION_ENABLE_LIGHTING, flatTex);
 	loadedObj = initObject3D(loadedMesh);
 
 
@@ -117,7 +118,7 @@ static void setObjectsPosAndRot(int dt)
 	drawNumber(32,64, loadedMesh->linesNum);*/
 
 	if (autoRot) {
-		//softRotX += 1;
+		softRotX += 1;
 		softRotY += 2;
 		//softRotZ -= 1;
 	}
