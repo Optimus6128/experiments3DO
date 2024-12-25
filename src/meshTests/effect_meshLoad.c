@@ -58,7 +58,7 @@ static void shadeGrid()
 
 void effectMeshLoadInit()
 {
-	static unsigned char paramCol = 0xFF;
+	static unsigned short paramCol = 0x7fff;
 	MeshgenParams gridParams = makeMeshgenGridParams(2048, GRID_SIZE);
 	
 	setPalGradient(0,31, 1,3,7, 31,27,23, gridPal);
