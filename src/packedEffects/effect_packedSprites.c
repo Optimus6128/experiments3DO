@@ -7,6 +7,8 @@
 #include "sprite_engine.h"
 #include "cel_packer.h"
 
+#include "operamath.h"
+
 
 #define ENABLE_4 true
 #define ENABLE_8 true
@@ -92,7 +94,7 @@ static void generateUnpackedBmp8()
 		for (x=0; x<SPRITE8_WIDTH; ++x) {
 			const int xc = x - SPRITE8_WIDTH/2;
 
-			c = xc * xc + yc * yc + ((SinF16(5.0 * Atan2F16(xc, yc)) + 65536) >> 7);
+			c = xc * xc + yc * yc + ((SinF16((int)(5.0 * Atan2F16(xc, yc))) + 65536) >> 7);
 			if (c==0) c = 1;
 			c = SPRITE8_SIZE / 4 - c;
 			if (c < 0) c = 0;

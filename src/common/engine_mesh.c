@@ -10,6 +10,7 @@
 #include "mathutil.h"
 #include "file_utils.h"
 
+
 static void setCelTexShifts(CCB *cel, PolyData *poly)
 {
 	const int texShrX = getShr(poly->subtexWidth);
@@ -355,7 +356,7 @@ Mesh* initMesh(ElementsSize *elSize, int renderType, Texture *tex)
 
 static char tempBuffSrc[16384];	// will alloc later, changed things in file utils and so I forgot about this. Afraid to do AllocMem inside now because compiler issues might emerge again.
 
-Mesh *loadMesh(char *path, int loadOptions, int meshOptions, Texture *tex)
+static Mesh *loadMesh3do(char *path, int loadOptions, int meshOptions, Texture *tex)
 {
 	int i;
 	unsigned char *tempBuff8;
@@ -367,15 +368,22 @@ Mesh *loadMesh(char *path, int loadOptions, int meshOptions, Texture *tex)
 	bool loadLines = !(loadOptions & MESH_LOAD_SKIP_LINES);
 	bool flipPolyOrder = loadOptions & MESH_LOAD_FLIP_POLYORDER;
 
-	Stream *CDstream = openFileStream(path); 
+	Stream *CDstream = openFileStream(path);
 	int verticesNum, polysNum, linesNum, indicesNum;
 
 	readSequentialBytesFromFileStream(6, tempBuffSrc, CDstream);
 	tempBuff16 = (uint16*)tempBuffSrc;
 
-	verticesNum = SHORT_ENDIAN_FLIP(tempBuff16[0]);
-	polysNum = SHORT_ENDIAN_FLIP(tempBuff16[2]);
-	linesNum = SHORT_ENDIAN_FLIP(tempBuff16[1]);
+	verticesNum = tempBuff16[0];
+	linesNum = tempBuff16[1];
+	polysNum = tempBuff16[2];
+
+	#ifdef BIG_ENDIAN
+		verticesNum = SHORT_ENDIAN_FLIP(verticesNum);
+		polysNum = SHORT_ENDIAN_FLIP(polysNum);
+		linesNum = SHORT_ENDIAN_FLIP(linesNum);
+	#endif
+
 	indicesNum = 3 * polysNum;
 	tempBuffSize = verticesNum * 3;
 
@@ -395,7 +403,10 @@ Mesh *loadMesh(char *path, int loadOptions, int meshOptions, Texture *tex)
 		readSequentialBytesFromFileStream(tempBuffSize, tempBuffSrc, CDstream);
 		tempBuff16 = (uint16*)tempBuffSrc;
 		for (i=0; i<2*linesNum; ++i) {
-			ms->lineIndex[i] = SHORT_ENDIAN_FLIP(tempBuff16[i]);
+			ms->lineIndex[i] = tempBuff16[i];
+			#ifdef BIG_ENDIAN
+				ms->lineIndex[i] = SHORT_ENDIAN_FLIP(ms->lineIndex[i]);
+			#endif
 		}
 	} else {
 		moveFileStreamPointerRelative(tempBuffSize, CDstream);
@@ -405,7 +416,10 @@ Mesh *loadMesh(char *path, int loadOptions, int meshOptions, Texture *tex)
 	readSequentialBytesFromFileStream(tempBuffSize, tempBuffSrc, CDstream);
 	tempBuff16 = (uint16*)tempBuffSrc;
 	for (i=0; i<indicesNum; ++i) {
-		ms->index[i] = SHORT_ENDIAN_FLIP(tempBuff16[i]);
+		ms->index[i] = tempBuff16[i];
+		#ifdef BIG_ENDIAN
+				ms->index[i] = SHORT_ENDIAN_FLIP(ms->index[i]);
+		#endif
 	}
 	setAllPolyData(ms, 3, 0, 0);
 
@@ -418,4 +432,174 @@ Mesh *loadMesh(char *path, int loadOptions, int meshOptions, Texture *tex)
 	//closeFileStream(CDstream);
 
 	return ms;
+}
+
+static char* readLineStringFromPlg(Stream *CDstream)
+{
+	int i;
+	static char lbuf[64];
+
+	do {
+		for (i=0; i<64; ++i) {
+			char c;
+
+			readSequentialBytesFromFileStream(1, &c, CDstream);
+			lbuf[i] = c;
+
+			if (c=='#' || c=='\r' || c=='\n') break;
+		}
+	} while(i==0);
+
+	return lbuf;
+}
+
+/*static char *ltrim(char *s)
+{
+	while(isspace(*s)) s++;
+
+	return s;
+}*/
+
+static void readLineValues(char *inp, char *out[], int numVals)
+{
+	int i;
+
+	//inp = ltrim(inp);
+	out[0] = strtok(inp, " ");
+
+	for (i=1; i<numVals; ++i) {
+		out[i] = strtok(NULL, " ");
+		//out[i] = ltrim(out[i]);
+	}
+}
+
+static int getNumTrianglesAndMaxPolyPointsFromPlg(char *objFile, int *outMaxPolyPoints)
+{
+	static int maxPolyPoints;
+	char *values[32];
+
+	Stream *CDstream = openFileStream(objFile);
+
+	int numVertices, numPolys, numTriangles;
+	int i;
+
+	readLineValues(readLineStringFromPlg(CDstream), values, 3);
+
+	numVertices = atoi(values[1]);
+	numPolys = atoi(values[2]);		// PLG polys that can have more edges than triangles
+	numTriangles = 0;				// as we subdivide to only triangles below we will be increasing this
+
+	for (i=0; i<numVertices; ++i) {
+		readLineStringFromPlg(CDstream);	// read just to skip
+	}
+
+	maxPolyPoints = 0;
+	for (i=0; i<numPolys; ++i) {
+		int numPoints;
+		char *lbuf = readLineStringFromPlg(CDstream);
+		readLineValues(lbuf, values, 2); // 0 is material, 1 is number of points in n-gon
+		numPoints = atoi(values[1]);
+		if (numPoints > maxPolyPoints) maxPolyPoints = numPoints;
+		numTriangles += (numPoints - 2);
+	}
+
+	closeFileStream(CDstream);
+
+	*outMaxPolyPoints = maxPolyPoints;
+
+	return numTriangles;
+}
+
+static Mesh* loadMeshPlg(char *objFile, int loadOptions, int meshOptions, Texture *tex)
+{
+	Mesh* mesh = NULL;
+
+	//bool loadLines = !(loadOptions & MESH_LOAD_SKIP_LINES);
+	bool flipPolyOrder = loadOptions & MESH_LOAD_FLIP_POLYORDER;
+
+	// Prepass file read to count the actual numTriangles as PLG polys might consist of variable n-gons
+	int maxPolyPoints;
+	const int numTriangles = getNumTrianglesAndMaxPolyPointsFromPlg(objFile, &maxPolyPoints);
+	const int numIndices = 3 * numTriangles;	// I add things as triangles, can be 4 point quads in the future, at least for some PLGs
+	const int maxIndexDataNum = 2 + maxPolyPoints;
+
+	char **values = (char**)malloc(maxIndexDataNum * sizeof(char*));
+
+	Stream *CDstream = openFileStream(objFile);
+
+	int numVertices, numPolys;
+	int i, currentIndex = 0;
+
+
+	readLineValues(readLineStringFromPlg(CDstream), values, 3);
+
+	numVertices = atoi(values[1]);
+	numPolys = atoi(values[2]);		// numPolys are n-gons, could be from 3 to 12 or more inside the PLG
+
+	mesh = initMesh(getElementsSize(numVertices, numTriangles, numIndices, 0), meshOptions, tex);
+
+	for (i=0; i<numVertices; ++i) {
+		char *lbuf = readLineStringFromPlg(CDstream);
+		readLineValues(lbuf, values, 3);
+		mesh->vertex[i].x = atoi(values[0]);
+		mesh->vertex[i].y = atoi(values[1]);
+		mesh->vertex[i].z = atoi(values[2]);
+	}
+
+	for (i=0; i<numPolys; ++i) {
+		int numPoints;
+		char *lbuf = readLineStringFromPlg(CDstream);
+		readLineValues(lbuf, values, maxIndexDataNum); // later I will deduce by reading second value the size, now I just read max
+		numPoints = atoi(values[1]);
+
+		if (numPoints == 3) {
+			int *index = &mesh->index[currentIndex];
+			*index = atoi(values[2]);
+			*(index + 1) = atoi(values[3]);
+			*(index + 2) = atoi(values[4]);
+			currentIndex += 3;
+		} else {
+			int j;
+			for (j=0; j<numPoints - 2; ++j) {
+				int *index = &mesh->index[currentIndex];
+				*index = atoi(values[2]);
+				*(index + 1) = atoi(values[3+j]);
+				*(index + 2) = atoi(values[4+j]);
+				index += 3;
+				currentIndex += 3;
+			}
+		}
+	}
+
+	setAllPolyData(mesh, 3, 0, 0);
+
+	//centerMeshVertices(mesh);
+
+	if (flipPolyOrder) flipMeshPolyOrder(mesh);
+
+	calculateMeshNormals(mesh);
+	prepareCelList(mesh);
+
+	closeFileStream(CDstream);
+
+	free(values);
+
+	return mesh;
+}
+
+Mesh *loadMesh(char *path, int loadOptions, int meshOptions, Texture *tex)
+{
+	Mesh* mesh = NULL;
+
+	char *dotExt = strrchr(path, '.');
+	if(!dotExt) return false;
+
+	if (strcmp(dotExt, ".plg") == 0) {
+		mesh = loadMeshPlg(path, loadOptions, meshOptions, tex);
+	} else if (strcmp(dotExt, ".3do") == 0) {
+		mesh = loadMesh3do(path, loadOptions, meshOptions, tex);
+	} else {
+		// TODO
+	}
+	return mesh;
 }

@@ -340,7 +340,7 @@ void effectVolumeCubeInit()
 			float yc = (float)(y - BLOB_HEIGHT / 2.0f);
 			for (x=0; x<BLOB_WIDTH; ++x) {
 				float xc = (float)(x - BLOB_WIDTH / 2.0f);
-				float r = sqrt(xc*xc + yc*yc + zc*zc);
+				float r = (float)sqrt(xc*xc + yc*yc + zc*zc);
 				if (r==0.0f) r = 1.0f;
 
 				c = 0;

@@ -3,6 +3,7 @@
 #include "tools.h"
 
 #define FLI_UPDATE_FULL_FRAME_ASM
+
 void FLIupdateFullFrame(uint16 *dst, uint32 *vga_pal, uint32 *vga32);
 
 static bool shouldUpdateFullFrame;
@@ -30,7 +31,9 @@ static uint32 readU32(AnimFLI *anim, bool advance)
 
 	if ((dataIndex & 3) == 0) {
 		value = *((uint32*)&fliBuffer[dataIndex]);
-		value = LONG_ENDIAN_FLIP(value);
+		#ifdef BIG_ENDIAN
+			value = LONG_ENDIAN_FLIP(value);
+		#endif
 	} else {
 		const uint32 u0 = fliBuffer[dataIndex];
 		const uint32 u1 = fliBuffer[dataIndex+1];
@@ -244,8 +247,13 @@ void FLIupdateFullFrameSlow(uint16* dst, uint32* vga_pal, uint32* vga32)
 	do {
 		const uint32 c = *vga32++;
 
-		*dst32++ = vga_pal[(c >> 24) & 255] | (vga_pal[(c >> 16) & 255] >> PAL_PAD_BITS);
-		*dst32++ = vga_pal[(c >> 8) & 255] | (vga_pal[c & 255] >> PAL_PAD_BITS);
+		#ifdef BIG_ENDIAN
+			*dst32++ = vga_pal[(c >> 24) & 255] | (vga_pal[(c >> 16) & 255] >> PAL_PAD_BITS);
+			*dst32++ = vga_pal[(c >> 8) & 255] | (vga_pal[c & 255] >> PAL_PAD_BITS);
+		#else
+			*dst32++ = vga_pal[c & 255] | (vga_pal[(c >> 8) & 255] >> PAL_PAD_BITS);
+			*dst32++ = vga_pal[(c >> 16) & 255] | (vga_pal[(c >> 24) & 255] >> PAL_PAD_BITS);
+		#endif
 	} while (--count > 0);
 }
 
@@ -306,19 +314,35 @@ void FLIload(AnimFLI *anim, bool preLoad)
 	readBytesFromFileStream(0, sizeof(OrigFLIheader), (char*)&origFliHdr, anim->fileStream);
 	anim->fileIndex = ORIG_FLI_HEADER_SIZE;
 
-	anim->FLIhdr.size = LONG_ENDIAN_FLIP(origFliHdr.size);
-	anim->FLIhdr.width = SHORT_ENDIAN_FLIP(origFliHdr.width);
-	anim->FLIhdr.height = SHORT_ENDIAN_FLIP(origFliHdr.height);
+	anim->FLIhdr.size = origFliHdr.size;
+	anim->FLIhdr.width = origFliHdr.width;
+	anim->FLIhdr.height = origFliHdr.height;
 
-    anim->FLIhdr.magic = SHORT_ENDIAN_FLIP(origFliHdr.magic);
-    anim->FLIhdr.frames = SHORT_ENDIAN_FLIP(origFliHdr.frames);
+    anim->FLIhdr.magic = origFliHdr.magic;
+    anim->FLIhdr.frames = origFliHdr.frames;
 
-    anim->FLIhdr.depth = SHORT_ENDIAN_FLIP(origFliHdr.depth);
-    anim->FLIhdr.flags = SHORT_ENDIAN_FLIP(origFliHdr.flags);
-    anim->FLIhdr.speed = SHORT_ENDIAN_FLIP(origFliHdr.speed);
+    anim->FLIhdr.depth = origFliHdr.depth;
+    anim->FLIhdr.flags = origFliHdr.flags;
+    anim->FLIhdr.speed = origFliHdr.speed;
 
-    anim->FLIhdr.next = LONG_ENDIAN_FLIP(origFliHdr.next);
-    anim->FLIhdr.frit = LONG_ENDIAN_FLIP(origFliHdr.frit);
+    anim->FLIhdr.next = origFliHdr.next;
+    anim->FLIhdr.frit = origFliHdr.frit;
+
+	#ifdef BIG_ENDIAN
+		anim->FLIhdr.size = LONG_ENDIAN_FLIP(anim->FLIhdr.size);
+		anim->FLIhdr.width = SHORT_ENDIAN_FLIP(anim->FLIhdr.width);
+		anim->FLIhdr.height = SHORT_ENDIAN_FLIP(anim->FLIhdr.height);
+
+		anim->FLIhdr.magic = SHORT_ENDIAN_FLIP(anim->FLIhdr.magic);
+		anim->FLIhdr.frames = SHORT_ENDIAN_FLIP(anim->FLIhdr.frames);
+
+		anim->FLIhdr.depth = SHORT_ENDIAN_FLIP(anim->FLIhdr.depth);
+		anim->FLIhdr.flags = SHORT_ENDIAN_FLIP(anim->FLIhdr.flags);
+		anim->FLIhdr.speed = SHORT_ENDIAN_FLIP(anim->FLIhdr.speed);
+
+		anim->FLIhdr.next = LONG_ENDIAN_FLIP(anim->FLIhdr.next);
+		anim->FLIhdr.frit = LONG_ENDIAN_FLIP(anim->FLIhdr.frit);
+	#endif
 
 	if (preLoad) {
 		loadSize = anim->FLIhdr.size - ORIG_FLI_HEADER_SIZE;
