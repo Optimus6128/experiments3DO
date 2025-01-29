@@ -68,9 +68,16 @@ Sprite *newPackedSprite(int width, int height, int bpp, int type, uint16 *pal, u
 	return spr;
 }
 
-void setPalette(Sprite *spr, uint16* pal)
+void setSpriteData(Sprite *spr, void *data)
+{
+	spr->cel->ccb_SourcePtr = (CelData*)data;
+	spr->data = data;
+}
+
+void setSpritePalette(Sprite *spr, uint16* pal)
 {
 	spr->cel->ccb_PLUTPtr = pal;
+	spr->pal = pal;
 }
 
 void setSpriteAlpha(Sprite *spr, bool enable, bool average)
