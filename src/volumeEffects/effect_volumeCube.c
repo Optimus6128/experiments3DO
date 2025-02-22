@@ -61,12 +61,12 @@ static unsigned char blob[BLOB_SIZE];
 
 static int mouseTravelZ = 0;
 
-static int posXtrans;
-static int posYtrans;
-static int posZtrans;
-static int rotXtrans;
-static int rotYtrans;
-static int rotZtrans;
+static int posXtrans = 0;
+static int posYtrans = 0;
+static int posZtrans = 0;
+static int rotXtrans = 0;
+static int rotYtrans = 0;
+static int rotZtrans = 0;
 
 Camera *camera;
 
@@ -394,8 +394,8 @@ static void renderMariaQuads(bool backToFront)
 	const int shrWidth = getShr(DOTS_DEPTH);
 	const int shrHeight = getShr(DOTS_DEPTH);
 
-	posXtrans = getMousePosition().x;
-	posYtrans = getMousePosition().y;
+	posXtrans += getMousePositionDiff().x;
+	posYtrans += getMousePositionDiff().y;
 	posZtrans = (8*DOTS_DEPTH + mouseTravelZ) << MESH_SCALE;
 
 	tvPtr = tv;
@@ -471,6 +471,15 @@ static void renderTorch()
 	renderObject3D(torchObj, camera, NULL, 0);
 }
 
+static void test()
+{
+	int x = getMousePositionDiff().x;
+	int y = getMousePositionDiff().y;
+
+	drawNumber(8,200,x);
+	drawNumber(8,208,y);
+}
+
 static void render()
 {
 	rotXtrans = 0;
@@ -482,6 +491,8 @@ static void render()
 	renderMariaQuads(true);
 
 	renderTorch();
+
+	test();
 }
 
 static void updateFromInput()

@@ -13,6 +13,7 @@ static bool joyButtonPressedOnce[JOY_BUTTONS_NUM];
 static bool mouseButtonPressed[MOUSE_BUTTONS_NUM];
 static bool mouseButtonPressedOnce[MOUSE_BUTTONS_NUM];
 
+static MousePosition previousMousePosition;
 static MousePosition mousePosition;
 static int mouseStatus = 0;
 static bool anyJoyButtonPressed;
@@ -67,8 +68,12 @@ static void updateMouse()
     mouseStatus = GetMouse(1,0,&mouseState);
 	if (mouseStatus < 0) return;
 
+	previousMousePosition.x = mousePosition.x;
+	previousMousePosition.y = mousePosition.y;
+
 	mousePosition.x = mouseState.med_HorizPosition;
 	mousePosition.y = mouseState.med_VertPosition;
+
 	mousebits = mouseState.med_ButtonBits;
 
 	for (i=0; i<MOUSE_BUTTONS_NUM; ++i) {
@@ -80,6 +85,16 @@ static void updateMouse()
 			mouseButtonPressedOnce[i] = false;
 		}
 	}
+}
+
+MousePosition getMousePositionDiff()
+{
+	static MousePosition mousePositionDiff;
+
+	mousePositionDiff.x = mousePosition.x - previousMousePosition.x;
+	mousePositionDiff.y = mousePosition.y - previousMousePosition.y;
+
+	return mousePositionDiff;
 }
 
 MousePosition getMousePosition()

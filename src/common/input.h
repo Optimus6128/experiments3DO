@@ -27,6 +27,7 @@ bool isJoyButtonPressedOnce(int joyButtonId);
 bool isMouseButtonPressed(int mouseButtonId);
 bool isMouseButtonPressedOnce(int mouseButtonId);
 
+MousePosition getMousePositionDiff(void);
 MousePosition getMousePosition(void);
 
 #endif
