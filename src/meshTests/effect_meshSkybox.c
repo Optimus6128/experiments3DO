@@ -70,7 +70,7 @@ static void initSkyboxObject()
 
 static void initTeapotObject()
 {
-	static unsigned char paramCol = 0x7f;
+	static unsigned short paramCol = 0x7fff;
 
 	flatTex = initGenTexture(4,4, 16, NULL, 0, TEXGEN_FLAT, &paramCol);
 

@@ -7,6 +7,6 @@ int main()
 {
 	const int effectIndex = runEffectSelector(effectName, EFFECTS_NUM);
 
-	coreInit(effectInitFunc[effectIndex], CORE_DEFAULT | CORE_SHOW_MEM);
+	coreInit(effectInitFunc[effectIndex], CORE_DEFAULT);// | CORE_SHOW_MEM);
 	coreRun(effectRunFunc[effectIndex]);
 }
