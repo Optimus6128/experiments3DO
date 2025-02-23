@@ -22,7 +22,7 @@ static ubyte draculinPacked[PACKED_LINE_WIDTH * SPRITE_HEIGHT];
 
 static void waveLeftSide(Sprite *spr, int t)
 {
-	int x,y;
+	int y;
 	ubyte *src = spr->data;
 
 	for (y=0; y<SPRITE_HEIGHT; ++y) {

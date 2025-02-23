@@ -49,8 +49,16 @@ int getCelBpp(CCB *cel)
 
 int getCelType(CCB *cel)
 {
-	// will implement in the future
-	return 0;
+	int type = 0;
+
+	if (cel->ccb_PRE0 & PRE0_LINEAR) {
+		type |= CEL_TYPE_UNCODED;
+	}
+	if (cel->ccb_Flags & CCB_PACKED) {
+		type |= CEL_TYPE_PACKED;
+	}
+
+	return type;
 }
 
 uint16* getCelPalette(CCB *cel)
