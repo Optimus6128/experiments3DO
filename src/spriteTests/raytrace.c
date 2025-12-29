@@ -444,7 +444,7 @@ static void renderSubdiv4x(uint16 *buff, int updatePieceIndex)
 
 	Vec3fp* dir = &perPixelPrecs.viewDir[y0 * RT_BUFF_WIDTH];
 	PerPixelVars* perPixelVars = &perPixelPrecs.vars[y0 * RT_BUFF_WIDTH];
-	Hit *hitBuff = &hitBuffer[y0 * HIT_BUFF_WIDTH];
+	Hit *hitBuff = &hitBuffer[(y0 >> 1) * HIT_BUFF_WIDTH];
 
 	uint16* dst = &buff[y0 * RT_WIDTH];
 
@@ -648,7 +648,7 @@ static void renderObjectsSubdiv4x(uint16 *buff, int updatePieceIndex)
 
 	Vec3fp* dir = &perPixelPrecs.viewDir[y0 * RT_BUFF_WIDTH];
 	PerPixelVars* perPixelVars = &perPixelPrecs.vars[y0 * RT_BUFF_WIDTH];
-	Hit *hitBuff = &hitBuffer[y0 * HIT_BUFF_WIDTH];
+	Hit *hitBuff = &hitBuffer[(y0 >> 1) * HIT_BUFF_WIDTH];
 
 	i = 0;
 	for (y = y0; y < y1; y++) {

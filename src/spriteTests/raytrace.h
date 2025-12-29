@@ -4,7 +4,7 @@
 #define RT_WIDTH 128
 #define RT_HEIGHT 128
 
-#define RT_UPDATE_PIECES 16
+#define RT_UPDATE_PIECES 8
 
 #define COL_BITS 8
 #define COL_BITS_OBJ 6
