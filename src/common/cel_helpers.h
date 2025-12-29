@@ -7,7 +7,9 @@
 enum {
 	CEL_TYPE_CODED = 0,
 	CEL_TYPE_UNCODED = 1,
-	CEL_TYPE_PACKED = 2	// Should continue as power of two from here on. You could have (CEL_TYPE_CODED | CEL_TYPE_PACKED) as argument combined.
+	CEL_TYPE_PACKED = 2,
+	CEL_TYPE_ALLOC_PAL = 4,
+	CEL_TYPE_ALLOC_BMP = 8
 };
 
 #define CEL_BLEND_OPAQUE 0x1F001F00

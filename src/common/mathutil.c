@@ -2,7 +2,7 @@
 
 #include "mathutil.h"
 
-#define SQRT_LUT_SIZE 16384
+#define SQRT_LUT_SIZE 32768
 
 int *isin;
 int *recZ;

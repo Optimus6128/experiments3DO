@@ -218,6 +218,16 @@ void initCel(int width, int height, int bpp, int type, CCB *cel)
 	setCelType(type, cel);
 	initCelHeight(height, cel);
 	initCelWidth(width, cel);
+
+	if (type & CEL_TYPE_ALLOC_PAL) {
+		int palSize = getCelPaletteColorsRealBpp(bpp) * sizeof(uint16);
+		cel->ccb_PLUTPtr = (uint16*)AllocMem(palSize, MEMTYPE_ANY);
+	}
+
+	if (type & CEL_TYPE_ALLOC_BMP) {
+		int bmpSize = getCelDataSizeInBytes(cel);
+		cel->ccb_SourcePtr = AllocMem(bmpSize, MEMTYPE_ANY);
+	}
 }
 
 CCB *createCel(int width, int height, int bpp, int type)

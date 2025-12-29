@@ -20,7 +20,7 @@
 #define HIT_BUFF_WIDTH ((RT_WIDTH / 2) + 1)
 #define HIT_BUFF_HEIGHT ((RT_HEIGHT / 2) + 1)
 
-CCB *rayBuffCel;
+static CCB *rayBuffCel;
 
 typedef struct Object
 {
@@ -312,7 +312,9 @@ void raytraceInit()
 	lightDir0 = VEC_FLT_TO_FP(-0.25f, -0.5f, 0.875f);
 	Vnormalize(&lightDir0);
 
-	rayBuffCel = createCel(RT_WIDTH, RT_HEIGHT, 16, CEL_TYPE_UNCODED);
+	rayBuffCel = createCel(RT_WIDTH, RT_HEIGHT, 16, CEL_TYPE_UNCODED | CEL_TYPE_ALLOC_BMP);
+	rayBuffCel->ccb_Flags |= CCB_BGND;
+
 }
 
 static uint16 computeColor(Vec3fp* dir, Hit* hit)
@@ -438,27 +440,16 @@ static void handleRender2x2(Hit* hitBuff, Vec3fp* dir, PerPixelVars* perPixelVar
 	}
 }
 
-static void renderFuckBlock4X(uint16 *dst)
-{
-	/**dst = 0; *(dst+1) = 0; *(dst+2) = 0; *(dst+3) = 0;
-	*(dst + RT_WIDTH) = 0; *(dst + RT_WIDTH + 1) = 0; *(dst + RT_WIDTH + 2) = 0; *(dst + RT_WIDTH + 3) = 0;
-	*(dst + 2 * RT_WIDTH) = 0; *(dst + 2 * RT_WIDTH + 1) = 0; *(dst + 2 * RT_WIDTH + 2) = 0; *(dst + 2 * RT_WIDTH + 3) = 0;
-	*(dst + 3 * RT_WIDTH) = 0; *(dst + 3 * RT_WIDTH + 1) = 0; *(dst + 3 * RT_WIDTH + 2) = 0; *(dst + 3 * RT_WIDTH + 3) = 0;*/
-	//uint32 *dst32 = (uint32*)dst;
-	//*(dst32+1) = 0;
-}
-
 static void renderSubdiv4x()
 {
 	int x, y;
-
-	uint16* dst = (uint16*)rayBuffCel->ccb_SourcePtr;
 
 	Vec3fp* dir = perPixelPrecs.viewDir;
 	PerPixelVars* perPixelVars = perPixelPrecs.vars;
 	Hit* hitBuff = hitBuffer;
 
 	for (y = 0; y < RT_HEIGHT; y += 4) {
+		uint16* dst = (uint16*)rayBuffCel->ccb_SourcePtr + y * RT_WIDTH;
 		for (x = 0; x < RT_WIDTH; x += 4) {
 			Hit* hit0_0 = &hitBuff[0 * HIT_BUFF_WIDTH + 0];
 			Hit* hit1_0 = &hitBuff[0 * HIT_BUFF_WIDTH + 1];
@@ -476,7 +467,11 @@ static void renderSubdiv4x()
 				const int objType = hit0_0->obj->type;
 
 				if (objType == OBJ_NOTHING) {
-					renderFuckBlock4X(dst);
+					uint32 *dst32 = (uint32*)dst;
+					*dst32 = 0; *(dst32+1) = 0;
+					*(dst32 + RT_WIDTH/2) = 0; *(dst32 + RT_WIDTH/2 + 1) = 0; 
+					*(dst32 + RT_WIDTH) = 0; *(dst32 + RT_WIDTH + 1) = 0; 
+					*(dst32 + (3*RT_WIDTH)/2) = 0; *(dst32 + (3*RT_WIDTH)/2 + 1) = 0; 
 				}
 				else {
 					*dst = computeColor(dir, hit0_0);
@@ -639,7 +634,6 @@ static void renderSubdiv4x()
 		}
 		perPixelVars += 3 * RT_BUFF_WIDTH + 1;
 		dir += 3 * RT_BUFF_WIDTH + 1;
-		dst += 3 * RT_WIDTH;
 		hitBuff += 1 * HIT_BUFF_WIDTH + 1;
 	}
 }
@@ -676,9 +670,6 @@ static void resetHitBuffer()
 	for (i=0; i<HIT_BUFF_WIDTH * HIT_BUFF_HEIGHT; ++i) {
 		hitBuffer[i].obj = NULL;
 	}
-
-	//memset(rayBuffCel->ccb_SourcePtr, 0, RT_WIDTH * RT_HEIGHT * 2);
-		memset((void*)((uint16*)rayBuffCel->ccb_SourcePtr + (RT_HEIGHT / 64) * RT_WIDTH), 0, RT_WIDTH * RT_HEIGHT);
 }
 
 void raytraceRun(int ticks)
