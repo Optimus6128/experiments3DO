@@ -12,6 +12,10 @@ int main()
 		coreFlags = CORE_SHOW_FPS | CORE_NO_VSYNC | CORE_NO_CLEAR_FRAME;
 	}
 
+	if (effectIndex == EFFECT_RAYTRACE) {
+		coreFlags = CORE_SHOW_FPS | CORE_SHOW_MEM | CORE_VRAM_DOUBLEBUFFER;
+	}
+
 	coreInit(effectInitFunc[effectIndex], coreFlags);
 	coreRun(effectRunFunc[effectIndex]);
 }

@@ -2,12 +2,15 @@
 
 #include "mathutil.h"
 
+#define SQRT_LUT_SIZE 16384
 
 int *isin;
 int *recZ;
 
+static int sqrtLUT[SQRT_LUT_SIZE];
 
-int isqrt(int x) {
+
+static int isqrtCalc(int x) {
     long long int q = 1;	// very high numbers over ((1<<30)-1) will freeze in while if this wasn't 64bit
 	int r = 0;
     while (q <= x) {
@@ -27,6 +30,14 @@ int isqrt(int x) {
     return r;
 } 
 
+int isqrt(int x) {
+	if (x < SQRT_LUT_SIZE) {
+		return sqrtLUT[x];
+	} else {
+		return isqrtCalc(x);
+	}
+}
+
 int getRand(int from, int to)
 {
 	int rnd;
@@ -45,6 +56,14 @@ int getShr(unsigned int n)
 	return b;
 }
 
+void initSQRTLut()
+{
+	int i;
+	for (i=0; i<SQRT_LUT_SIZE; ++i) {
+		sqrtLUT[i] = isqrtCalc(i);
+	}
+}
+
 void initEngineLUTs()
 {
 	int i;
@@ -59,6 +78,8 @@ void initEngineLUTs()
 	for (i=1; i<NUM_REC_Z; ++i) {
 		recZ[i] = (1 << REC_FPSHR) / i;
 	}
+
+	initSQRTLut();
 }
 
 void setVector3D(Vector3D *v, int x, int y, int z)

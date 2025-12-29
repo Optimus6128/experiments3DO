@@ -10,13 +10,15 @@
 #define NORMAL_SHIFT 8
 
 #define FLOAT_TO_FIXED(f,b) ((int)((f) * (1 << b)))
-#define INT_TO_FIXED(i,b) ((i) * (1 << b))
+#define INT_TO_FIXED(i,b) ((i) << b)
 #define UINT_TO_FIXED(i,b) ((i) << b)
 #define FIXED_TO_INT(x,b) ((x) >> b)
 #define FIXED_TO_FLOAT(x,b) ((float)(x) / (1 << b))
 #define FIXED_MUL(x,y,b) (((x) * (y)) >> b)
+#define FIXED_MUL_64(x,y,b) ((int)(((long long int)(x) * (long long int)(y)) >> b))
 #define FIXED_DIV(x,y,b) (((x) << b) / (y))
-#define FIXED_SQRT(x,b) (sqrt((x) << b))
+#define FIXED_DIV_64(x,y,b) (((long long int)(x) << b) / (y))
+#define FIXED_SQRT(x,b) (isqrt(x) << (b / 2))
 
 #define VEC3D_TO_FIXED(v,b) v.x *= (1 << b); v.y *= (1 << b); v.z *= (1 << b);
 
@@ -60,12 +62,13 @@ typedef struct Point2Darray
 extern int *isin;
 extern int *recZ;
 
-
 int isqrt(int x);
 
 int getRand(int from, int to);
 int getShr(unsigned int n);
+
 void initEngineLUTs(void);
+void initSQRTLut(void);
 
 void setVector3D(Vector3D *v, int x, int y, int z);
 void copyVector3D(Vector3D *src, Vector3D *dst);
