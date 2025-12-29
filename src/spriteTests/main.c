@@ -13,7 +13,7 @@ int main()
 	}
 
 	if (effectIndex == EFFECT_RAYTRACE) {
-		coreFlags = CORE_SHOW_FPS | CORE_SHOW_MEM | CORE_VRAM_DOUBLEBUFFER;
+		coreFlags = CORE_SHOW_FPS | CORE_SHOW_MEM | CORE_VRAM_DOUBLEBUFFER | CORE_INIT_3D_ENGINE;
 	}
 
 	coreInit(effectInitFunc[effectIndex], coreFlags);

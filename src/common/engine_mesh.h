@@ -94,6 +94,7 @@ void setMeshTexture(Mesh *ms, Texture *tex);
 void setMeshPaletteIndex(Mesh *ms, int palIndex);
 
 void setAllPolyData(Mesh *ms, int numPoints, int textureId, int palId);
+void updateAllPolyTextureId(Mesh *ms, int textureId);
 void updatePolyTexData(Mesh *ms);
 void flipMeshPolyOrder(Mesh *ms);
 void scaleMesh(Mesh *ms, int scaleX, int scaleY, int scaleZ);

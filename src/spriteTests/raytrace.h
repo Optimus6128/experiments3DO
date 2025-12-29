@@ -4,6 +4,8 @@
 #define RT_WIDTH 128
 #define RT_HEIGHT 128
 
+#define RT_UPDATE_PIECES 16
+
 #define COL_BITS 8
 #define COL_BITS_OBJ 6
 
@@ -15,6 +17,6 @@
 enum { OBJ_NOTHING, OBJ_PLANE, OBJ_SPHERE, OBJ_TYPES_COUNT };
 
 void raytraceInit(void);
-void raytraceRun(int ticks);
+void raytraceRun(uint16 *buff, int updatePieceIndex, int ticks);
 
 #endif

@@ -208,24 +208,44 @@ void setMeshDottedDisplay(Mesh *ms, bool enable)
 
 void updatePolyTexData(Mesh *ms)
 {
+	const int polysNum = ms->polysNum;
+
 	int i;
-	for (i=0; i<ms->polysNum; i++) {
-		PolyData *poly = &ms->poly[i];
+	PolyData *poly = ms->poly;
+	for (i=0; i<polysNum; i++) {
 		Texture *tex = &ms->tex[poly->textureId];
 
 		poly->offsetU = 0;
 		poly->offsetV = 0;
 		poly->subtexWidth = tex->width;
 		poly->subtexHeight = tex->height;
+		++poly;
 	}
+}
+
+void updateAllPolyTextureId(Mesh *ms, int textureId)
+{
+	const int polysNum = ms->polysNum;
+
+	int i;
+	PolyData *poly = ms->poly;
+	for (i=0; i<polysNum; i++) {
+		poly->textureId = textureId;
+		++poly;
+	}
+	
+	updatePolyTexData(ms);
+
+	prepareCelList(ms);
 }
 
 void setAllPolyData(Mesh *ms, int numPoints, int textureId, int palId)
 {
-	int i;
+	const int polysNum = ms->polysNum;
 
-	for (i=0; i<ms->polysNum; i++) {
-		PolyData *poly = &ms->poly[i];
+	int i;
+	PolyData *poly = ms->poly;
+	for (i=0; i<polysNum; i++) {
 		poly->numPoints = numPoints;
 		poly->textureId = textureId;
 		poly->palId = palId;
@@ -237,9 +257,11 @@ void setAllPolyData(Mesh *ms, int numPoints, int textureId, int palId)
 
 void flipMeshPolyOrder(Mesh *ms)
 {
+	const int polysNum = ms->polysNum;
+
 	int i,j;
 	int *index = ms->index;
-	for (i=0; i<ms->polysNum; ++i) {
+	for (i=0; i<polysNum; ++i) {
 		const int numPoints = ms->poly[i].numPoints;
 
 		for (j=0; j<numPoints/2; ++j) {
@@ -254,9 +276,11 @@ void flipMeshPolyOrder(Mesh *ms)
 
 void scaleMesh(Mesh *ms, int scaleX, int scaleY, int scaleZ)
 {
+	const int verticesNum = ms->verticesNum;
+
 	int i;
 	Vertex *vrtx = ms->vertex;
-	for (i=0; i<ms->verticesNum; ++i) {
+	for (i=0; i<verticesNum; ++i) {
 		vrtx->x *= scaleX;
 		vrtx->y *= scaleY;
 		vrtx->z *= scaleZ;
@@ -266,9 +290,11 @@ void scaleMesh(Mesh *ms, int scaleX, int scaleY, int scaleZ)
 
 void flipMeshVerticesIfNeg(Mesh *ms, bool flipX, int flipY, bool flipZ)
 {
+	const int verticesNum = ms->verticesNum;
+
 	int i;
 	Vertex *vrtx = ms->vertex;
-	for (i=0; i<ms->verticesNum; ++i) {
+	for (i=0; i<verticesNum; ++i) {
 		if (flipX && vrtx->x < 0) vrtx->x = -vrtx->x;
 		if (flipY && vrtx->y < 0) vrtx->y = -vrtx->y;
 		if (flipZ && vrtx->z < 0) vrtx->z = -vrtx->z;

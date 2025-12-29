@@ -20,8 +20,6 @@
 #define HIT_BUFF_WIDTH ((RT_WIDTH / 2) + 1)
 #define HIT_BUFF_HEIGHT ((RT_HEIGHT / 2) + 1)
 
-static CCB *rayBuffCel;
-
 typedef struct Object
 {
 	int type;
@@ -311,10 +309,6 @@ void raytraceInit()
 
 	lightDir0 = VEC_FLT_TO_FP(-0.25f, -0.5f, 0.875f);
 	Vnormalize(&lightDir0);
-
-	rayBuffCel = createCel(RT_WIDTH, RT_HEIGHT, 16, CEL_TYPE_UNCODED | CEL_TYPE_ALLOC_BMP);
-	rayBuffCel->ccb_Flags |= CCB_BGND;
-
 }
 
 static uint16 computeColor(Vec3fp* dir, Hit* hit)
@@ -440,16 +434,21 @@ static void handleRender2x2(Hit* hitBuff, Vec3fp* dir, PerPixelVars* perPixelVar
 	}
 }
 
-static void renderSubdiv4x()
+static void renderSubdiv4x(uint16 *buff, int updatePieceIndex)
 {
 	int x, y;
 
-	Vec3fp* dir = perPixelPrecs.viewDir;
-	PerPixelVars* perPixelVars = perPixelPrecs.vars;
-	Hit* hitBuff = hitBuffer;
+	const int updatePieceHeight = RT_HEIGHT / RT_UPDATE_PIECES;
+	const int y0 = updatePieceIndex * updatePieceHeight;
+	const int y1 = y0 + updatePieceHeight;
 
-	for (y = 0; y < RT_HEIGHT; y += 4) {
-		uint16* dst = (uint16*)rayBuffCel->ccb_SourcePtr + y * RT_WIDTH;
+	Vec3fp* dir = &perPixelPrecs.viewDir[y0 * RT_BUFF_WIDTH];
+	PerPixelVars* perPixelVars = &perPixelPrecs.vars[y0 * RT_BUFF_WIDTH];
+	Hit *hitBuff = &hitBuffer[y0 * HIT_BUFF_WIDTH];
+
+	uint16* dst = &buff[y0 * RT_WIDTH];
+
+	for (y = y0; y < y1; y+=4) {
 		for (x = 0; x < RT_WIDTH; x += 4) {
 			Hit* hit0_0 = &hitBuff[0 * HIT_BUFF_WIDTH + 0];
 			Hit* hit1_0 = &hitBuff[0 * HIT_BUFF_WIDTH + 1];
@@ -634,21 +633,31 @@ static void renderSubdiv4x()
 		}
 		perPixelVars += 3 * RT_BUFF_WIDTH + 1;
 		dir += 3 * RT_BUFF_WIDTH + 1;
+		dst += 3 * RT_WIDTH;
 		hitBuff += 1 * HIT_BUFF_WIDTH + 1;
 	}
 }
 
-
-
-static void renderObjectsSubdiv4x()
+static void renderObjectsSubdiv4x(uint16 *buff, int updatePieceIndex)
 {
-	int x, y;
+	int x, y, i;
 
-	Vec3fp* dir = perPixelPrecs.viewDir;
-	PerPixelVars* perPixelVars = perPixelPrecs.vars;
+	const int updatePieceHeight = RT_HEIGHT / RT_UPDATE_PIECES;	// RT_BUFF_HEIGHT happens to be nice number + 1. So we divide RT_HEIGHT instead, maybe handle the last extra line later.
+	const int y0 = updatePieceIndex * updatePieceHeight;
+	const int y1 = y0 + updatePieceHeight + 1;
 
-	Hit *hitBuff = hitBuffer;
-	for (y = 0; y < RT_BUFF_HEIGHT; y+=4) {
+	Vec3fp* dir = &perPixelPrecs.viewDir[y0 * RT_BUFF_WIDTH];
+	PerPixelVars* perPixelVars = &perPixelPrecs.vars[y0 * RT_BUFF_WIDTH];
+	Hit *hitBuff = &hitBuffer[y0 * HIT_BUFF_WIDTH];
+
+	i = 0;
+	for (y = y0; y < y1; y++) {
+		for (x = 0; x < HIT_BUFF_WIDTH; x++) {
+			hitBuff[i++].obj = NULL;
+		}
+	}
+		
+	for (y = y0; y < y1; y+=4) {
 		for (x = 0; x < RT_BUFF_WIDTH; x+=4) {
 			traceRay(dir, perPixelVars, hitBuff, y);
 
@@ -661,24 +670,12 @@ static void renderObjectsSubdiv4x()
 		hitBuff +=  HIT_BUFF_WIDTH - 1;
 	}
 
-	renderSubdiv4x();
+	renderSubdiv4x(buff, updatePieceIndex);
 }
 
-static void resetHitBuffer()
+void raytraceRun(uint16 *buff, int updatePieceIndex, int ticks)
 {
-	int i;
-	for (i=0; i<HIT_BUFF_WIDTH * HIT_BUFF_HEIGHT; ++i) {
-		hitBuffer[i].obj = NULL;
-	}
-}
-
-void raytraceRun(int ticks)
-{
-	resetHitBuffer();
-
 	updateObjects(ticks);
 
-	renderObjectsSubdiv4x();
-
-	drawCels(rayBuffCel);
+	renderObjectsSubdiv4x(buff, updatePieceIndex);
 }
